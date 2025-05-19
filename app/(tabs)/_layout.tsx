@@ -4,11 +4,8 @@ import { Platform } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useEffect } from '@/hooks/react';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 
 function useProtectedRoute(isAuthenticated: boolean) {
@@ -37,8 +34,6 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
             // Use a transparent background on iOS to show the blur effect
@@ -46,19 +41,19 @@ export default function TabLayout() {
           },
           default: {},
         }),
+        tabBarShowLabel: false, // Ocultar etiquetas para que solo se muestre el navbar personalizado
+        tabBarButton: () => null, // Deshabilitar los botones predeterminados del tabBar
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }: { color: string }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }: { color: string }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
     </Tabs>
