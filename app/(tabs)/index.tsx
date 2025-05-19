@@ -1,75 +1,159 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { ParallaxScrollView } from '@/components/ParallaxScrollView';
+
+type ServiceItem = {
+  id: string;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+  description: string;
+};
+
+const services: ServiceItem[] = [
+  {
+    id: '1',
+    name: 'Consulta',
+    icon: 'medkit',
+    route: '/consulta',
+    description: 'Agenda citas médicas presenciales o por telemedicina'
+  },
+  {
+    id: '2',
+    name: 'Farmacia',
+    icon: 'medical',
+    route: '/farmacia',
+    description: 'Busca y compra medicamentos con entrega a domicilio'
+  },
+  {
+    id: '3',
+    name: 'Emergencia',
+    icon: 'alert-circle',
+    route: '/emergencia',
+    description: 'Solicita atención médica de urgencia en tu ubicación'
+  },
+  {
+    id: '4',
+    name: 'Enfermería',
+    icon: 'pulse',
+    route: '/enfermeria',
+    description: 'Servicios de cuidados y procedimientos a domicilio'
+  },
+  {
+    id: '5',
+    name: 'Expediente',
+    icon: 'document-text',
+    route: '/expediente',
+    description: 'Accede a tu historial médico y resultados de pruebas'
+  },
+  {
+    id: '6',
+    name: 'Laboratorio',
+    icon: 'flask',
+    route: '/laboratorio',
+    description: 'Programa toma de muestras y revisa resultados'
+  },
+];
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  const renderServiceItem = ({ item }: { item: ServiceItem }) => (
+    <TouchableOpacity 
+      style={styles.serviceItem}
+      onPress={() => router.push(item.route)}
+    >
+      <View style={styles.iconContainer}>
+        <Ionicons name={item.icon} size={32} color="#2D7FF9" />
+      </View>
+      <View style={styles.serviceContent}>
+        <ThemedText style={styles.serviceName}>{item.name}</ThemedText>
+        <ThemedText style={styles.serviceDescription}>{item.description}</ThemedText>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#999" />
+    </TouchableOpacity>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
+      
+      <View style={styles.header}>
+        <ThemedText style={styles.greeting}>¡Hola!</ThemedText>
+        <ThemedText style={styles.subtitle}>¿Qué servicio necesitas hoy?</ThemedText>
+      </View>
+      
+      <FlatList
+        data={services}
+        renderItem={renderServiceItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.servicesList}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#777',
+  },
+  servicesList: {
+    paddingBottom: 20,
+  },
+  serviceItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  serviceContent: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  serviceDescription: {
+    fontSize: 14,
+    color: '#777',
   },
 });

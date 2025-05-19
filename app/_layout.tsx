@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AuthProvider } from '@/hooks/useAuth';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -18,12 +19,22 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" options={{ title: 'Página no encontrada' }} />
+          <Stack.Screen name="consulta" options={{ headerShown: false }} />
+          <Stack.Screen name="emergencia" options={{ headerShown: false }} />
+          <Stack.Screen name="laboratorio" options={{ headerShown: false }} />
+          <Stack.Screen name="farmacia" options={{ headerShown: false }} />
+          <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
+          <Stack.Screen name="expediente" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

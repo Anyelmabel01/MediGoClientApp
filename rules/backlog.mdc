@@ -1,0 +1,897 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Eres un desarrollador experto en frontend con especialización en Expo (React Native), TypeScript, y diseño de UI/UX moderno y accesible. Tu tarea es diseñar y describir la estructura de componentes y pantallas para el frontend de una aplicación móvil de servicios de salud a domicilio llamada "Medigo". La aplicación es para los clientes.
+
+**Tecnologías a utilizar:**
+*   Expo (React Native)
+*   TypeScript
+*   Componentes funcionales, patrones de programación declarativa.
+*   Diseño responsive y mobile-first.
+*   Asegúrate de que la navegación sea intuitiva, incluyendo botones de retroceso y enlaces correctos entre pantallas.
+*   El frontend debe ser de excelente calidad visual y funcional ("TODO CON EL FRONTED EXCELENTE").
+
+**Flujo General de la Aplicación:**
+
+1.  **Pantalla de Login:**
+    *   Diseño estándar de login (email/contraseña, opción de registro, recuperación de contraseña).
+
+2.  **Pantalla Principal (Post-Login):**
+    *   Bienvenida al usuario.
+    *   Selector de servicios. Cada servicio debe ser claramente distinguible (ej. tarjetas con iconos y nombres).
+    *   Servicios disponibles:
+        *   Consulta
+        *   Farmacia (Nota: El usuario no ha detallado esta sección. Si es necesario, crea una pantalla placeholder o sugiere funcionalidades básicas como búsqueda de medicamentos y pedidos.)
+        *   Emergencia
+        *   Enfermería
+        *   Expediente
+        *   Laboratorio
+
+**Detalle de las Secciones y Pantallas por Servicio:**
+
+---
+
+**A. Servicio: CONSULTA**
+
+Al seleccionar "Consulta", el cliente podrá elegir entre "Consulta en Consultorio" o "Telemedicina".
+
+**A.1. Consulta en Consultorio:**
+
+### **🏠 Appointments Home Screen (Pantalla Principal de Citas en Consultorio)**
+
+*   **Main options (Opciones principales)**
+    *   New appointment (Nueva cita)
+    *   My appointments (Mis citas)
+*   **List of upcoming appointments (Lista de próximas citas)**
+    *   Date and time (Fecha y hora)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Provider's provider\_type (Tipo de proveedor)
+    *   Status (Pending, Confirmed, Cancelled) (Estado: Pendiente, Confirmada, Cancelada)
+
+### **🔍 Provider Search (Búsqueda de Proveedor)**
+
+*   **Filters (Filtros)**
+    *   Provider type (dropdown based on provider\_type enum) (Tipo de proveedor: desplegable basado en el enum `provider_type`)
+    *   Location (Ubicación)
+    *   Available date (Fecha disponible)
+*   **List of available providers (Lista de proveedores disponibles)**
+    *   Provider's avatar\_url (URL del avatar del proveedor)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Provider type (from provider\_type) (Tipo de proveedor)
+    *   Organization name (if applicable) (Nombre de la organización, si aplica)
+    *   Next availability (Próxima disponibilidad)
+    *   Rating (if implemented) (Calificación, si está implementado)
+*   **"View Profile" button for each provider (Botón "Ver Perfil" para cada proveedor)**
+
+### **👤 Provider Profile (Perfil del Proveedor)**
+
+*   **Provider information (Información del proveedor)**
+    *   Avatar
+    *   Display name (Nombre)
+    *   Provider type (Tipo de proveedor)
+    *   Organization name (if applicable) (Nombre de la organización, si aplica)
+    *   License number (Número de licencia)
+    *   Bio (Biografía)
+*   **Availability calendar (Calendario de disponibilidad)**
+*   **Client reviews (if implemented) (Reseñas de clientes, si está implementado)**
+*   **Consultation fee (Costo de la consulta)**
+*   **"Schedule Appointment" button (Botón "Agendar Cita")**
+
+### **📅 Schedule Appointment (Agendar Cita)**
+
+*   **Selected provider information (Información del proveedor seleccionado)**
+*   **Date and time selection (Selección de fecha y hora)**
+*   **Reason for visit (Motivo de la visita)**
+    *   Text field for details (Campo de texto para detalles)
+*   **Upload relevant documents (optional) (Subir documentos relevantes, opcional)**
+*   **Select payment method (Seleccionar método de pago)**
+*   **"Confirm Appointment" button (Botón "Confirmar Cita")**
+
+### **📋 My Appointments (Mis Citas)**
+
+*   **Tabs (Pestañas)**
+    *   Upcoming (Próximas)
+    *   Past (Pasadas)
+*   **List of appointments (Lista de citas)**
+    *   Date and time (Fecha y hora)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Provider type (Tipo de proveedor)
+    *   Status (Estado)
+*   **Actions for each appointment (Acciones para cada cita)**
+    *   View details (Ver detalles)
+    *   Reschedule (if allowed) (Reprogramar, si está permitido)
+    *   Cancel (if allowed) (Cancelar, si está permitido)
+
+### **📝 Appointment Details (Detalles de la Cita)**
+
+*   **Appointment information (Información de la cita)**
+    *   Date and time (Fecha y hora)
+    *   Provider's display\_name and provider\_type (Nombre y tipo del proveedor)
+    *   Organization name (if applicable) (Nombre de la organización, si aplica)
+    *   Address (Dirección)
+    *   Reason for visit (Motivo de la visita)
+*   **Status and instructions (Estado e instrucciones)**
+*   **Attached documents (Documentos adjuntos)**
+*   **Payment information (Información de pago)**
+*   **Actions (Acciones)**
+    *   Get directions (Obtener direcciones)
+    *   Call provider (Llamar al proveedor)
+    *   Reschedule/Cancel (if allowed) (Reprogramar/Cancelar, si está permitido)
+
+### **⭐ Post-Appointment Rating (Calificación Post-Cita)**
+
+*   **Rating (Calificación)**
+    *   1-5 star scale (Escala de 1-5 estrellas)
+*   **Comments (Comentarios)**
+    *   Text field for feedback (Campo de texto para retroalimentación)
+*   **"Submit" button (Botón "Enviar")**
+
+---
+
+**A.2. Telemedicina:**
+
+*(Presentar las siguientes dos descripciones para Telemedicina. Pueden ser interpretadas como iteraciones o versiones complementarias.)*
+
+**Versión 1 de Telemedicina:**
+
+### **🏠 Telemedicine Home Screen (Pantalla Principal de Telemedicina)**
+
+*   **Main options (Opciones principales)**
+    *   New telemedicine consultation (Nueva consulta de telemedicina)
+*   **List of upcoming consultations (Lista de próximas consultas)**
+    *   Date and time (Fecha y hora)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Provider type (should be 'VIRTUAL\_SPECIALIST') (Tipo de proveedor, debería ser 'ESPECIALISTA\_VIRTUAL')
+    *   Status (Pending, Confirmed, Cancelled) (Estado: Pendiente, Confirmada, Cancelada)
+
+### **🔍 Virtual Specialist Search (Búsqueda de Especialista Virtual)**
+
+*   **Filters (Filtros)**
+    *   Specialty (based on provider's bio or additional fields) (Especialidad: basado en la biografía del proveedor o campos adicionales)
+    *   Available date (Fecha disponible)
+    *   Language (if implemented) (Idioma, si está implementado)
+*   **List of available virtual specialists (Lista de especialistas virtuales disponibles)**
+    *   Provider's avatar\_url (URL del avatar del proveedor)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Specialty (Especialidad)
+    *   Next availability (Próxima disponibilidad)
+    *   Rating (if implemented) (Calificación, si está implementado)
+*   **"View Profile" button for each provider (Botón "Ver Perfil" para cada proveedor)**
+
+### **👤 Virtual Specialist Profile (Perfil del Especialista Virtual)**
+
+*   **Provider information (Información del proveedor)**
+    *   Avatar
+    *   Display name (Nombre)
+    *   Specialty (Especialidad)
+    *   Bio (Biografía)
+    *   Languages spoken (if implemented) (Idiomas hablados, si está implementado)
+*   **Availability calendar (Calendario de disponibilidad)**
+*   **Client reviews (if implemented) (Reseñas de clientes, si está implementado)**
+    *   Rating (Calificación)
+    *   Comments (Comentarios)
+*   **Consultation fee (Costo de la consulta)**
+*   **"Schedule Consultation" button (Botón "Agendar Consulta")**
+
+### **📅 Schedule Telemedicine Consultation (Agendar Consulta de Telemedicina)**
+
+*   **Selected virtual specialist information (Información del especialista virtual seleccionado)**
+*   **Date and time selection (Selección de fecha y hora)**
+*   **Reason for consultation (Motivo de la consulta)**
+    *   Text field for details (Campo de texto para detalles)
+*   **Upload relevant documents (optional) (Subir documentos relevantes, opcional)**
+*   **Select payment method (Seleccionar método de pago)**
+*   **"Confirm Consultation" button (Botón "Confirmar Consulta")**
+
+### **📋 My Telemedicine Consultations (Mis Consultas de Telemedicina)**
+
+*   **Tabs (Pestañas)**
+    *   Upcoming (Próximas)
+    *   Past (Pasadas)
+*   **List of consultations (Lista de consultas)**
+    *   Date and time (Fecha y hora)
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Specialty (Especialidad)
+    *   Status (Estado)
+*   **Actions for each consultation (Acciones para cada consulta)**
+    *   View details (Ver detalles)
+    *   Join video call (when it's time) (Unirse a videollamada, cuando sea el momento)
+    *   Reschedule (if allowed) (Reprogramar, si está permitido)
+    *   Cancel (if allowed) (Cancelar, si está permitido)
+
+### **🏥 Virtual Waiting Room (Sala de Espera Virtual)**
+
+*   **Consultation information (Información de la consulta)**
+    *   Provider's display\_name (Nombre del proveedor)
+    *   Specialty (Especialidad)
+    *   Scheduled time (Hora programada)
+*   **Status (Estado)**
+    *   Estimated waiting time (Tiempo de espera estimado)
+*   **Preparation checklist (Lista de preparación)**
+    *   Test audio and video (Probar audio y video)
+    *   Review consultation reason (Revisar motivo de la consulta)
+*   **"Join Call" button (enabled when provider is ready) (Botón "Unirse a la Llamada", habilitado cuando el proveedor esté listo)**
+
+### **📹 Video Consultation (Videoconsulta)**
+
+*   **Video call interface (Interfaz de videollamada)**
+    *   Main video area (provider) (Área de video principal - proveedor)
+    *   Secondary video area (client) (Área de video secundaria - cliente)
+    *   Audio/video controls (Controles de audio/video)
+    *   Chat feature (Función de chat)
+    *   Screen sharing option (Opción de compartir pantalla)
+*   **Consultation timer (Temporizador de la consulta)**
+*   **"End Call" button (Botón "Finalizar Llamada")**
+
+### **⭐ Post-Consultation Rating (Calificación Post-Consulta)**
+
+*   **Rating (Calificación)**
+    *   1-5 star scale (Escala de 1-5 estrellas)
+*   **Comments (Comentarios)**
+    *   Text field for feedback (Campo de texto para retroalimentación)
+*   **"Submit" button (Botón "Enviar")**
+
+**Versión 2 de Telemedicina (Detallada/Alternativa):**
+
+## **🏠 Telemedicine Home Screen (Pantalla Principal de Telemedicina)**
+
+*   **Quick Access Buttons (Botones de Acceso Rápido)**
+    *   Start New Consultation (Iniciar Nueva Consulta)
+    *   View Medicine Information (new section for quick access to medicine details or FAQs) (Ver Información de Medicamentos - nueva sección para acceso rápido a detalles de medicamentos o FAQs)
+*   **Upcoming Consultations List (Lista de Consultas Próximas)**
+    *   Date and Time (Fecha y Hora)
+    *   Provider Name (Nombre del Proveedor)
+    *   Provider Type (e.g., Virtual Specialist) (Tipo de Proveedor, ej. Especialista Virtual)
+    *   Status (Pending, Confirmed, Cancelled) (Estado: Pendiente, Confirmada, Cancelada)
+*   **Quick Action (Acción Rápida)**
+    *   "Join Call" button (visible for upcoming consultations within 10 minutes of start time) (Botón "Unirse a Llamada", visible para consultas próximas dentro de los 10 minutos de la hora de inicio)
+
+## **🔍 Find Virtual Specialist (Encontrar Especialista Virtual)**
+
+*   **Search Filters (Filtros de Búsqueda)**
+    *   Specialty (e.g., Cardiology, General Medicine) (Especialidad, ej. Cardiología, Medicina General)
+    *   Availability Date and Time (Fecha y Hora de Disponibilidad)
+    *   Language Preference (Preferencia de Idioma)
+*   **Specialist Results List (Lista de Resultados de Especialistas)**
+    *   Avatar
+    *   Name (Nombre)
+    *   Specialty (Especialidad)
+    *   Next Available Slot (Próximo Horario Disponible)
+    *   Rating (if available) (Calificación, si disponible)
+*   **Action (Acción)**
+    *   "View Profile" button for detailed information (Botón "Ver Perfil" para información detallada)
+
+## **👤 Specialist Profile (Perfil del Especialista)**
+
+*   **Profile Details (Detalles del Perfil)**
+    *   Avatar
+    *   Name (Nombre)
+    *   Specialty (Especialidad)
+    *   Short Bio (Biografía Corta)
+    *   Languages Spoken (Idiomas Hablados)
+*   **Availability Calendar (interactive for date/time selection) (Calendario de Disponibilidad, interactivo para selección de fecha/hora)**
+*   **Client Feedback (if available) (Comentarios de Clientes, si disponible)**
+    *   Average Rating (Calificación Promedio)
+    *   Recent Comments (Comentarios Recientes)
+*   **Consultation Cost (Costo de la Consulta)**
+*   **Action (Acción)**
+    *   "Schedule Consultation" button (Botón "Agendar Consulta")
+
+## **📅 Book Consultation (Reservar Consulta)**
+
+*   **Specialist Summary (Resumen del Especialista)**
+    *   Name and Specialty (Nombre y Especialidad)
+*   **Booking Options (Opciones de Reserva)**
+    *   Select Date and Time (Seleccionar Fecha y Hora)
+    *   Reason for Consultation (text input) (Motivo de la Consulta, campo de texto)
+    *   Upload Documents (optional, for medical history or prescriptions) (Subir Documentos, opcional, para historial médico o recetas)
+*   **Payment Selection (Selección de Pago)**
+    *   Choose Payment Method (Elegir Método de Pago)
+*   **Action (Acción)**
+    *   "Confirm Booking" button (Botón "Confirmar Reserva")
+
+## **📋 My Consultations (Mis Consultas)**
+
+*   **View Tabs (Pestañas de Visualización)**
+    *   Upcoming Consultations (Consultas Próximas)
+    *   Past Consultations (Consultas Pasadas)
+*   **Consultation Details (Detalles de la Consulta)**
+    *   Date and Time (Fecha y Hora)
+    *   Provider Name (Nombre del Proveedor)
+    *   Specialty (Especialidad)
+    *   Status (Estado)
+*   **Actions per Consultation (Acciones por Consulta)**
+    *   View Full Details (Ver Detalles Completos)
+    *   Join Video Call (active for upcoming) (Unirse a Videollamada, activo para próximas)
+    *   Reschedule (if permitted) (Reprogramar, si está permitido)
+    *   Cancel (if permitted) (Cancelar, si está permitido)
+
+## **🏥 Virtual Waiting Room (Sala de Espera Virtual)**
+
+*   **Consultation Summary (Resumen de la Consulta)**
+    *   Provider Name (Nombre del Proveedor)
+    *   Specialty (Especialidad)
+    *   Scheduled Time (Hora Programada)
+*   **Waiting Status (Estado de Espera)**
+    *   Estimated Wait Time (Tiempo de Espera Estimado)
+*   **Pre-Call Checklist (Lista de Verificación Pre-Llamada)**
+    *   Test Audio/Video Equipment (Probar Equipo de Audio/Video)
+    *   Review Consultation Reason (Revisar Motivo de la Consulta)
+*   **Action (Acción)**
+    *   "Join Call" button (enabled when provider is available) (Botón "Unirse a Llamada", habilitado cuando el proveedor esté disponible)
+
+## **📹 Video Consultation Interface (Interfaz de Videoconsulta)**
+
+*   **Video Layout (Diseño de Video)**
+    *   Primary View (Provider) (Vista Principal - Proveedor)
+    *   Secondary View (Client) (Vista Secundaria - Cliente)
+*   **Controls (Controles)**
+    *   Mute/Unmute Audio (Silenciar/Activar Audio)
+    *   Enable/Disable Video (Activar/Desactivar Video)
+    *   In-Call Chat (Chat Durante la Llamada)
+    *   Screen Sharing (for sharing medical reports or visuals) (Compartir Pantalla, para compartir informes médicos o visuales)
+*   **Session Timer (Temporizador de Sesión)**
+*   **Action (Acción)**
+    *   "End Call" button (Botón "Finalizar Llamada")
+
+## **⭐ Post-Consultation Feedback (Retroalimentación Post-Consulta)**
+
+*   **Rating System (Sistema de Calificación)**
+    *   1-5 Star Rating for Provider (Calificación de 1-5 Estrellas para el Proveedor)
+*   **Feedback Input (Entrada de Retroalimentación)**
+    *   Text Field for Detailed Comments (Campo de Texto para Comentarios Detallados)
+*   **Action (Acción)**
+    *   "Submit Feedback" button (Botón "Enviar Retroalimentación")
+
+---
+
+**B. Servicio: EMERGENCIA**
+
+## **1. CLIENT Views (medigo-app - Mobile App) (Vistas del CLIENTE)**
+
+### **1.1 Emergency Request (Solicitud de Emergencia)**
+
+**Home Screen Emergency Action (Acción de Emergencia en Pantalla Principal)**
+
+*   Prominent "Emergency" button in app header or fixed position (Botón "Emergencia" prominente en el encabezado de la app o posición fija)
+*   Quick explanation of service (Breve explicación del servicio)
+
+**Emergency Type Selection (Selección de Tipo de Emergencia)**
+
+*   Card-based emergency type selection: (Selección de tipo de emergencia basada en tarjetas)
+    *   MEDICAL\_EMERGENCY card with icon and brief description (Tarjeta EMERGENCIA\_MÉDICA con ícono y descripción breve)
+    *   ACCIDENT card with icon and brief description (Tarjeta ACCIDENTE con ícono y descripción breve)
+    *   TRANSFER card with icon and brief description (Tarjeta TRASLADO con ícono y descripción breve)
+*   "Continue" button (Botón "Continuar")
+
+**Patient Information Card (Tarjeta de Información del Paciente)**
+
+*   Patient selection: (Selección de paciente)
+    *   "For myself" option (Opción "Para mí")
+    *   "For someone else" option (Opción "Para otra persona")
+*   If "For someone else": (Si es "Para otra persona")
+    *   Patient name field (Campo nombre del paciente)
+    *   Patient age field (Campo edad del paciente)
+    *   Blood type dropdown (optional) (Desplegable tipo de sangre, opcional)
+    *   Medical conditions checklist with common options (Checklist de condiciones médicas con opciones comunes)
+    *   Allergies field (Campo alergias)
+    *   Current medications field (Campo medicamentos actuales)
+*   "Continue" button (Botón "Continuar")
+
+**Emergency Details Card (Tarjeta de Detalles de la Emergencia)**
+
+*   Emergency description text area (Área de texto para descripción de la emergencia)
+*   Severity indicator (Low/Medium/High) (Indicador de severidad: Baja/Media/Alta)
+*   "Continue" button (Botón "Continuar")
+
+**Location Selection Card (Tarjeta de Selección de Ubicación)**
+
+*   Address options: (Opciones de dirección)
+    *   "Use current location" button (Botón "Usar ubicación actual")
+    *   "Use saved address" dropdown (Desplegable "Usar dirección guardada")
+    *   "Enter new address" option (Opción "Ingresar nueva dirección")
+*   If new address: (Si es nueva dirección)
+    *   Address input field with autocomplete (Campo de dirección con autocompletar)
+    *   Reference notes field (landmarks, etc.) (Campo de notas de referencia: puntos de referencia, etc.)
+    *   Building/apartment details field (Campo detalles de edificio/apartamento)
+    *   Access instructions field (Campo instrucciones de acceso)
+*   "Continue" button (Botón "Continuar")
+
+**Contact Information Card (Tarjeta de Información de Contacto)**
+
+*   Contact options: (Opciones de contacto)
+    *   "Use my information" button (Botón "Usar mi información")
+    *   "Enter different contact" option (Opción "Ingresar contacto diferente")
+*   If different contact: (Si es contacto diferente)
+    *   Contact name field (Campo nombre del contacto)
+    *   Contact phone field (Campo teléfono del contacto)
+    *   Relationship to patient field (Campo relación con el paciente)
+*   "Continue" button (Botón "Continuar")
+
+**Request Review and Confirmation (Revisión y Confirmación de la Solicitud)**
+
+*   Full request summary card (Tarjeta de resumen completo de la solicitud)
+*   Provider information: (Información del proveedor)
+    *   Provider name (Nombre del proveedor)
+    *   Estimated arrival time (Tiempo estimado de llegada)
+    *   Rating (Calificación)
+*   Price calculation card: (Tarjeta de cálculo de precio)
+    *   Base fee (Tarifa base)
+    *   Distance fee (Tarifa por distancia)
+    *   Total amount (Monto total)
+*   Payment method selection (Selección de método de pago)
+*   "Confirm and Request" button (Botón "Confirmar y Solicitar")
+*   "Back" button (Botón "Atrás")
+
+### **1.2 Emergency Tracking (Seguimiento de Emergencia)**
+
+**Active Emergency Card (Tarjeta de Emergencia Activa)**
+
+*   Status banner with current status: (Banner de estado con estado actual)
+    *   PAID (Payment confirmed, awaiting operator) (PAGADO: Pago confirmado, esperando operador)
+    *   ACCEPTED (Operator assigned and confirmed) (ACEPTADO: Operador asignado y confirmado)
+    *   IN\_PROGRESS (Operator en route) (EN\_CURSO: Operador en camino)
+    *   ARRIVING (Within 3 minutes of arrival) (LLEGANDO: A menos de 3 minutos de llegar)
+*   Request ID and timestamp (ID de solicitud y marca de tiempo)
+*   Patient name (Nombre del paciente)
+*   Emergency type (Tipo de emergencia)
+*   Estimated arrival time with countdown (Tiempo estimado de llegada con cuenta regresiva)
+
+**Paramedic Information Card (Tarjeta de Información del Paramédico)**
+
+*   Paramedic name (Nombre del paramédico)
+*   Current distance from patient (Distancia actual del paciente)
+*   Estimated time of arrival (Tiempo estimado de llegada)
+*   Contact button (Botón de contacto)
+
+**Location Tracking Card (Tarjeta de Seguimiento de Ubicación)**
+
+*   Simple location visualization with: (Visualización simple de ubicación con)
+    *   Patient location indicator (Indicador de ubicación del paciente)
+    *   Paramedic current location (Ubicación actual del paramédico)
+    *   Direction of travel (Dirección de viaje)
+    *   Distance remaining (Distancia restante)
+*   Auto-updating every 30 seconds (Actualización automática cada 30 segundos)
+
+**Emergency Contact Card (Tarjeta de Contacto de Emergencia)**
+
+*   Emergency helpline number (Número de línea de ayuda de emergencia)
+*   Direct call button (Botón de llamada directa)
+*   Message options (Opciones de mensaje)
+
+### **1.3 Service Completion (Finalización del Servicio)**
+
+**Service Summary Card (Tarjeta de Resumen del Servicio)**
+
+*   Emergency type (Tipo de emergencia)
+*   Start time (Hora de inicio)
+*   End time (Hora de finalización)
+*   Duration (Duración)
+*   Final status (Estado final)
+*   Provider name (Nombre del proveedor)
+*   Paramedic name (Nombre del paramédico)
+
+**Payment Receipt Card (Tarjeta de Recibo de Pago)**
+
+*   Service cost breakdown (Desglose del costo del servicio)
+*   Payment method used (Método de pago utilizado)
+*   Transaction ID (ID de transacción)
+*   Receipt download option (Opción de descargar recibo)
+
+**Rating and Review Card (Tarjeta de Calificación y Reseña)**
+
+*   Overall service rating (1-5 stars) (Calificación general del servicio: 1-5 estrellas)
+*   Response time rating (1-5 stars) (Calificación del tiempo de respuesta: 1-5 estrellas)
+*   Service quality rating (1-5 stars) (Calificación de la calidad del servicio: 1-5 estrellas)
+*   Paramedic rating (1-5 stars) (Calificación del paramédico: 1-5 estrellas)
+*   Comments text area (Área de texto para comentarios)
+*   "Submit Feedback" button (Botón "Enviar Retroalimentación")
+
+### **1.4 Emergency History (Historial de Emergencias)**
+
+**Emergency List View (Vista de Lista de Emergencias)**
+
+*   Filter tabs: (Pestañas de filtro)
+    *   All (Todas)
+    *   Completed (Completadas)
+*   Emergency service cards showing: (Tarjetas de servicio de emergencia mostrando)
+    *   Date and time (Fecha y hora)
+    *   Emergency type with icon (Tipo de emergencia con ícono)
+    *   Status indicator (Indicador de estado)
+    *   Provider name (Nombre del proveedor)
+    *   Service cost (Costo del servicio)
+    *   "View Details" button (Botón "Ver Detalles")
+
+**Emergency Details View (Vista de Detalles de Emergencia)**
+
+*   Complete service information card (Tarjeta de información completa del servicio)
+*   Status history timeline (Línea de tiempo del historial de estados)
+*   Paramedic information card (Tarjeta de información del paramédico)
+*   Payment details card (Tarjeta de detalles de pago)
+*   Rating given (if completed) (Calificación otorgada, si se completó)
+*   Action button (Botón de acción)
+
+---
+
+**C. Servicio: ENFERMERÍA**
+
+### **🏠 Nursing Home Screen (Pantalla Principal de Enfermería)**
+
+*   **Types of services (Tipos de servicios)**
+    *   Home care (Cuidado en casa)
+    *   Injections (Inyecciones)
+    *   Wound care (Cuidado de heridas)
+*   **Nurse search (Búsqueda de enfermero/a)**
+    *   Search field (Campo de búsqueda)
+    *   Filters (specialty, availability) (Filtros: especialidad, disponibilidad)
+
+### **👤 Nurse Profile (Perfil del Enfermero/a)**
+
+*   **Nurse information (Información del enfermero/a)**
+    *   Photo (Foto)
+    *   Name (Nombre)
+    *   Experience (Experiencia)
+    *   Specialties (Especialidades)
+*   **Ratings and reviews (Calificaciones y reseñas)**
+    *   Average rating (Calificación promedio)
+    *   Comments from previous patients (Comentarios de pacientes anteriores)
+*   **Availability (Disponibilidad)**
+    *   Calendar with available time slots (Calendario con horarios disponibles)
+*   **Book service button (Botón "Reservar Servicio")**
+
+### **📅 Book Service (Reservar Servicio)**
+
+*   **Date and time selection (Selección de fecha y hora)**
+*   **Required service type (Tipo de servicio requerido)**
+*   **Estimated duration (Duración estimada)**
+*   **Service address (Dirección del servicio)**
+*   **Additional notes (Notas adicionales)**
+    *   Text field for special instructions (Campo de texto para instrucciones especiales)
+*   **Service cost (Costo del servicio)**
+    *   Base rate (Tarifa base)
+    *   Additional charges (if applicable) (Cargos adicionales, si aplica)
+    *   Total cost (Costo total)
+*   **Payment method (Método de pago)**
+    *   Select payment method (saved or add new) (Seleccionar método de pago: guardado o agregar nuevo)
+    *   "Add new payment method" button (Botón "Agregar nuevo método de pago")
+*   **"Confirm and pay" button (Botón "Confirmar y Pagar")**
+
+### **📋 My Services (Mis Servicios)**
+
+*   **List of scheduled services (Lista de servicios programados)**
+    *   Date and time (Fecha y hora)
+    *   Type of service (Tipo de servicio)
+    *   Nurse name (Nombre del enfermero/a)
+    *   Status (Confirmed, In progress, Completed) (Estado: Confirmado, En progreso, Completado)
+    *   Total cost (Costo total)
+*   **Service history (Historial de servicios)**
+    *   Past services with ratings (Servicios pasados con calificaciones)
+    *   Total cost per service (Costo total por servicio)
+
+---
+
+**D. Servicio: EXPEDIENTE (Historial Médico)**
+
+### **📁 My Medical Record (Mi Expediente Médico)**
+
+*   **Health Summary (Resumen de Salud)**
+    *   Allergies (Alergias)
+        *   List of allergies (e.g., Penicillin, Peanuts) (Lista de alergias, ej. Penicilina, Cacahuates)
+        *   Add allergy button (Botón "Agregar alergia")
+    *   Chronic Conditions (Condiciones Crónicas)
+        *   List of chronic conditions (e.g., Diabetes, Hypertension) (Lista de condiciones crónicas, ej. Diabetes, Hipertensión)
+        *   Add condition button (Botón "Agregar condición")
+    *   Blood Type (Tipo de Sangre)
+        *   Blood type (e.g., A+, B-, O+) (Tipo de sangre, ej. A+, B-, O+)
+*   **Consultation History (Historial de Consultas)**
+    *   List of past consultations (grouped by specialty) (Lista de consultas pasadas, agrupadas por especialidad)
+        *   Date (Fecha)
+        *   Doctor's name (Nombre del doctor)
+        *   Specialty (Especialidad)
+        *   Diagnosis (Diagnóstico)
+*   **Current Medications (Medicamentos Actuales)**
+    *   List of current medications (Lista de medicamentos actuales)
+        *   Medication name (Nombre del medicamento)
+        *   Dosage (Dosis)
+        *   Frequency (Frecuencia)
+        *   Start date (Fecha de inicio)
+        *   End date (if applicable) (Fecha de finalización, si aplica)
+
+### **📄 My Documents (Mis Documentos)**
+
+*   **Document List (Lista de Documentos)**
+*   For each document: (Para cada documento)
+    *   Document name (Nombre del documento)
+    *   Upload date (Fecha de subida)
+    *   Type (e.g., Lab result, X-ray, Prescription) (Tipo, ej. Resultado de laboratorio, Radiografía, Receta)
+    *   View/Download button (Botón Ver/Descargar)
+*   **Upload New Document (Subir Nuevo Documento)**
+    *   Select file button (Botón "Seleccionar archivo")
+    *   Document type dropdown (Desplegable tipo de documento)
+    *   Description field (Campo descripción)
+    *   Upload button (Botón "Subir")
+
+---
+
+**E. Servicio: LABORATORIO**
+
+## **Primary Navigation (Navegación Principal)**
+
+*   Home (Inicio)
+*   Tests (Pruebas)
+*   Results (Resultados)
+*   Profile (Perfil)
+
+## **1. Home Screen (Pantalla de Inicio)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Welcome message with user's name (Mensaje de bienvenida con el nombre del usuario)
+*   Quick action buttons: (Botones de acción rápida)
+    *   Book a Test (Reservar una Prueba)
+    *   View Results (Ver Resultados)
+    *   Find Nearest Lab (Encontrar Laboratorio Cercano)
+*   Upcoming Test Appointments: (Próximas Citas de Pruebas)
+    *   Date and time (Fecha y hora)
+    *   Test name (Nombre de la prueba)
+    *   Lab name (Nombre del laboratorio)
+    *   Status (Confirmed, Pending) (Estado: Confirmada, Pendiente)
+    *   Action: View Details (Acción: Ver Detalles)
+*   Recent Results: (Resultados Recientes)
+    *   Test name (Nombre de la prueba)
+    *   Date (Fecha)
+    *   Status (Normal, Abnormal, Review Needed) (Estado: Normal, Anormal, Requiere Revisión)
+    *   Action: View Results (Acción: Ver Resultados)
+*   Health Tips: (Consejos de Salud)
+    *   Rotating carousel with lab test preparation advice (Carrusel rotativo con consejos de preparación para pruebas de laboratorio)
+
+## **2. Tests (Pruebas)**
+
+### **2.1 Test Catalog (Catálogo de Pruebas)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Search Bar (Barra de Búsqueda)
+*   Popular Tests Categories: (Categorías de Pruebas Populares)
+    *   Blood Tests (Análisis de Sangre)
+    *   Urine Tests (Análisis de Orina)
+    *   Imaging (Imágenes)
+    *   Special Tests (Pruebas Especiales)
+    *   Health Packages (Paquetes de Salud)
+*   Test Cards: (Tarjetas de Pruebas)
+    *   Test name (Nombre de la prueba)
+    *   Brief description (Descripción breve)
+    *   Price (Precio)
+    *   Preparation required indicator (Indicador de preparación requerida)
+    *   Action: Book Now (Acción: Reservar Ahora)
+
+### **2.2 Test Details (Detalles de la Prueba)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Test Information: (Información de la Prueba)
+    *   Name (Nombre)
+    *   Detailed description (Descripción detallada)
+    *   What it measures (Qué mide)
+    *   Why it's important (Por qué es importante)
+    *   Normal ranges (Rangos normales)
+*   Preparation Instructions: (Instrucciones de Preparación)
+    *   Fasting requirements (Requisitos de ayuno)
+    *   Medication restrictions (Restricciones de medicamentos)
+    *   Time of day recommendations (Recomendaciones de hora del día)
+*   Test Specifications: (Especificaciones de la Prueba)
+    *   Sample type (Tipo de muestra)
+    *   Results timeframe (Plazo de resultados)
+    *   Price (Precio)
+*   Lab Options: (Opciones de Laboratorio)
+    *   List of labs offering this test (Lista de laboratorios que ofrecen esta prueba)
+    *   Home collection availability (Disponibilidad de toma de muestra a domicilio)
+*   Action Buttons: (Botones de Acción)
+    *   Book Test (Reservar Prueba)
+    *   Add to Favorites (Agregar a Favoritos)
+    *   Share (Compartir)
+
+### **2.3 Booking Process (Proceso de Reserva)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Step 1: Collection Method (Paso 1: Método de Recolección)
+    *   Visit Lab (Visitar Laboratorio)
+    *   Home Collection (Toma de Muestra a Domicilio)
+*   Step 2: Date and Time Selection (Paso 2: Selección de Fecha y Hora)
+    *   Calendar view (Vista de calendario)
+    *   Available time slots (Horarios disponibles)
+*   Step 3: Personal Information (Paso 3: Información Personal)
+    *   Pre-filled from profile (Prellenado desde el perfil)
+    *   Additional notes field (Campo de notas adicionales)
+*   Step 4: Payment (Paso 4: Pago)
+    *   Test price breakdown (Desglose del precio de la prueba)
+    *   Payment method selection (Selección de método de pago)
+    *   Apply promo code option (Opción de aplicar código promocional)
+*   Step 5: Confirmation (Paso 5: Confirmación)
+    *   Booking summary (Resumen de la reserva)
+    *   Preparation instructions reminder (Recordatorio de instrucciones de preparación)
+    *   Add to calendar option (Opción de agregar al calendario)
+
+## **3. Results (Resultados)**
+
+### **3.1 Results List (Lista de Resultados)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Filter options: (Opciones de filtro)
+    *   Date range (Rango de fechas)
+    *   Test type (Tipo de prueba)
+    *   Results status (Estado de los resultados)
+*   Results Cards: (Tarjetas de Resultados)
+    *   Test name (Nombre de la prueba)
+    *   Date performed (Fecha de realización)
+    *   Lab name (Nombre del laboratorio)
+    *   Status indicator (color-coded) (Indicador de estado codificado por colores)
+    *   Action: View Details (Acción: Ver Detalles)
+
+### **3.2 Result Details (Detalles del Resultado)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Test Information Header: (Encabezado de Información de la Prueba)
+    *   Test name (Nombre de la prueba)
+    *   Date performed (Fecha de realización)
+    *   Lab name (Nombre del laboratorio)
+    *   Ordering physician (if applicable) (Médico solicitante, si aplica)
+*   Result Document: (Documento del Resultado)
+    *   PDF viewer for lab report (Visor de PDF para el informe de laboratorio)
+    *   Download option (Opción de descarga)
+    *   Share with doctor option (Opción de compartir con el médico)
+*   Result Summary: (Resumen del Resultado)
+    *   Key measurements (Mediciones clave)
+    *   Normal ranges (Rangos normales)
+    *   Flagged values (if any) (Valores marcados, si los hay)
+*   Historical Comparison: (Comparación Histórica)
+    *   Graph showing trends (if previous tests exist) (Gráfico mostrando tendencias, si existen pruebas anteriores)
+    *   Comparison table with past results (Tabla de comparación con resultados pasados)
+*   Actions: (Acciones)
+    *   Download Report (Descargar Informe)
+    *   Share Report (Compartir Informe)
+    *   Ask Questions (Hacer Preguntas)
+    *   Book Follow-up Test (Reservar Prueba de Seguimiento)
+
+### **3.3 Test History (Historial de Pruebas)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Timeline view of all tests (Vista de línea de tiempo de todas las pruebas)
+*   Grouping by test type (Agrupación por tipo de prueba)
+*   Trend visualization for recurring tests (Visualización de tendencias para pruebas recurrentes)
+*   Export complete history option (Opción de exportar historial completo)
+
+## **4. Profile (Perfil)**
+
+### **4.1 Personal Information (Información Personal)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Profile Details: (Detalles del Perfil)
+    *   Name (Nombre)
+    *   Age/DOB (Edad/Fecha de Nacimiento)
+    *   Contact information (Información de contacto)
+    *   Blood type (Tipo de sangre)
+    *   Height/Weight (Altura/Peso)
+*   Medical Information: (Información Médica)
+    *   Allergies (Alergias)
+    *   Chronic conditions (Condiciones crónicas)
+    *   Current medications (Medicamentos actuales)
+    *   Family history (Historial familiar)
+*   Edit Profile button (Botón "Editar Perfil")
+
+### **4.2 Saved Labs & Doctors (Laboratorios y Médicos Guardados)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Favorite Labs: (Laboratorios Favoritos)
+    *   Lab name (Nombre del laboratorio)
+    *   Address (Dirección)
+    *   Rating (Calificación)
+    *   Action: Book Test (Acción: Reservar Prueba)
+*   Saved Doctors: (Médicos Guardados)
+    *   Doctor name (Nombre del médico)
+    *   Specialty (Especialidad)
+    *   Action: Share Results (Acción: Compartir Resultados)
+
+### **4.3 Payment Methods (Métodos de Pago)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Saved Payment Methods (Métodos de Pago Guardados)
+*   Add New Payment Method (Agregar Nuevo Método de Pago)
+*   Payment History (Historial de Pagos)
+*   Receipts and Invoices (Recibos y Facturas)
+
+### **4.4 Notifications (Notificaciones)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Notification settings: (Configuración de notificaciones)
+    *   Appointment reminders (Recordatorios de citas)
+    *   Results availability (Disponibilidad de resultados)
+    *   Test preparation reminders (Recordatorios de preparación de pruebas)
+    *   Promotional offers (Ofertas promocionales)
+*   Notification history (Historial de notificaciones)
+
+## **5. Lab Locator (Localizador de Laboratorios)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Map View: (Vista de Mapa)
+    *   Nearby labs shown as pins (Laboratorios cercanos mostrados como pines)
+    *   User's current location (Ubicación actual del usuario)
+    *   Search radius adjuster (Ajustador de radio de búsqueda)
+*   List View: (Vista de Lista)
+    *   Lab name (Nombre del laboratorio)
+    *   Distance (Distancia)
+    *   Rating (Calificación)
+    *   Available tests count (Cantidad de pruebas disponibles)
+    *   Home collection availability (Disponibilidad de toma de muestra a domicilio)
+    *   Action: View Details or Book Test (Acción: Ver Detalles o Reservar Prueba)
+*   Search and Filter: (Búsqueda y Filtro)
+    *   Search by test name (Buscar por nombre de prueba)
+    *   Filter by services offered (Filtrar por servicios ofrecidos)
+    *   Filter by operating hours (Filtrar por horario de atención)
+    *   Sort by distance/rating (Ordenar por distancia/calificación)
+
+## **6. Lab Details (Detalles del Laboratorio)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Lab Information: (Información del Laboratorio)
+    *   Name (Nombre)
+    *   Address with map (Dirección con mapa)
+    *   Contact information (Información de contacto)
+    *   Operating hours (Horario de atención)
+    *   Accreditations (Acreditaciones)
+*   Services Offered: (Servicios Ofrecidos)
+    *   List of available tests (Lista de pruebas disponibles)
+    *   Home collection availability (Disponibilidad de toma de muestra a domicilio)
+    *   Special services (Servicios especiales)
+*   User Reviews: (Reseñas de Usuarios)
+    *   Overall rating (Calificación general)
+    *   Recent reviews (Reseñas recientes)
+    *   Rating breakdown (Desglose de calificación)
+*   Action Buttons: (Botones de Acción)
+    *   Book a Test (Reservar una Prueba)
+    *   Get Directions (Obtener Direcciones)
+    *   Call Lab (Llamar al Laboratorio)
+    *   Save to Favorites (Guardar en Favoritos)
+
+## **7. Home Collection Details (Detalles de Toma de Muestra a Domicilio)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   Home Collection Process Explainer (Explicación del Proceso de Toma de Muestra a Domicilio)
+*   Service Area Map (Mapa del Área de Servicio)
+*   Preparation Guidelines (Guías de Preparación)
+*   What to Expect: (Qué Esperar)
+    *   Technician identification (Identificación del técnico)
+    *   Equipment used (Equipo utilizado)
+    *   Estimated time (Tiempo estimado)
+    *   Post-collection care (Cuidados post-recolección)
+*   FAQs about home collection (Preguntas Frecuentes sobre la toma de muestra a domicilio)
+
+## **8. Notifications Center (Centro de Notificaciones)**
+
+**Screen Content: (Contenido de la Pantalla)**
+
+*   All Notifications List: (Lista de Todas las Notificaciones)
+    *   Appointment confirmations (Confirmaciones de citas)
+    *   Reminder notifications (Notificaciones de recordatorio)
+    *   Results ready alerts (Alertas de resultados listos)
+    *   Special offers (Ofertas especiales)
+*   Mark all as read option (Opción "Marcar todo como leído")
+*   Delete notification option (Opción "Eliminar notificación")
+
+---
+
+
+Por favor, genera una descripción detallada de los componentes de React Native (Expo) necesarios para construir este frontend, incluyendo la estructura de carpetas sugerida, los props para cada componente y cómo se interconectan las pantallas. Prioriza la creación de componentes reutilizables y sigue las mejores prácticas de desarrollo con TypeScript y Expo.
