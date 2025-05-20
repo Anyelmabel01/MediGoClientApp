@@ -1,13 +1,15 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Image } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
 export default function ConsultaScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
 
   const handleConsultorioSelect = () => {
     router.push('/consulta/consultorio');
@@ -19,48 +21,48 @@ export default function ConsultaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Consulta Médica</ThemedText>
       </View>
       
       <View style={styles.options}>
         <TouchableOpacity 
-          style={styles.optionCard}
+          style={[styles.optionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]}
           onPress={handleConsultorioSelect}
         >
           <View style={styles.optionImageContainer}>
-            <Ionicons name="medical" size={80} color="#2D7FF9" />
+            <Ionicons name="medical" size={80} color={Colors.light.primary} />
           </View>
           <ThemedText style={styles.optionTitle}>Consulta en Consultorio</ThemedText>
-          <ThemedText style={styles.optionDescription}>
+          <ThemedText style={[styles.optionDescription, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
             Agenda una cita presencial con médicos especialistas en su consultorio
           </ThemedText>
           <View style={styles.arrowContainer}>
-            <Ionicons name="arrow-forward-circle" size={24} color="#2D7FF9" />
+            <Ionicons name="arrow-forward-circle" size={24} color={Colors.light.primary} />
           </View>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.optionCard}
+          style={[styles.optionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]}
           onPress={handleTelemedicineSelect}
         >
           <View style={styles.optionImageContainer}>
-            <Ionicons name="videocam" size={80} color="#2D7FF9" />
+            <Ionicons name="videocam" size={80} color={Colors.light.primary} />
           </View>
           <ThemedText style={styles.optionTitle}>Telemedicina</ThemedText>
-          <ThemedText style={styles.optionDescription}>
+          <ThemedText style={[styles.optionDescription, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
             Consulta con especialistas por videollamada desde donde estés
           </ThemedText>
           <View style={styles.arrowContainer}>
-            <Ionicons name="arrow-forward-circle" size={24} color="#2D7FF9" />
+            <Ionicons name="arrow-forward-circle" size={24} color={Colors.light.primary} />
           </View>
         </TouchableOpacity>
       </View>
@@ -92,10 +94,9 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   optionCard: {
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -105,6 +106,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     minHeight: 200,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   optionImageContainer: {
     alignItems: 'center',
@@ -122,7 +125,6 @@ const styles = StyleSheet.create({
   },
   optionDescription: {
     fontSize: 14,
-    color: '#777',
     textAlign: 'center',
   },
   arrowContainer: {

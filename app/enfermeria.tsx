@@ -1,8 +1,9 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, FlatList } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
@@ -61,41 +62,67 @@ const nursingServices: NursingService[] = [
 
 export default function EnfermeriaScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+
+  const handleServicePress = (serviceId: string) => {
+    router.push(`/enfermeria/servicio/${serviceId}` as any);
+  };
+
+  const handleAgendarPress = () => {
+    router.push('/enfermeria/agendar' as any);
+  };
 
   const renderServiceItem = ({ item }: { item: NursingService }) => (
     <TouchableOpacity 
-      style={styles.serviceCard}
-      onPress={() => router.push(`/enfermeria/servicio/${item.id}`)}
+      style={[styles.serviceCard, { 
+        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+        borderWidth: 1
+      }]}
+      onPress={() => handleServicePress(item.id)}
     >
-      <View style={styles.serviceIconContainer}>
-        <Ionicons name={item.icon} size={32} color="#2D7FF9" />
+      <View style={[styles.serviceIconContainer, { 
+        backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)'
+      }]}>
+        <Ionicons name={item.icon} size={32} color={Colors.light.primary} />
       </View>
       <View style={styles.serviceContent}>
         <ThemedText style={styles.serviceName}>{item.name}</ThemedText>
-        <ThemedText style={styles.serviceDescription}>{item.description}</ThemedText>
-        <ThemedText style={styles.servicePrice}>${item.price.toFixed(2)}</ThemedText>
+        <ThemedText style={[styles.serviceDescription, { 
+          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+        }]}>{item.description}</ThemedText>
+        <ThemedText style={[styles.servicePrice, { color: Colors.light.primary }]}>
+          ${item.price.toFixed(2)}
+        </ThemedText>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
+      <Ionicons 
+        name="chevron-forward" 
+        size={20} 
+        color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+      />
     </TouchableOpacity>
   );
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Enfermería a Domicilio</ThemedText>
       </View>
       
-      <View style={styles.infoBox}>
-        <Ionicons name="information-circle" size={24} color="#2D7FF9" />
-        <ThemedText style={styles.infoText}>
+      <View style={[styles.infoBox, { 
+        backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
+        borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
+      }]}>
+        <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
+        <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
           Servicios de enfermería profesional en la comodidad de tu hogar
         </ThemedText>
       </View>
@@ -110,8 +137,8 @@ export default function EnfermeriaScreen() {
       />
       
       <TouchableOpacity 
-        style={styles.ctaButton}
-        onPress={() => router.push('/enfermeria/agendar')}
+        style={[styles.ctaButton, { backgroundColor: Colors.light.primary }]}
+        onPress={handleAgendarPress}
       >
         <ThemedText style={styles.ctaButtonText}>Agendar Servicio</ThemedText>
       </TouchableOpacity>
@@ -139,17 +166,14 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   infoBox: {
-    backgroundColor: '#E3F2FD',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#BBDEFB',
   },
   infoText: {
-    color: '#1565C0',
     marginLeft: 12,
     flex: 1,
     fontSize: 14,
@@ -165,11 +189,10 @@ const styles = StyleSheet.create({
   serviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -182,7 +205,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -197,20 +219,17 @@ const styles = StyleSheet.create({
   },
   serviceDescription: {
     fontSize: 14,
-    color: '#777',
     marginBottom: 6,
   },
   servicePrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2D7FF9',
   },
   ctaButton: {
     position: 'absolute',
     bottom: 20,
     left: 16,
     right: 16,
-    backgroundColor: '#2D7FF9',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

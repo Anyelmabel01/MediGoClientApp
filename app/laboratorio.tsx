@@ -1,8 +1,9 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
@@ -47,25 +48,34 @@ const labOptions: LabOption[] = [
 
 export default function LaboratorioScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+
+  const handleOptionPress = (route: string) => {
+    router.push(route as any);
+  };
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Laboratorio</ThemedText>
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.banner}>
-          <ThemedText style={styles.bannerTitle}>Laboratorio a Domicilio</ThemedText>
-          <ThemedText style={styles.bannerText}>
+        <View style={[styles.banner, { 
+          backgroundColor: isDarkMode ? 'rgba(94, 53, 177, 0.15)' : '#EDE7F6'
+        }]}>
+          <ThemedText style={[styles.bannerTitle, { color: '#4527A0' }]}>
+            Laboratorio a Domicilio
+          </ThemedText>
+          <ThemedText style={[styles.bannerText, { color: '#5E35B1' }]}>
             Nuestros especialistas tomarán tus muestras donde tú estés.
           </ThemedText>
           <View style={styles.bannerIconContainer}>
@@ -77,37 +87,65 @@ export default function LaboratorioScreen() {
           {labOptions.map((option) => (
             <TouchableOpacity 
               key={option.id}
-              style={styles.optionCard}
-              onPress={() => router.push(option.route)}
+              style={[styles.optionCard, { 
+                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                borderWidth: 1
+              }]}
+              onPress={() => handleOptionPress(option.route)}
             >
-              <View style={styles.optionIcon}>
+              <View style={[styles.optionIcon, { 
+                backgroundColor: isDarkMode ? 'rgba(94, 53, 177, 0.15)' : 'rgba(94, 53, 177, 0.1)'
+              }]}>
                 <Ionicons name={option.icon} size={28} color="#5E35B1" />
               </View>
               <View style={styles.optionContent}>
                 <ThemedText style={styles.optionName}>{option.name}</ThemedText>
-                <ThemedText style={styles.optionDescription}>{option.description}</ThemedText>
+                <ThemedText style={[styles.optionDescription, { 
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                }]}>{option.description}</ThemedText>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
+              <Ionicons 
+                name="chevron-forward" 
+                size={20} 
+                color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+              />
             </TouchableOpacity>
           ))}
         </View>
         
-        <View style={styles.infoSection}>
+        <View style={[styles.infoSection, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+          borderWidth: 1
+        }]}>
           <ThemedText style={styles.infoTitle}>Información Importante</ThemedText>
           
           <View style={styles.infoItem}>
             <Ionicons name="time-outline" size={20} color="#5E35B1" style={styles.infoIcon} />
-            <ThemedText style={styles.infoText}>Resultados disponibles en 24-48 horas para la mayoría de las pruebas</ThemedText>
+            <ThemedText style={[styles.infoText, { 
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+            }]}>
+              Resultados disponibles en 24-48 horas para la mayoría de las pruebas
+            </ThemedText>
           </View>
           
           <View style={styles.infoItem}>
             <Ionicons name="water-outline" size={20} color="#5E35B1" style={styles.infoIcon} />
-            <ThemedText style={styles.infoText}>Ayuno requerido para algunas pruebas. Consulta las indicaciones específicas</ThemedText>
+            <ThemedText style={[styles.infoText, { 
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+            }]}>
+              Ayuno requerido para algunas pruebas. Consulta las indicaciones específicas
+            </ThemedText>
           </View>
           
           <View style={styles.infoItem}>
             <Ionicons name="notifications-outline" size={20} color="#5E35B1" style={styles.infoIcon} />
-            <ThemedText style={styles.infoText}>Recibirás una notificación cuando tus resultados estén listos</ThemedText>
+            <ThemedText style={[styles.infoText, { 
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+            }]}>
+              Recibirás una notificación cuando tus resultados estén listos
+            </ThemedText>
           </View>
         </View>
       </ScrollView>
@@ -138,7 +176,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   banner: {
-    backgroundColor: '#EDE7F6',
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -149,12 +186,10 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4527A0',
     marginBottom: 8,
   },
   bannerText: {
     fontSize: 14,
-    color: '#5E35B1',
     maxWidth: '60%',
   },
   bannerIconContainer: {
@@ -168,11 +203,10 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -185,7 +219,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(94, 53, 177, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -200,10 +233,8 @@ const styles = StyleSheet.create({
   },
   optionDescription: {
     fontSize: 14,
-    color: '#777',
   },
   infoSection: {
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -224,7 +255,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: '#555',
     flex: 1,
   },
 }); 

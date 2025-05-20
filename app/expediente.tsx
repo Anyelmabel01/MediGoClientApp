@@ -1,12 +1,13 @@
-import * as React from 'react';
-import { useState } from '../hooks/react';
-import { StyleSheet, TouchableOpacity, View, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemedText } from '../components/ThemedText';
+import { useRouter } from 'expo-router';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppButton } from '../components/AppButton';
 import { AppContainer } from '../components/AppContainer';
 import { CardContainer } from '../components/CardContainer';
-import { AppButton } from '../components/AppButton';
+import { ThemedText } from '../components/ThemedText';
+import { useState } from '../hooks/react';
 
 // Paleta de colores consistente
 const COLORS = {
@@ -112,6 +113,7 @@ const labResults: LabResult[] = [
 export default function ExpedienteScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'history' | 'results'>('history');
+  const { isDarkMode } = useTheme();
 
   const renderRecordItem = ({ item }: { item: MedicalRecord }) => (
     <CardContainer
@@ -126,22 +128,38 @@ export default function ExpedienteScreen() {
         <Ionicons 
           name={item.type === 'hospitalization' ? "medical" : "person"} 
           size={22} 
-          color={COLORS.primary}
+          color={Colors.light.primary}
         />
       }
       rightElement={
-        <ThemedText style={styles.recordDate}>{item.date}</ThemedText>
+        <ThemedText style={[styles.recordDate, { 
+          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+        }]}>{item.date}</ThemedText>
       }
     >
       <ThemedText style={styles.diagnosis}>{item.diagnosis}</ThemedText>
       <View style={styles.recordTypeContainer}>
         <View style={[
           styles.recordTypeBadge, 
-          item.type === 'hospitalization' ? styles.hospitalizationBadge : styles.consultationBadge
+          item.type === 'hospitalization' ? styles.hospitalizationBadge : styles.consultationBadge,
+          { 
+            backgroundColor: isDarkMode 
+              ? item.type === 'hospitalization' 
+                ? 'rgba(220, 53, 69, 0.15)' 
+                : 'rgba(0, 160, 176, 0.15)'
+              : item.type === 'hospitalization' 
+                ? 'rgba(220, 53, 69, 0.1)' 
+                : 'rgba(0, 160, 176, 0.1)'
+          }
         ]}>
           <ThemedText style={[
             styles.recordTypeText, 
-            item.type === 'hospitalization' ? styles.hospitalizationText : styles.consultationText
+            item.type === 'hospitalization' ? styles.hospitalizationText : styles.consultationText,
+            { 
+              color: item.type === 'hospitalization' 
+                ? COLORS.danger 
+                : Colors.light.primary
+            }
           ]}>
             {item.type === 'hospitalization' ? 'Hospitalización' : 'Consulta'}
           </ThemedText>
@@ -163,21 +181,31 @@ export default function ExpedienteScreen() {
         <Ionicons 
           name="flask-outline" 
           size={22} 
-          color={COLORS.primary}
+          color={Colors.light.primary}
         />
       }
       rightElement={
         <View style={styles.resultMetaContainer}>
           {item.isNew && (
-            <View style={styles.newBadge}>
-              <ThemedText style={styles.newBadgeText}>NUEVO</ThemedText>
+            <View style={[styles.newBadge, { 
+              backgroundColor: isDarkMode ? 'rgba(40, 167, 69, 0.15)' : 'rgba(40, 167, 69, 0.1)'
+            }]}>
+              <ThemedText style={[styles.newBadgeText, { color: Colors.light.success }]}>
+                NUEVO
+              </ThemedText>
             </View>
           )}
-          <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+          />
         </View>
       }
     >
-      <ThemedText style={styles.resultDate}>{item.date}</ThemedText>
+      <ThemedText style={[styles.resultDate, { 
+        color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+      }]}>{item.date}</ThemedText>
     </CardContainer>
   );
 
@@ -191,20 +219,42 @@ export default function ExpedienteScreen() {
       showBackButton={true}
       showLogoutButton={true}
     >
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { 
+        backgroundColor: isDarkMode ? 'rgba(0, 160, 176, 0.1)' : 'rgba(0, 160, 176, 0.05)'
+      }]}>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'history' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            activeTab === 'history' && [
+              styles.activeTab,
+              { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }
+            ]
+          ]}
           onPress={() => setActiveTab('history')}
         >
-          <ThemedText style={[styles.tabText, activeTab === 'history' && styles.activeTabText]}>
+          <ThemedText style={[
+            styles.tabText, 
+            activeTab === 'history' && styles.activeTabText,
+            { color: activeTab === 'history' ? Colors.light.primary : Colors.light.textSecondary }
+          ]}>
             Historial
           </ThemedText>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'results' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            activeTab === 'results' && [
+              styles.activeTab,
+              { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }
+            ]
+          ]}
           onPress={() => setActiveTab('results')}
         >
-          <ThemedText style={[styles.tabText, activeTab === 'results' && styles.activeTabText]}>
+          <ThemedText style={[
+            styles.tabText, 
+            activeTab === 'results' && styles.activeTabText,
+            { color: activeTab === 'results' ? Colors.light.primary : Colors.light.textSecondary }
+          ]}>
             Resultados
           </ThemedText>
         </TouchableOpacity>
@@ -247,7 +297,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 160, 176, 0.05)',
     padding: 4,
   },
   tab: {
@@ -257,8 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.primary,
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -268,11 +316,10 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   tabText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '500',
   },
   activeTabText: {
-    color: COLORS.primary,
     fontWeight: 'bold',
   },
   listContainer: {
@@ -280,59 +327,55 @@ const styles = StyleSheet.create({
   },
   recordDate: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   diagnosis: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   recordTypeContainer: {
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   recordTypeBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 12,
+  },
+  recordTypeText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   consultationBadge: {
     backgroundColor: 'rgba(0, 160, 176, 0.1)',
   },
-  hospitalizationBadge: {
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-  },
   consultationText: {
-    color: COLORS.primary,
+    color: Colors.light.primary,
+  },
+  hospitalizationBadge: {
+    backgroundColor: 'rgba(220, 53, 69, 0.1)',
   },
   hospitalizationText: {
     color: COLORS.danger,
   },
-  recordTypeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   resultMetaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  resultDate: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    gap: 8,
   },
   newBadge: {
-    backgroundColor: COLORS.success,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
+    borderRadius: 12,
   },
   newBadgeText: {
-    color: COLORS.white,
     fontSize: 10,
     fontWeight: 'bold',
   },
+  resultDate: {
+    fontSize: 14,
+  },
   buttonContainer: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 20,
+    paddingHorizontal: 16,
   },
 });

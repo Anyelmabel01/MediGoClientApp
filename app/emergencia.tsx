@@ -1,8 +1,9 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Image, ScrollView } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
@@ -40,25 +41,33 @@ const emergencyTypes: EmergencyType[] = [
 
 export default function EmergenciaScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+
+  const handleEmergencySelect = (route: string) => {
+    router.push(route as any);
+  };
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Emergencia</ThemedText>
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.alertBox}>
+        <View style={[styles.alertBox, { 
+          backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.1)' : '#FFEBEE',
+          borderColor: isDarkMode ? 'rgba(244, 67, 54, 0.2)' : '#FFCDD2'
+        }]}>
           <Ionicons name="alert-circle" size={24} color="#F44336" />
-          <ThemedText style={styles.alertText}>
+          <ThemedText style={[styles.alertText, { color: '#D32F2F' }]}>
             Si estás en una situación de riesgo vital, llama directamente al número de emergencias 911
           </ThemedText>
         </View>
@@ -68,23 +77,34 @@ export default function EmergenciaScreen() {
         {emergencyTypes.map((type) => (
           <TouchableOpacity 
             key={type.id}
-            style={styles.emergencyTypeCard}
-            onPress={() => router.push(type.route)}
+            style={[styles.emergencyTypeCard, { 
+              backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+              borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+              borderWidth: 1
+            }]}
+            onPress={() => handleEmergencySelect(type.route)}
           >
-            <View style={styles.emergencyIcon}>
+            <View style={[styles.emergencyIcon, { 
+              backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.1)'
+            }]}>
               <Ionicons name={type.icon} size={32} color="#F44336" />
             </View>
             <View style={styles.emergencyContent}>
               <ThemedText style={styles.emergencyName}>{type.name}</ThemedText>
-              <ThemedText style={styles.emergencyDescription}>{type.description}</ThemedText>
+              <ThemedText style={[styles.emergencyDescription, { 
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+              }]}>{type.description}</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
           </TouchableOpacity>
         ))}
         
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle" size={24} color="#2D7FF9" />
-          <ThemedText style={styles.infoText}>
+        <View style={[styles.infoBox, { 
+          backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
+          borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
+        }]}>
+          <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
+          <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
             Nuestros servicios de emergencia están disponibles las 24 horas. Un profesional médico te atenderá lo antes posible.
           </ThemedText>
         </View>
@@ -116,17 +136,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertBox: {
-    backgroundColor: '#FFEBEE',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
   },
   alertText: {
-    color: '#D32F2F',
     marginLeft: 12,
     flex: 1,
     fontSize: 14,
@@ -139,11 +156,10 @@ const styles = StyleSheet.create({
   emergencyTypeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -156,7 +172,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -171,10 +186,8 @@ const styles = StyleSheet.create({
   },
   emergencyDescription: {
     fontSize: 14,
-    color: '#777',
   },
   infoBox: {
-    backgroundColor: '#E3F2FD',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -182,10 +195,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#BBDEFB',
   },
   infoText: {
-    color: '#1565C0',
     marginLeft: 12,
     flex: 1,
     fontSize: 14,

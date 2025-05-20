@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, TextInput, FlatList, Image } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
@@ -68,14 +70,29 @@ const featuredMedicines: Medicine[] = [
 export default function FarmaciaScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const { isDarkMode } = useTheme();
+
+  const handleCategorySelect = (categoryId: string) => {
+    router.push(`/farmacia/categoria/${categoryId}` as any);
+  };
+
+  const handleMedicineSelect = (medicineId: string) => {
+    router.push(`/farmacia/producto/${medicineId}` as any);
+  };
+
+  const handleCartPress = () => {
+    router.push('/farmacia/carrito' as any);
+  };
 
   const renderCategoryItem = ({ item }: { item: MedicineCategory }) => (
     <TouchableOpacity 
       style={styles.categoryItem}
-      onPress={() => router.push(`/farmacia/categoria/${item.id}`)}
+      onPress={() => handleCategorySelect(item.id)}
     >
-      <View style={styles.categoryIcon}>
-        <Ionicons name={item.icon} size={24} color="#2D7FF9" />
+      <View style={[styles.categoryIcon, { 
+        backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)'
+      }]}>
+        <Ionicons name={item.icon} size={24} color={Colors.light.primary} />
       </View>
       <ThemedText style={styles.categoryName}>{item.name}</ThemedText>
     </TouchableOpacity>
@@ -83,51 +100,68 @@ export default function FarmaciaScreen() {
 
   const renderMedicineItem = ({ item }: { item: Medicine }) => (
     <TouchableOpacity 
-      style={styles.medicineCard}
-      onPress={() => router.push(`/farmacia/producto/${item.id}`)}
+      style={[styles.medicineCard, { 
+        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+        borderWidth: 1
+      }]}
+      onPress={() => handleMedicineSelect(item.id)}
     >
       <View style={styles.medicineImageContainer}>
-        <Ionicons name="medical" size={50} color="#2D7FF9" />
+        <Ionicons name="medical" size={50} color={Colors.light.primary} />
       </View>
       <ThemedText style={styles.medicineName}>{item.name}</ThemedText>
-      <ThemedText style={styles.medicinePrice}>${item.price.toFixed(2)}</ThemedText>
+      <ThemedText style={[styles.medicinePrice, { 
+        color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+      }]}>${item.price.toFixed(2)}</ThemedText>
       <TouchableOpacity 
         style={styles.addButton}
         onPress={() => {/* Agregar al carrito */}}
       >
-        <Ionicons name="add-circle" size={28} color="#2D7FF9" />
+        <Ionicons name="add-circle" size={28} color={Colors.light.primary} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Farmacia</ThemedText>
         <TouchableOpacity 
           style={styles.cartButton}
-          onPress={() => router.push('/farmacia/carrito')}
+          onPress={handleCartPress}
         >
-          <Ionicons name="cart" size={24} color="#2D7FF9" />
+          <Ionicons name="cart" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
       </View>
       
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#777" style={styles.searchIcon} />
+      <View style={[styles.searchContainer, { 
+        backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
+        borderColor: isDarkMode ? Colors.dark.border : 'transparent',
+        borderWidth: 1
+      }]}>
+        <Ionicons 
+          name="search" 
+          size={20} 
+          color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
+          style={styles.searchIcon} 
+        />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { 
+            color: isDarkMode ? Colors.dark.text : Colors.light.text 
+          }]}
           placeholder="Buscar medicamentos..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholderTextColor="#999"
+          placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
         />
       </View>
       
@@ -182,7 +216,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -194,7 +227,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
   },
   sectionTitle: {
     fontSize: 18,
@@ -214,7 +246,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -232,10 +263,9 @@ const styles = StyleSheet.create({
   },
   medicineCard: {
     width: '48%',
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -248,7 +278,6 @@ const styles = StyleSheet.create({
   medicineImageContainer: {
     alignItems: 'center',
     marginBottom: 12,
-    paddingVertical: 10,
   },
   medicineName: {
     fontSize: 14,
@@ -256,13 +285,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   medicinePrice: {
-    fontSize: 14,
-    color: '#2D7FF9',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   addButton: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 12,
+    right: 12,
   },
 });
