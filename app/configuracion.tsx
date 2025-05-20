@@ -2,6 +2,7 @@ import { BottomNavbar } from '@/components/BottomNavbar';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,7 +11,7 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 
 interface ConfigOption {
   id: string;
@@ -24,7 +25,7 @@ interface ConfigOption {
 export default function ConfiguracionScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const colorScheme = useColorScheme();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   
   const [configOptions, setConfigOptions] = useState<ConfigOption[]>([
     {
@@ -39,7 +40,7 @@ export default function ConfiguracionScreen() {
       title: 'Modo oscuro',
       icon: 'moon',
       type: 'toggle',
-      value: colorScheme === 'dark'
+      value: isDarkMode
     },
     {
       id: 'language',
@@ -203,13 +204,12 @@ export default function ConfiguracionScreen() {
 
   const loadSettings = async () => {
     try {
-      const darkMode = await AsyncStorage.getItem('darkMode');
       const notifications = await AsyncStorage.getItem('notifications');
       
       setConfigOptions(options => 
         options.map(option => {
           if (option.id === 'darkMode') {
-            return { ...option, value: darkMode === 'true' };
+            return { ...option, value: isDarkMode };
           }
           if (option.id === 'notifications') {
             return { ...option, value: notifications === 'true' };
@@ -250,8 +250,7 @@ export default function ConfiguracionScreen() {
         await AsyncStorage.setItem('notifications', 'false');
       }
     } else if (id === 'darkMode') {
-      await AsyncStorage.setItem('darkMode', newValue.toString());
-      // Aquí podrías implementar la lógica para cambiar el tema de la app
+      await toggleDarkMode(newValue);
     }
 
     setConfigOptions(options => 
