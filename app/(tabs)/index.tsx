@@ -10,7 +10,8 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { UserProfile } from '@/components/UserProfile';
 import { LocationSelector } from '@/components/LocationSelector';
 import { BottomNavbar } from '@/components/BottomNavbar';
-import { mockUser, mockLocations, UserLocation } from '@/constants/UserModel';
+import { UserLocation } from '@/constants/UserModel';
+import { useUser } from '@/hooks/useUser';
 
 type ServiceItem = {
   id: string;
@@ -67,12 +68,9 @@ const services: ServiceItem[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [user] = useState(mockUser);
+  const { user, currentLocation, setCurrentLocation } = useUser();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<UserLocation>(
-    mockLocations.find(loc => loc.esPrincipal) || mockLocations[0]
-  );
 
   const handleLocationSelect = (location: UserLocation) => {
     setCurrentLocation(location);

@@ -7,14 +7,12 @@ import { ThemedView } from '@/components/ThemedView';
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { UserProfile } from '@/components/UserProfile';
 import { LocationSelector } from '@/components/LocationSelector';
-import { mockUser, mockLocations } from '@/constants/UserModel';
+import { useUser } from '@/hooks/useUser';
 
 export default function PerfilScreen() {
-  const [user] = useState(mockUser);
+  const { user, currentLocation } = useUser();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  
-  const [currentLocation] = useState(mockLocations.find(loc => loc.esPrincipal) || mockLocations[0]);
 
   return (
     <ThemedView style={styles.container}>
