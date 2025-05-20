@@ -1,15 +1,15 @@
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { UserProfile } from '@/components/UserProfile';
-import { LocationSelector } from '@/components/LocationSelector';
-import { BottomNavbar } from '@/components/BottomNavbar';
+import { Colors } from '@/constants/Colors';
 import { UserLocation } from '@/constants/UserModel';
 import { useUser } from '@/hooks/useUser';
 
@@ -80,7 +80,6 @@ export default function HomeScreen() {
     <TouchableOpacity 
       style={styles.serviceItem}
       onPress={() => {
-        // Usamos try/catch para evitar errores si la ruta no es válida
         try {
           router.push(item.route as any);
         } catch (e) {
@@ -89,13 +88,12 @@ export default function HomeScreen() {
       }}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={item.icon} size={32} color="#2D7FF9" />
+        <Ionicons name={item.icon} size={32} color={Colors.light.primary} />
       </View>
       <View style={styles.serviceContent}>
         <ThemedText style={styles.serviceName}>{item.name}</ThemedText>
         <ThemedText style={styles.serviceDescription}>{item.description}</ThemedText>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
     </TouchableOpacity>
   );
 
@@ -121,7 +119,7 @@ export default function HomeScreen() {
               ¡Hola, {user.nombre} {user.apellido}!
             </ThemedText>
             <View style={styles.editProfileIndicator}>
-              <Ionicons name="create-outline" size={14} color="#2D7FF9" />
+              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
             </View>
           </View>
         </TouchableOpacity>
@@ -131,29 +129,13 @@ export default function HomeScreen() {
           onPress={() => setShowLocationSelector(true)}
         >
           <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color="#2D7FF9" />
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
           </View>
           <ThemedText style={styles.locationText} numberOfLines={1}>
             {currentLocation.direccion}
           </ThemedText>
-          <Ionicons name="chevron-down" size={16} color="#777" />
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
         </TouchableOpacity>
-
-        <View style={styles.needsAppointmentContainer}>
-          <TouchableOpacity style={styles.needsAppointment}>
-            <View style={styles.appointmentQuestionContainer}>
-              <ThemedText style={styles.appointmentQuestion}>
-                ¿Necesitas una cita médica?
-              </ThemedText>
-              <ThemedText style={styles.appointmentSubtext}>
-                Toca aquí para agendar
-              </ThemedText>
-            </View>
-            <View style={styles.appointmentIcon}>
-              <Ionicons name="chevron-forward" size={20} color="#2D7FF9" />
-            </View>
-          </TouchableOpacity>
-        </View>
       </View>
       
       <View style={styles.servicesHeaderContainer}>
@@ -165,6 +147,8 @@ export default function HomeScreen() {
         renderItem={renderServiceItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.servicesList}
+        numColumns={2}
+        columnWrapperStyle={styles.serviceRow}
       />
       
       <BottomNavbar />
@@ -186,12 +170,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
-    backgroundColor: '#2D7FF9',
+    backgroundColor: Colors.light.primary,
     paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -208,14 +193,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'white',
+    backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   avatarText: {
-    color: '#2D7FF9',
+    color: Colors.light.primary,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -226,10 +211,10 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: Colors.light.white,
   },
   editProfileIndicator: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
@@ -241,104 +226,74 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    marginBottom: 16,
   },
   locationIcon: {
     marginRight: 6,
   },
   locationText: {
     flex: 1,
-    color: 'white',
+    color: Colors.light.white,
     fontSize: 14,
     marginRight: 4,
   },
-  needsAppointmentContainer: {
-    marginBottom: 8,
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  needsAppointment: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  servicesList: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  serviceRow: {
     justifyContent: 'space-between',
-    backgroundColor: 'white',
+    marginBottom: 16,
+  },
+  serviceItem: {
+    width: '48%',
+    backgroundColor: Colors.light.white,
     padding: 16,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  appointmentQuestionContainer: {
-    flex: 1,
-  },
-  appointmentQuestion: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  appointmentSubtext: {
-    fontSize: 12,
-    color: '#777',
-  },
-  appointmentIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    elevation: 2,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  servicesHeaderContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  servicesList: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
-  },
-  serviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    minHeight: 180,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 12,
   },
   serviceContent: {
-    flex: 1,
+    alignItems: 'center',
   },
   serviceName: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    textAlign: 'center',
+    color: Colors.light.primary,
   },
   serviceDescription: {
-    fontSize: 14,
-    color: '#777',
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

@@ -1,7 +1,6 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { usePathname, useRouter } from 'expo-router';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 
 interface NavItem {
@@ -85,11 +84,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#fff',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   navItem: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 8,
   },
   navText: {
     fontSize: 12,
