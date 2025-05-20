@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Modal, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { UserLocation, mockLocations } from '@/constants/UserModel';
+import { WebView } from 'react-native-webview';
 
 interface LocationSelectorProps {
   isVisible: boolean;
@@ -18,12 +19,29 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
   const [editingName, setEditingName] = useState('');
   const [editingAddress, setEditingAddress] = useState('');
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [selectedCoords, setSelectedCoords] = useState({
+    latitude: 8.9673,
+    longitude: -79.5314,
+  });
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState(false);
+  const webViewRef = useRef(null);
 
   // Cargar ubicaciones (en una app real vendría de una API)
   useEffect(() => {
     // Aquí iría la llamada a la API para obtener las ubicaciones actualizadas
     setLocations(mockLocations);
   }, [isVisible]);
+
+  // Cuando se edita una ubicación existente, actualizamos las coordenadas seleccionadas
+  useEffect(() => {
+    if (editingLocation) {
+      setSelectedCoords({
+        latitude: editingLocation.latitud,
+        longitude: editingLocation.longitud,
+      });
+    }
+  }, [editingLocation]);
 
   const handleSaveLocation = () => {
     if (isAddingNew) {
@@ -33,8 +51,8 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
         userId: '1', // Usuario actual
         nombre: editingName,
         direccion: editingAddress,
-        latitud: 0, // En una app real, estos valores vendrían de un mapa
-        longitud: 0,
+        latitud: selectedCoords.latitude, // Usamos las coordenadas seleccionadas en el mapa
+        longitud: selectedCoords.longitude,
         esPrincipal: locations.length === 0 // Si es la primera, la hacemos principal
       };
       
@@ -43,7 +61,13 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
       // Actualizar una ubicación existente
       const updatedLocations = locations.map(loc => 
         loc.id === editingLocation.id 
-          ? { ...loc, nombre: editingName, direccion: editingAddress }
+          ? { 
+              ...loc, 
+              nombre: editingName, 
+              direccion: editingAddress,
+              latitud: selectedCoords.latitude,
+              longitud: selectedCoords.longitude
+            }
           : loc
       );
       setLocations(updatedLocations);
@@ -78,6 +102,8 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingAddress(location.direccion);
     setIsEditing(true);
     setIsAddingNew(false);
+    setMapLoading(true);
+    setMapError(false);
   };
 
   const handleAddNewLocation = () => {
@@ -86,6 +112,8 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingAddress('');
     setIsEditing(true);
     setIsAddingNew(true);
+    setMapLoading(true);
+    setMapError(false);
   };
 
   const resetEditState = () => {
@@ -94,6 +122,142 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingName('');
     setEditingAddress('');
     setIsAddingNew(false);
+  };
+
+  // Manejar mensajes desde el WebView
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'markerDragEnd' || data.type === 'mapClick') {
+        setSelectedCoords({
+          latitude: data.latitude,
+          longitude: data.longitude
+        });
+      } else if (data.type === 'mapLoaded') {
+        setMapLoading(false);
+      } else if (data.type === 'mapError') {
+        setMapError(true);
+        setMapLoading(false);
+      }
+    } catch (error) {
+      console.error('Error al procesar mensaje del WebView:', error);
+    }
+  };
+
+  // HTML simplificado para el WebView
+  const getMapHtml = () => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <style>
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+          }
+          #map {
+            width: 100%;
+            height: 100%;
+            background-color: #f2f2f2;
+          }
+          .error-message {
+            text-align: center;
+            color: red;
+            padding: 20px;
+            display: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <div id="error" class="error-message">No se pudo cargar el mapa. Verifica tu conexión a internet.</div>
+        
+        <script>
+          // Función para informar al React Native que ocurrió un error
+          function notifyError() {
+            try {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'mapError'
+              }));
+              document.getElementById('error').style.display = 'block';
+              document.getElementById('map').style.display = 'none';
+            } catch (e) {
+              console.error('Error al notificar estado:', e);
+            }
+          }
+
+          // Intenta cargar las librerías de Leaflet
+          try {
+            // Carga la hoja de estilos de Leaflet
+            var linkElement = document.createElement('link');
+            linkElement.rel = 'stylesheet';
+            linkElement.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+            document.head.appendChild(linkElement);
+            
+            // Carga el script de Leaflet
+            var scriptElement = document.createElement('script');
+            scriptElement.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+            
+            scriptElement.onload = function() {
+              // Inicializa el mapa cuando se carga Leaflet
+              try {
+                var map = L.map('map').setView([${selectedCoords.latitude}, ${selectedCoords.longitude}], 15);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
+                
+                var marker = L.marker([${selectedCoords.latitude}, ${selectedCoords.longitude}], {
+                  draggable: true
+                }).addTo(map);
+                
+                marker.on('dragend', function(e) {
+                  var position = marker.getLatLng();
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'markerDragEnd',
+                    latitude: position.lat,
+                    longitude: position.lng
+                  }));
+                });
+                
+                map.on('click', function(e) {
+                  marker.setLatLng(e.latlng);
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'mapClick',
+                    latitude: e.latlng.lat,
+                    longitude: e.latlng.lng
+                  }));
+                });
+                
+                // Notifica que el mapa se cargó correctamente
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'mapLoaded'
+                }));
+              } catch (e) {
+                console.error('Error al inicializar el mapa:', e);
+                notifyError();
+              }
+            };
+            
+            scriptElement.onerror = function() {
+              console.error('Error al cargar Leaflet');
+              notifyError();
+            };
+            
+            document.body.appendChild(scriptElement);
+          } catch (e) {
+            console.error('Error al cargar las librerías:', e);
+            notifyError();
+          }
+        </script>
+      </body>
+      </html>
+    `;
   };
 
   const renderLocationItem = ({ item }: { item: UserLocation }) => (
@@ -145,6 +309,51 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     </View>
   );
 
+  // Renderizar el contenido del mapa con estados de carga y error
+  const renderMapContent = () => {
+    return (
+      <View style={styles.mapContainer}>
+        <ThemedText style={styles.fieldLabel}>Selecciona la ubicación en el mapa</ThemedText>
+        
+        <View style={styles.mapWrapper}>
+          <WebView
+            ref={webViewRef}
+            style={styles.map}
+            originWhitelist={['*']}
+            source={{ html: getMapHtml() }}
+            onMessage={handleWebViewMessage}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onError={() => {
+              setMapError(true);
+              setMapLoading(false);
+            }}
+          />
+          
+          {mapLoading && (
+            <View style={styles.mapLoadingOverlay}>
+              <ActivityIndicator size="large" color="#2D7FF9" />
+              <ThemedText style={styles.loadingText}>Cargando mapa...</ThemedText>
+            </View>
+          )}
+          
+          {mapError && (
+            <View style={styles.mapErrorOverlay}>
+              <Ionicons name="cloud-offline-outline" size={40} color="#888" />
+              <ThemedText style={styles.errorText}>
+                No se pudo cargar el mapa. Verifica tu conexión a internet.
+              </ThemedText>
+            </View>
+          )}
+        </View>
+        
+        <ThemedText style={styles.mapInstructions}>
+          Toca en el mapa o arrastra el marcador para seleccionar la ubicación exacta
+        </ThemedText>
+      </View>
+    );
+  };
+
   return (
     <Modal
       visible={isVisible}
@@ -189,17 +398,13 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
                 />
               </View>
               
-              <View style={styles.mapPlaceholder}>
-                <ThemedText style={styles.mapPlaceholderText}>
-                  Mapa para seleccionar ubicación
-                </ThemedText>
-                <ThemedText style={styles.mapNote}>
-                  En una implementación completa, aquí iría un mapa interactivo
-                </ThemedText>
-              </View>
+              {renderMapContent()}
               
               <TouchableOpacity 
-                style={styles.saveButton}
+                style={[
+                  styles.saveButton,
+                  (!editingName || !editingAddress) && styles.saveButtonDisabled
+                ]}
                 onPress={handleSaveLocation}
                 disabled={!editingName || !editingAddress}
               >
@@ -248,6 +453,7 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
     borderRadius: 20,
     overflow: 'hidden',
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -368,30 +574,67 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
   },
-  mapPlaceholder: {
-    height: 150,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 8,
+  mapContainer: {
     marginBottom: 20,
+  },
+  mapWrapper: {
+    position: 'relative',
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  map: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#f5f5f5',
+  },
+  mapLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#555',
+  },
+  mapErrorOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  mapPlaceholderText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  mapNote: {
-    fontSize: 12,
-    color: '#999',
+  errorText: {
+    marginTop: 10,
+    color: '#666',
     textAlign: 'center',
+  },
+  mapInstructions: {
+    fontSize: 12,
+    color: '#777',
+    textAlign: 'center',
+    marginTop: 4,
   },
   saveButton: {
     backgroundColor: '#2D7FF9',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#a0c4f2',
   },
   saveButtonText: {
     color: 'white',
