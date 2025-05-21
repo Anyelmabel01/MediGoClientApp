@@ -7,6 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -16,6 +17,7 @@ export default function PerfilScreen() {
   const { isDarkMode } = useTheme();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const router = useRouter();
 
   return (
     <ThemedView style={styles.container}>
@@ -107,37 +109,27 @@ export default function PerfilScreen() {
         </View>
         
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Accesos rápidos</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Mi Expediente Médico</ThemedText>
           
-          <View style={styles.quickLinks}>
-            <TouchableOpacity style={[styles.quickLinkItem, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
-              <View style={styles.quickLinkIcon}>
-                <Ionicons name="medkit" size={20} color={Colors.light.primary} />
-              </View>
-              <ThemedText style={styles.quickLinkText}>Mis citas</ThemedText>
-            </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.expedienteCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
+            onPress={() => router.push('/expediente')}
+          >
+            <View style={styles.expedienteIconContainer}>
+              <Ionicons name="document-text" size={24} color={Colors.light.primary} />
+            </View>
             
-            <TouchableOpacity style={[styles.quickLinkItem, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
-              <View style={styles.quickLinkIcon}>
-                <Ionicons name="document-text" size={20} color={Colors.light.primary} />
-              </View>
-              <ThemedText style={styles.quickLinkText}>Expediente</ThemedText>
-            </TouchableOpacity>
+            <View style={styles.expedienteInfo}>
+              <ThemedText style={styles.expedienteName}>
+                Ver Expediente Completo
+              </ThemedText>
+              <ThemedText style={[styles.expedienteDescription, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                Accede a tu historial médico y documentos
+              </ThemedText>
+            </View>
             
-            <TouchableOpacity style={[styles.quickLinkItem, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
-              <View style={styles.quickLinkIcon}>
-                <Ionicons name="wallet" size={20} color={Colors.light.primary} />
-              </View>
-              <ThemedText style={styles.quickLinkText}>Pagos</ThemedText>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.quickLinkItem, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
-              <View style={styles.quickLinkIcon}>
-                <Ionicons name="heart" size={20} color={Colors.light.primary} />
-              </View>
-              <ThemedText style={styles.quickLinkText}>Favoritos</ThemedText>
-            </TouchableOpacity>
-          </View>
+            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
+          </TouchableOpacity>
         </View>
       </ScrollView>
       
@@ -248,14 +240,15 @@ const styles = StyleSheet.create({
   },
   infoCardValue: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   section: {
-    padding: 16,
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 12,
   },
   locationCard: {
@@ -263,10 +256,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   locationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   locationInfo: {
@@ -274,32 +276,42 @@ const styles = StyleSheet.create({
   },
   locationName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   locationAddress: {
     fontSize: 14,
   },
-  quickLinks: {
+  expedienteCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -8,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+    marginBottom: 10,
   },
-  quickLinkItem: {
-    width: '50%',
-    padding: 8,
-  },
-  quickLinkIcon: {
+  expedienteIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(0, 160, 176, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginRight: 12,
   },
-  quickLinkText: {
+  expedienteInfo: {
+    flex: 1,
+  },
+  expedienteName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  expedienteDescription: {
     fontSize: 14,
-    fontWeight: '500',
-  },
+  }
 }); 

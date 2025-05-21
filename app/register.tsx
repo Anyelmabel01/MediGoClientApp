@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TextInput, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
-import { useState } from 'react';
+
 
 export default function RegisterScreen() {
   const router = useRouter();

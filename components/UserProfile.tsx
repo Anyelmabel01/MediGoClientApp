@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { User } from '@/constants/UserModel';
+import { useTheme } from '@/hooks/useTheme';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { User } from '@/constants/UserModel';
-import { useUser } from '@/hooks/useUser';
-import { useTheme } from '@/hooks/useTheme';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface UserProfileProps {
   isVisible: boolean;

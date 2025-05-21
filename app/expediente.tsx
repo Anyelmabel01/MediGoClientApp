@@ -1,11 +1,11 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AppButton } from '../components/AppButton';
 import { AppContainer } from '../components/AppContainer';
-import { CardContainer } from '../components/CardContainer';
 import { ThemedText } from '../components/ThemedText';
 import { useState } from '../hooks/react';
 
@@ -112,102 +112,43 @@ const labResults: LabResult[] = [
 
 export default function ExpedienteScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'history' | 'results'>('history');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
 
-  const renderRecordItem = ({ item }: { item: MedicalRecord }) => (
-    <CardContainer
-      title={item.doctorName}
-      subtitle={item.specialty}
-      onPress={() => router.push({
-        pathname: `/expediente/consulta/${item.id}` as any,
-      })}
-      gradient
-      highlighted={item.type === 'hospitalization'}
-      icon={
-        <Ionicons 
-          name={item.type === 'hospitalization' ? "medical" : "person"} 
-          size={22} 
-          color={Colors.light.primary}
-        />
-      }
-      rightElement={
-        <ThemedText style={[styles.recordDate, { 
-          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-        }]}>{item.date}</ThemedText>
-      }
-    >
-      <ThemedText style={styles.diagnosis}>{item.diagnosis}</ThemedText>
-      <View style={styles.recordTypeContainer}>
-        <View style={[
-          styles.recordTypeBadge, 
-          item.type === 'hospitalization' ? styles.hospitalizationBadge : styles.consultationBadge,
-          { 
-            backgroundColor: isDarkMode 
-              ? item.type === 'hospitalization' 
-                ? 'rgba(220, 53, 69, 0.15)' 
-                : 'rgba(0, 160, 176, 0.15)'
-              : item.type === 'hospitalization' 
-                ? 'rgba(220, 53, 69, 0.1)' 
-                : 'rgba(0, 160, 176, 0.1)'
-          }
-        ]}>
-          <ThemedText style={[
-            styles.recordTypeText, 
-            item.type === 'hospitalization' ? styles.hospitalizationText : styles.consultationText,
-            { 
-              color: item.type === 'hospitalization' 
-                ? COLORS.danger 
-                : Colors.light.primary
-            }
-          ]}>
-            {item.type === 'hospitalization' ? 'Hospitalización' : 'Consulta'}
-          </ThemedText>
-        </View>
-      </View>
-    </CardContainer>
-  );
-
-  const renderResultItem = ({ item }: { item: LabResult }) => (
-    <CardContainer
-      title={item.name}
-      subtitle={item.laboratory}
-      onPress={() => router.push({
-        pathname: `/expediente/resultado/${item.id}` as any,
-      })}
-      gradient
-      highlighted={item.isNew}
-      icon={
-        <Ionicons 
-          name="flask-outline" 
-          size={22} 
-          color={Colors.light.primary}
-        />
-      }
-      rightElement={
-        <View style={styles.resultMetaContainer}>
-          {item.isNew && (
-            <View style={[styles.newBadge, { 
-              backgroundColor: isDarkMode ? 'rgba(40, 167, 69, 0.15)' : 'rgba(40, 167, 69, 0.1)'
-            }]}>
-              <ThemedText style={[styles.newBadgeText, { color: Colors.light.success }]}>
-                NUEVO
-              </ThemedText>
-            </View>
-          )}
-          <Ionicons 
-            name="chevron-forward" 
-            size={20} 
-            color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
-          />
-        </View>
-      }
-    >
-      <ThemedText style={[styles.resultDate, { 
-        color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-      }]}>{item.date}</ThemedText>
-    </CardContainer>
-  );
+  // Datos ficticios para historial y estudios
+  const mockHistory = [
+    {
+      id: 'h1',
+      fecha: '2024-04-10',
+      titulo: 'Consulta General',
+      detalle: 'Dolor de cabeza y fiebre. Diagnóstico: Gripe común.',
+      doctor: 'Dra. Ana López',
+    },
+    {
+      id: 'h2',
+      fecha: '2024-03-15',
+      titulo: 'Consulta Cardiología',
+      detalle: 'Chequeo de presión arterial. Todo normal.',
+      doctor: 'Dr. Juan Pérez',
+    },
+  ];
+  const mockResults = [
+    {
+      id: 'r1',
+      fecha: '2024-04-12',
+      titulo: 'Laboratorio: Hemograma',
+      detalle: 'Resultados dentro de parámetros normales.',
+      laboratorio: 'Lab. Central',
+    },
+    {
+      id: 'r2',
+      fecha: '2024-03-20',
+      titulo: 'Radiografía de tórax',
+      detalle: 'Sin hallazgos patológicos.',
+      laboratorio: 'Imagen Diagnóstica',
+    },
+  ];
 
   const handleGoToLogin = () => {
     router.push('/login');
@@ -215,69 +156,122 @@ export default function ExpedienteScreen() {
 
   return (
     <AppContainer 
-      title="Mi Expediente"
+      title="Mi Expediente Médico"
       showBackButton={true}
       showLogoutButton={true}
     >
-      <View style={[styles.tabContainer, { 
-        backgroundColor: isDarkMode ? 'rgba(0, 160, 176, 0.1)' : 'rgba(0, 160, 176, 0.05)'
-      }]}>
+      {/* Información médica básica */}
+      <View style={styles.sectionBox}>
+        <ThemedText style={styles.sectionTitle}>Información médica básica</ThemedText>
+        <View style={styles.infoCardsContainer}>
+          <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.gray }]}>
+            <Ionicons name="water" size={24} color={COLORS.primary} />
+            <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary }]}>Tipo de sangre</ThemedText>
+            <ThemedText style={styles.infoCardValue}>{user.tipoSangre}</ThemedText>
+          </View>
+          <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.gray }]}>
+            <Ionicons name="fitness" size={24} color={COLORS.primary} />
+            <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary }]}>Peso</ThemedText>
+            <ThemedText style={styles.infoCardValue}>{user.peso} kg</ThemedText>
+          </View>
+          <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.gray }]}>
+            <Ionicons name="resize" size={24} color={COLORS.primary} />
+            <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary }]}>Altura</ThemedText>
+            <ThemedText style={styles.infoCardValue}>{user.altura} cm</ThemedText>
+          </View>
+        </View>
         <TouchableOpacity 
-          style={[
-            styles.tab, 
-            activeTab === 'history' && [
-              styles.activeTab,
-              { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }
-            ]
-          ]}
-          onPress={() => setActiveTab('history')}
+          style={[styles.editMedicalInfoButton, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.white }]}
+          onPress={() => router.push('/expediente/editar-info-medica' as any)}
         >
-          <ThemedText style={[
-            styles.tabText, 
-            activeTab === 'history' && styles.activeTabText,
-            { color: activeTab === 'history' ? Colors.light.primary : Colors.light.textSecondary }
-          ]}>
-            Historial
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[
-            styles.tab, 
-            activeTab === 'results' && [
-              styles.activeTab,
-              { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }
-            ]
-          ]}
-          onPress={() => setActiveTab('results')}
-        >
-          <ThemedText style={[
-            styles.tabText, 
-            activeTab === 'results' && styles.activeTabText,
-            { color: activeTab === 'results' ? Colors.light.primary : Colors.light.textSecondary }
-          ]}>
-            Resultados
-          </ThemedText>
+          <ThemedText style={[styles.editMedicalInfoText, { color: COLORS.primary }]}>Actualizar información médica</ThemedText>
+          <Ionicons name="pencil" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-      
-      {activeTab === 'history' ? (
-        <FlatList
-          data={medicalRecords}
-          renderItem={renderRecordItem}
-          keyExtractor={(item: MedicalRecord) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <FlatList
-          data={labResults}
-          renderItem={renderResultItem}
-          keyExtractor={(item: LabResult) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-      
+
+      {/* Historial y estudios */}
+      <View style={styles.sectionBox}>
+        <ThemedText style={styles.sectionTitle}>Historial y estudios</ThemedText>
+        <View style={[styles.tabContainer, { backgroundColor: isDarkMode ? 'rgba(0, 160, 176, 0.1)' : 'rgba(0, 160, 176, 0.05)' }]}> 
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'history' && [styles.activeTab, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]]}
+            onPress={() => setActiveTab(activeTab === 'history' ? null : 'history')}
+          >
+            <ThemedText style={[styles.tabText, activeTab === 'history' && styles.activeTabText, { color: activeTab === 'history' ? Colors.light.primary : Colors.light.textSecondary }]}>Historial Médico</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'results' && [styles.activeTab, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]]}
+            onPress={() => setActiveTab(activeTab === 'results' ? null : 'results')}
+          >
+            <ThemedText style={[styles.tabText, activeTab === 'results' && styles.activeTabText, { color: activeTab === 'results' ? Colors.light.primary : Colors.light.textSecondary }]}>Resultados y Estudios</ThemedText>
+          </TouchableOpacity>
+        </View>
+        {/* Mostrar tarjetas solo si hay tab activo */}
+        {activeTab === 'history' && (
+          <View style={styles.cardsGrid}>
+            {mockHistory.map(item => (
+              <View key={item.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Ionicons name="medkit" size={22} color={COLORS.primary} style={{marginRight: 8}} />
+                  <ThemedText style={styles.cardTitle}>{item.titulo}</ThemedText>
+                </View>
+                <ThemedText style={styles.cardDate}>{item.fecha}</ThemedText>
+                <ThemedText style={styles.cardDetail}>{item.detalle}</ThemedText>
+                <ThemedText style={styles.cardFooter}>Atendió: {item.doctor}</ThemedText>
+              </View>
+            ))}
+          </View>
+        )}
+        {activeTab === 'results' && (
+          <View style={styles.cardsGrid}>
+            {mockResults.map(item => (
+              <View key={item.id} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Ionicons name="flask" size={22} color={COLORS.primary} style={{marginRight: 8}} />
+                  <ThemedText style={styles.cardTitle}>{item.titulo}</ThemedText>
+                </View>
+                <ThemedText style={styles.cardDate}>{item.fecha}</ThemedText>
+                <ThemedText style={styles.cardDetail}>{item.detalle}</ThemedText>
+                <ThemedText style={styles.cardFooter}>Centro: {item.laboratorio}</ThemedText>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Gestión de documentos */}
+      <View style={styles.sectionBox}>
+        <ThemedText style={styles.sectionTitle}>Gestión de documentos</ThemedText>
+        <View style={styles.medicalOptionsContainer}>
+          <TouchableOpacity 
+            style={[styles.optionCard, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.white }]}
+            onPress={() => router.push('/expediente/archivos' as any)}
+          >
+            <View style={styles.optionIconContainer}>
+              <Ionicons name="cloud-upload" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.optionInfo}>
+              <ThemedText style={styles.optionName}>Gestionar Archivos Médicos</ThemedText>
+              <ThemedText style={[styles.optionDescription, { color: isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary }]}>Subir, ver y compartir documentos médicos</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.optionCard, { backgroundColor: isDarkMode ? Colors.dark.background : COLORS.white }]}
+            onPress={() => router.push('/expediente/recetas' as any)}
+          >
+            <View style={styles.optionIconContainer}>
+              <Ionicons name="medkit" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.optionInfo}>
+              <ThemedText style={styles.optionName}>Recetas Digitales</ThemedText>
+              <ThemedText style={[styles.optionDescription, { color: isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary }]}>Ver y descargar recetas médicas</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <View style={styles.buttonContainer}>
         <AppButton
           title="Volver al Login"
@@ -293,6 +287,53 @@ export default function ExpedienteScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionBox: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: 'transparent',
+  },
+  cardsGrid: {
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  cardDate: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 4,
+  },
+  cardDetail: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  cardFooter: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
   tabContainer: {
     flexDirection: 'row',
     marginBottom: 20,
@@ -377,5 +418,84 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
     paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  infoCardsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  infoCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 160, 176, 0.1)',
+  },
+  infoCardTitle: {
+    fontSize: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  infoCardValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  editMedicalInfoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 160, 176, 0.2)',
+    marginTop: 5,
+  },
+  editMedicalInfoText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginRight: 6,
+  },
+  medicalOptionsContainer: {
+    marginBottom: 10,
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  optionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  optionInfo: {
+    flex: 1,
+  },
+  optionName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  optionDescription: {
+    fontSize: 14,
   },
 });

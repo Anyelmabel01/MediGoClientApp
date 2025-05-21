@@ -1,149 +1,154 @@
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
 type Appointment = {
   id: string;
-  date: string;
-  time: string;
-  providerName: string;
-  providerType: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  fecha: string;
+  hora: string;
+  nombreProveedor: string;
+  tipoProveedor: string;
+  estado: 'pendiente' | 'confirmada' | 'cancelada';
 };
 
 // Datos de ejemplo
-const upcomingAppointments: Appointment[] = [
+const proximasCitas: Appointment[] = [
   {
     id: '1',
-    date: '12 Nov 2023',
-    time: '10:00 AM',
-    providerName: 'Dr. Juan Pérez',
-    providerType: 'Médico General',
-    status: 'confirmed',
+    fecha: '12 Nov 2023',
+    hora: '10:00 AM',
+    nombreProveedor: 'Dr. Juan Pérez',
+    tipoProveedor: 'Médico General',
+    estado: 'confirmada',
   },
   {
     id: '2',
-    date: '15 Nov 2023',
-    time: '3:30 PM',
-    providerName: 'Dra. María Rodríguez',
-    providerType: 'Cardióloga',
-    status: 'pending',
+    fecha: '15 Nov 2023',
+    hora: '3:30 PM',
+    nombreProveedor: 'Dra. María Rodríguez',
+    tipoProveedor: 'Cardióloga',
+    estado: 'pendiente',
   },
 ];
 
 export default function ConsultorioScreen() {
   const router = useRouter();
 
-  const handleNewAppointment = () => {
-    router.push('/consulta/consultorio/nueva-cita');
+  const handleNuevaCita = () => {
+    // Corregido para usar una ruta de navegación válida
+    router.push('/consulta');
+    // En una implementación real, aquí navegaríamos a la pantalla de nueva cita
   };
 
-  const handleMyAppointments = () => {
-    router.push('/consulta/consultorio/mis-citas');
+  const handleMisCitas = () => {
+    // Corregido para usar una ruta de navegación válida
+    router.push('/consulta');
+    // En una implementación real, aquí navegaríamos a la pantalla de mis citas
   };
 
-  const handleAppointmentDetails = (id: string) => {
-    router.push(`/consulta/consultorio/cita/${id}`);
+  const handleDetallesCita = (id: string) => {
+    // Corregido para usar una ruta de navegación válida
+    router.push('/consulta');
+    // En una implementación real, aquí navegaríamos a los detalles de la cita
   };
 
-  const getStatusColor = (status: Appointment['status']) => {
-    switch (status) {
-      case 'confirmed':
+  const getColorEstado = (estado: Appointment['estado']) => {
+    switch (estado) {
+      case 'confirmada':
         return '#4CAF50';
-      case 'pending':
+      case 'pendiente':
         return '#FFC107';
-      case 'cancelled':
+      case 'cancelada':
         return '#F44336';
       default:
         return '#757575';
     }
   };
 
-  const getStatusText = (status: Appointment['status']) => {
-    switch (status) {
-      case 'confirmed':
+  const getTextoEstado = (estado: Appointment['estado']) => {
+    switch (estado) {
+      case 'confirmada':
         return 'Confirmada';
-      case 'pending':
+      case 'pendiente':
         return 'Pendiente';
-      case 'cancelled':
+      case 'cancelada':
         return 'Cancelada';
       default:
         return '';
     }
   };
 
-  const renderAppointmentItem = ({ item }: { item: Appointment }) => (
+  const renderItemCita = ({ item }: { item: Appointment }) => (
     <TouchableOpacity 
-      style={styles.appointmentItem}
-      onPress={() => handleAppointmentDetails(item.id)}
+      style={styles.itemCita}
+      onPress={() => handleDetallesCita(item.id)}
     >
-      <View style={styles.appointmentDate}>
-        <ThemedText style={styles.appointmentDay}>{item.date}</ThemedText>
-        <ThemedText style={styles.appointmentTime}>{item.time}</ThemedText>
+      <View style={styles.fechaCita}>
+        <ThemedText style={styles.diaFecha}>{item.fecha}</ThemedText>
+        <ThemedText style={styles.horaCita}>{item.hora}</ThemedText>
       </View>
-      <View style={styles.appointmentInfo}>
-        <ThemedText style={styles.doctorName}>{item.providerName}</ThemedText>
-        <ThemedText style={styles.doctorSpecialty}>{item.providerType}</ThemedText>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <ThemedText style={styles.statusText}>{getStatusText(item.status)}</ThemedText>
+      <View style={styles.infoCita}>
+        <ThemedText style={styles.nombreDoctor}>{item.nombreProveedor}</ThemedText>
+        <ThemedText style={styles.especialidadDoctor}>{item.tipoProveedor}</ThemedText>
+        <View style={[styles.badgeEstado, { backgroundColor: getColorEstado(item.estado) }]}>
+          <ThemedText style={styles.textoEstado}>{getTextoEstado(item.estado)}</ThemedText>
         </View>
       </View>
-      <View style={styles.arrowContainer}>
+      <View style={styles.contenedorFlecha}>
         <Ionicons name="chevron-forward" size={20} color="#999" />
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.contenedor}>
       <StatusBar style="auto" />
       
-      <View style={styles.header}>
+      <View style={styles.cabecera}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={styles.botonRegresar}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
         </TouchableOpacity>
-        <ThemedText style={styles.title}>Consulta en Consultorio</ThemedText>
+        <ThemedText style={styles.titulo}>Consultorio</ThemedText>
       </View>
       
-      <View style={styles.buttonsContainer}>
+      <View style={styles.contenedorBotones}>
         <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleNewAppointment}
+          style={styles.botonAccion}
+          onPress={handleNuevaCita}
         >
           <Ionicons name="add-circle" size={24} color="white" />
-          <ThemedText style={styles.buttonText}>Nueva Cita</ThemedText>
+          <ThemedText style={styles.textoBoton}>Nueva Cita</ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={handleMyAppointments}
+          style={[styles.botonAccion, styles.botonSecundario]}
+          onPress={handleMisCitas}
         >
           <Ionicons name="calendar" size={24} color="white" />
-          <ThemedText style={styles.buttonText}>Mis Citas</ThemedText>
+          <ThemedText style={styles.textoBoton}>Mis Citas</ThemedText>
         </TouchableOpacity>
       </View>
       
-      <View style={styles.upcomingSection}>
-        <ThemedText style={styles.sectionTitle}>Próximas Citas</ThemedText>
+      <View style={styles.seccionProximas}>
+        <ThemedText style={styles.tituloSeccion}>Próximas Citas</ThemedText>
         
-        {upcomingAppointments.length > 0 ? (
+        {proximasCitas.length > 0 ? (
           <FlatList
-            data={upcomingAppointments}
-            renderItem={renderAppointmentItem}
+            data={proximasCitas}
+            renderItem={renderItemCita}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.appointmentsList}
+            contentContainerStyle={styles.listaCitas}
           />
         ) : (
-          <ThemedView style={styles.emptyState}>
+          <ThemedView style={styles.estadoVacio}>
             <Ionicons name="calendar-outline" size={50} color="#ccc" />
-            <ThemedText style={styles.emptyText}>No tienes citas programadas</ThemedText>
+            <ThemedText style={styles.textoVacio}>No tienes citas programadas</ThemedText>
           </ThemedView>
         )}
       </View>
@@ -152,30 +157,30 @@ export default function ConsultorioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  contenedor: {
     flex: 1,
     padding: 16,
   },
-  header: {
+  cabecera: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 20,
   },
-  backButton: {
+  botonRegresar: {
     padding: 5,
   },
-  title: {
+  titulo: {
     fontSize: 20,
     fontWeight: 'bold',
     marginLeft: 10,
   },
-  buttonsContainer: {
+  contenedorBotones: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
   },
-  actionButton: {
+  botonAccion: {
     backgroundColor: '#2D7FF9',
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,26 +189,26 @@ const styles = StyleSheet.create({
     padding: 12,
     flex: 0.48,
   },
-  secondaryButton: {
+  botonSecundario: {
     backgroundColor: '#5C6BC0',
   },
-  buttonText: {
+  textoBoton: {
     color: 'white',
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  upcomingSection: {
+  seccionProximas: {
     flex: 1,
   },
-  sectionTitle: {
+  tituloSeccion: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
   },
-  appointmentsList: {
+  listaCitas: {
     paddingBottom: 20,
   },
-  appointmentItem: {
+  itemCita: {
     flexDirection: 'row',
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
@@ -219,54 +224,54 @@ const styles = StyleSheet.create({
     elevation: 1,
     alignItems: 'center',
   },
-  appointmentDate: {
+  fechaCita: {
     marginRight: 16,
     alignItems: 'center',
     minWidth: 70,
   },
-  appointmentDay: {
+  diaFecha: {
     fontWeight: 'bold',
     fontSize: 14,
     marginBottom: 4,
   },
-  appointmentTime: {
+  horaCita: {
     fontSize: 13,
     color: '#777',
   },
-  appointmentInfo: {
+  infoCita: {
     flex: 1,
   },
-  doctorName: {
+  nombreDoctor: {
     fontWeight: 'bold',
     fontSize: 15,
     marginBottom: 2,
   },
-  doctorSpecialty: {
+  especialidadDoctor: {
     fontSize: 13,
     color: '#777',
     marginBottom: 6,
   },
-  statusBadge: {
+  badgeEstado: {
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
   },
-  statusText: {
+  textoEstado: {
     color: 'white',
     fontSize: 11,
     fontWeight: 'bold',
   },
-  arrowContainer: {
+  contenedorFlecha: {
     marginLeft: 8,
   },
-  emptyState: {
+  estadoVacio: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyText: {
+  textoVacio: {
     marginTop: 16,
     color: '#777',
     fontSize: 16,
