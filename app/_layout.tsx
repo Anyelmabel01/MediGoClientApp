@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AuthProvider } from '@/hooks/useAuth';
 import { UserProvider } from '@/hooks/useUser';
@@ -45,7 +46,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <UserProvider>
         <AuthProvider>
-          <RootLayoutNav />
+          <CartProvider>
+            <RootLayoutNav />
+          </CartProvider>
         </AuthProvider>
       </UserProvider>
     </ThemeProvider>
