@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 const categorias = [
   { nombre: 'Pruebas de Sangre', icon: 'water' },
@@ -23,7 +25,7 @@ export default function PruebasScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.titulo}>Catálogo de Pruebas</Text>
+      <ThemedText style={styles.titulo}>Catálogo de Pruebas</ThemedText>
       <View style={styles.barraBusqueda}>
         <Ionicons name="search" size={20} color="#888" />
         <TextInput
@@ -37,7 +39,7 @@ export default function PruebasScreen() {
         {categorias.map((cat) => (
           <View key={cat.nombre} style={styles.categoria}>
             <Ionicons name={cat.icon as any} size={24} color="#5E35B1" />
-            <Text style={styles.categoriaTexto}>{cat.nombre}</Text>
+            <ThemedText style={styles.categoriaTexto}>{cat.nombre}</ThemedText>
           </View>
         ))}
       </ScrollView>
@@ -49,15 +51,15 @@ export default function PruebasScreen() {
             onPress={() => router.push(`../../laboratorio/detalle/${prueba.id}` as any)}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.pruebaNombre}>{prueba.nombre}</Text>
+              <ThemedText style={styles.pruebaNombre}>{prueba.nombre}</ThemedText>
               {prueba.requierePreparacion && (
                 <Ionicons name="alert-circle" size={18} color="#FFA000" style={{ marginLeft: 6 }} />
               )}
             </View>
-            <Text style={styles.pruebaDescripcion}>{prueba.descripcion}</Text>
-            <Text style={styles.pruebaPrecio}>{prueba.precio}</Text>
+            <ThemedText style={styles.pruebaDescripcion}>{prueba.descripcion}</ThemedText>
+            <ThemedText style={styles.pruebaPrecio}>{prueba.precio}</ThemedText>
             <TouchableOpacity style={styles.botonReservar} onPress={() => router.push(`../../laboratorio/reservar/${prueba.id}` as any)}>
-              <Text style={styles.botonReservarTexto}>Reservar</Text>
+              <ThemedText style={styles.botonReservarTexto}>Reservar</ThemedText>
             </TouchableOpacity>
           </TouchableOpacity>
         ))}

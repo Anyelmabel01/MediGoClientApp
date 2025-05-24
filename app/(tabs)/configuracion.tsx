@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications'; // REMOVIDO
 import { useRouter } from 'expo-router';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -28,13 +28,6 @@ export default function ConfiguracionScreen() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   
   const [configOptions, setConfigOptions] = useState<ConfigOption[]>([
-    {
-      id: 'notifications',
-      title: 'Notificaciones',
-      icon: 'notifications',
-      type: 'toggle',
-      value: false
-    },
     {
       id: 'darkMode',
       title: 'Modo oscuro',
@@ -198,21 +191,16 @@ export default function ConfiguracionScreen() {
   ]);
 
   useEffect(() => {
-    checkNotificationPermissions();
     loadSettings();
   }, []);
 
   const loadSettings = async () => {
     try {
-      const notifications = await AsyncStorage.getItem('notifications');
-      
+      // Notificaciones removidas - solo cargar dark mode
       setConfigOptions(options => 
         options.map(option => {
           if (option.id === 'darkMode') {
             return { ...option, value: isDarkMode };
-          }
-          if (option.id === 'notifications') {
-            return { ...option, value: notifications === 'true' };
           }
           return option;
         })
@@ -222,36 +210,11 @@ export default function ConfiguracionScreen() {
     }
   };
 
-  const checkNotificationPermissions = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setConfigOptions(options => 
-      options.map(option => 
-        option.id === 'notifications' 
-          ? { ...option, value: status === 'granted' } 
-          : option
-      )
-    );
-  };
-
   const handleToggleChange = async (id: string, newValue: boolean) => {
-    if (id === 'notifications') {
-      if (newValue) {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert(
-            'Permiso denegado',
-            'Necesitamos tu permiso para enviar notificaciones',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-        await AsyncStorage.setItem('notifications', 'true');
-      } else {
-        await AsyncStorage.setItem('notifications', 'false');
-      }
-    } else if (id === 'darkMode') {
+    if (id === 'darkMode') {
       await toggleDarkMode(newValue);
     }
+    // Notificaciones removidas - solo manejar dark mode
 
     setConfigOptions(options => 
       options.map(option => 
@@ -282,7 +245,7 @@ export default function ConfiguracionScreen() {
           <ThemedText style={styles.sectionTitle}>General</ThemedText>
           
           {configOptions
-            .filter(option => ['notifications', 'darkMode', 'language'].includes(option.id))
+            .filter(option => ['darkMode', 'language'].includes(option.id))
             .map(option => (
               <TouchableOpacity
                 key={option.id}

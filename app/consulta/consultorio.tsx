@@ -37,17 +37,9 @@ const proximasCitas: Appointment[] = [
 export default function ConsultorioScreen() {
   const router = useRouter();
 
-  const handleNuevaCita = () => {
-    // Corregido para usar una ruta de navegación válida
-    router.push('/consulta');
-    // En una implementación real, aquí navegaríamos a la pantalla de nueva cita
-  };
+    const handleNuevaCita = () => {    router.push('/consulta/consultorio/buscar-proveedores');  };
 
-  const handleMisCitas = () => {
-    // Corregido para usar una ruta de navegación válida
-    router.push('/consulta');
-    // En una implementación real, aquí navegaríamos a la pantalla de mis citas
-  };
+    const handleMisCitas = () => {    router.push('/consulta/consultorio/mis-citas');  };
 
   const handleDetallesCita = (id: string) => {
     // Corregido para usar una ruta de navegación válida

@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
 
 const filtros = [
   { nombre: 'Todos', value: 'todos' },
@@ -27,11 +29,11 @@ export default function ResultadosScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.titulo}>Resultados de Laboratorio</Text>
+      <ThemedText style={styles.titulo}>Resultados de Laboratorio</ThemedText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtros}>
         {filtros.map((f) => (
           <TouchableOpacity key={f.value} style={[styles.filtro, filtro === f.value && styles.filtroActivo]} onPress={() => setFiltro(f.value)}>
-            <Text style={[styles.filtroTexto, filtro === f.value && styles.filtroTextoActivo]}>{f.nombre}</Text>
+            <ThemedText style={[styles.filtroTexto, filtro === f.value && styles.filtroTextoActivo]}>{f.nombre}</ThemedText>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -43,15 +45,15 @@ export default function ResultadosScreen() {
             onPress={() => router.push(`../../laboratorio/resultados/${res.id}` as any)}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.pruebaNombre}>{res.prueba}</Text>
+              <ThemedText style={styles.pruebaNombre}>{res.prueba}</ThemedText>
               <View style={[styles.estado, { backgroundColor: estadoColor[res.estado as keyof typeof estadoColor] }]}>
-                <Text style={styles.estadoTexto}>{res.estado.charAt(0).toUpperCase() + res.estado.slice(1)}</Text>
+                <ThemedText style={styles.estadoTexto}>{res.estado.charAt(0).toUpperCase() + res.estado.slice(1)}</ThemedText>
               </View>
             </View>
-            <Text style={styles.fecha}>{res.fecha}</Text>
-            <Text style={styles.laboratorio}>{res.laboratorio}</Text>
+            <ThemedText style={styles.fecha}>{res.fecha}</ThemedText>
+            <ThemedText style={styles.laboratorio}>{res.laboratorio}</ThemedText>
             <TouchableOpacity style={styles.botonVer} onPress={() => router.push(`../../laboratorio/resultados/${res.id}` as any)}>
-              <Text style={styles.botonVerTexto}>Ver Detalles</Text>
+              <ThemedText style={styles.botonVerTexto}>Ver Detalles</ThemedText>
             </TouchableOpacity>
           </TouchableOpacity>
         ))}
