@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useEffect } from '@/hooks/react';
 import { useAuth } from '@/hooks/useAuth';
-import { useColorScheme } from '@/hooks/useTheme';
 import { Tabs, useRouter, useSegments } from 'expo-router';
 
 function useProtectedRoute(isAuthenticated: boolean) {
@@ -18,7 +18,7 @@ function useProtectedRoute(isAuthenticated: boolean) {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { isDarkMode } = useTheme();
   const { isAuthenticated } = useAuth();
   
   useProtectedRoute(isAuthenticated);
@@ -26,7 +26,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[isDarkMode ? 'dark' : 'light'].tint,
         headerShown: false,
         tabBarStyle: {
           display: 'none',

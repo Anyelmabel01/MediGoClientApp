@@ -1,16 +1,15 @@
-import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { View, ViewProps } from 'react-native';
 
 export function ThemedView(props: ViewProps) {
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, themeColors } = useTheme();
   
   return (
     <View
       {...props}
       style={[
         {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+          backgroundColor: themeColors.background,
         },
         props.style,
       ]}

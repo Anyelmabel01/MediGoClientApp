@@ -6,12 +6,12 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 // import * as Notifications from 'expo-notifications'; // REMOVIDO
+import { handleError } from '@/utils/errorHandler';
 import { useRouter } from 'expo-router';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, StatusBar, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 
 interface ConfigOption {
   id: string;
@@ -22,12 +22,27 @@ interface ConfigOption {
   action?: () => void;
 }
 
+// Definir la paleta de colores de MediGo al inicio del archivo
+const MEDIGO_COLORS = {
+  primary: '#00A0B0',
+  primaryLight: '#33b5c2',
+  primaryDark: '#006070',
+  accent: '#70D0E0',
+};
+
 export default function ConfiguracionScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
   
   const [configOptions, setConfigOptions] = useState<ConfigOption[]>([
+    {
+      id: 'notifications',
+      title: 'Notificaciones',
+      icon: 'notifications',
+      type: 'toggle',
+      value: true
+    },
     {
       id: 'darkMode',
       title: 'Modo oscuro',
@@ -63,7 +78,10 @@ export default function ConfiguracionScreen() {
           ]
         );
       }
-    },
+    }
+  ]);
+
+  const legalOptions: ConfigOption[] = [
     {
       id: 'terms',
       title: 'Términos y condiciones',
@@ -72,18 +90,18 @@ export default function ConfiguracionScreen() {
       action: () => {
         Alert.alert(
           'Términos y Condiciones',
-          'MediGo - Términos y Condiciones\\n\\n' +
-          '1. Uso del Servicio\\n' +
-          'MediGo es una plataforma integral de servicios médicos que conecta pacientes con profesionales de la salud. Al utilizar nuestra aplicación, aceptas estos términos y condiciones.\\n\\n' +
-          '2. Cuentas de Usuario\\n' +
-          'Los usuarios deben proporcionar información precisa y mantener la confidencialidad de sus credenciales. La cuenta es personal e intransferible.\\n\\n' +
-          '3. Servicios Médicos\\n' +
-          'MediGo facilita la conexión entre pacientes y profesionales de la salud. No somos responsables de los servicios médicos proporcionados por terceros.\\n\\n' +
-          '4. Privacidad y Seguridad\\n' +
-          'Nos comprometemos a proteger tu información personal y médica según nuestra política de privacidad y las leyes aplicables.\\n\\n' +
-          '5. Modificaciones\\n' +
-          'Nos reservamos el derecho de modificar estos términos en cualquier momento, notificando a los usuarios sobre cambios significativos.\\n\\n' +
-          '6. Limitación de Responsabilidad\\n' +
+          'MediGo - Términos y Condiciones\n\n' +
+          '1. Uso del Servicio\n' +
+          'MediGo es una plataforma integral de servicios médicos que conecta pacientes con profesionales de la salud. Al utilizar nuestra aplicación, aceptas estos términos y condiciones.\n\n' +
+          '2. Cuentas de Usuario\n' +
+          'Los usuarios deben proporcionar información precisa y mantener la confidencialidad de sus credenciales. La cuenta es personal e intransferible.\n\n' +
+          '3. Servicios Médicos\n' +
+          'MediGo facilita la conexión entre pacientes y profesionales de la salud. No somos responsables de los servicios médicos proporcionados por terceros.\n\n' +
+          '4. Privacidad y Seguridad\n' +
+          'Nos comprometemos a proteger tu información personal y médica según nuestra política de privacidad y las leyes aplicables.\n\n' +
+          '5. Modificaciones\n' +
+          'Nos reservamos el derecho de modificar estos términos en cualquier momento, notificando a los usuarios sobre cambios significativos.\n\n' +
+          '6. Limitación de Responsabilidad\n' +
           'MediGo no se hace responsable por daños indirectos o consecuentes derivados del uso de la plataforma.',
           [{ text: 'Entendido' }]
         );
@@ -97,35 +115,35 @@ export default function ConfiguracionScreen() {
       action: () => {
         Alert.alert(
           'Política de Privacidad',
-          'MediGo - Política de Privacidad\\n\\n' +
-          '1. Información Recopilada\\n' +
-          'Recopilamos información necesaria para proporcionar nuestros servicios, incluyendo:\\n' +
-          '- Datos personales (nombre, edad, género)\\n' +
-          '- Información médica (historial, medicamentos)\\n' +
-          '- Datos de contacto y ubicación\\n\\n' +
-          '2. Uso de la Información\\n' +
-          'Utilizamos tu información para:\\n' +
-          '- Gestionar citas médicas y servicios\\n' +
-          '- Proporcionar atención médica personalizada\\n' +
-          '- Mejorar nuestros servicios\\n' +
-          '- Enviar notificaciones importantes\\n\\n' +
-          '3. Protección de Datos\\n' +
-          'Implementamos medidas de seguridad avanzadas para proteger tu información, incluyendo:\\n' +
-          '- Encriptación de datos\\n' +
-          '- Acceso restringido\\n' +
-          '- Monitoreo continuo\\n\\n' +
-          '4. Compartir Información\\n' +
-          'Solo compartimos información con:\\n' +
-          '- Profesionales de la salud autorizados\\n' +
-          '- Según lo requiera la ley\\n' +
-          '- Con tu consentimiento explícito\\n\\n' +
-          '5. Tus Derechos\\n' +
-          'Tienes derecho a:\\n' +
-          '- Acceder a tu información\\n' +
-          '- Corregir datos inexactos\\n' +
-          '- Solicitar eliminación de datos\\n' +
-          '- Oponerte al procesamiento\\n\\n' +
-          '6. Contacto\\n' +
+          'MediGo - Política de Privacidad\n\n' +
+          '1. Información Recopilada\n' +
+          'Recopilamos información necesaria para proporcionar nuestros servicios, incluyendo:\n' +
+          '- Datos personales (nombre, edad, género)\n' +
+          '- Información médica (historial, medicamentos)\n' +
+          '- Datos de contacto y ubicación\n\n' +
+          '2. Uso de la Información\n' +
+          'Utilizamos tu información para:\n' +
+          '- Gestionar citas médicas y servicios\n' +
+          '- Proporcionar atención médica personalizada\n' +
+          '- Mejorar nuestros servicios\n' +
+          '- Enviar notificaciones importantes\n\n' +
+          '3. Protección de Datos\n' +
+          'Implementamos medidas de seguridad avanzadas para proteger tu información, incluyendo:\n' +
+          '- Encriptación de datos\n' +
+          '- Acceso restringido\n' +
+          '- Monitoreo continuo\n\n' +
+          '4. Compartir Información\n' +
+          'Solo compartimos información con:\n' +
+          '- Profesionales de la salud autorizados\n' +
+          '- Según lo requiera la ley\n' +
+          '- Con tu consentimiento explícito\n\n' +
+          '5. Tus Derechos\n' +
+          'Tienes derecho a:\n' +
+          '- Acceder a tu información\n' +
+          '- Corregir datos inexactos\n' +
+          '- Solicitar eliminación de datos\n' +
+          '- Oponerte al procesamiento\n\n' +
+          '6. Contacto\n' +
           'Para consultas sobre privacidad, contacta a nuestro equipo de protección de datos en Panatec@gmail.com',
           [{ text: 'Entendido' }]
         );
@@ -139,17 +157,17 @@ export default function ConfiguracionScreen() {
       action: () => {
         Alert.alert(
           'Ayuda y Soporte',
-          '¿Necesitas ayuda?\\n\\n' +
-          'Nuestro equipo está aquí para ayudarte:\\n\\n' +
-          '📧 Email: Panatec@gmail.com\\n' +
-          '📞 Teléfono: +1 (555) 123-4567\\n\\n' +
-          'Horario de atención:\\n' +
-          'Lunes a Viernes: 8:00 AM - 8:00 PM\\n' +
-          'Sábados: 9:00 AM - 2:00 PM\\n\\n' +
-          'Servicios de soporte:\\n' +
-          '• Asistencia técnica\\n' +
-          '• Consultas sobre servicios\\n' +
-          '• Reporte de problemas\\n' +
+          '¿Necesitas ayuda?\n\n' +
+          'Nuestro equipo está aquí para ayudarte:\n\n' +
+          '📧 Email: Panatec@gmail.com\n' +
+          '📞 Teléfono: +1 (555) 123-4567\n\n' +
+          'Horario de atención:\n' +
+          'Lunes a Viernes: 8:00 AM - 8:00 PM\n' +
+          'Sábados: 9:00 AM - 2:00 PM\n\n' +
+          'Servicios de soporte:\n' +
+          '• Asistencia técnica\n' +
+          '• Consultas sobre servicios\n' +
+          '• Reporte de problemas\n' +
           '• Sugerencias y mejoras',
           [
             { text: 'Enviar Email', onPress: () => Linking.openURL('mailto:Panatec@gmail.com') },
@@ -167,28 +185,28 @@ export default function ConfiguracionScreen() {
       action: () => {
         Alert.alert(
           'Acerca de MediGo',
-          'MediGo - Tu Compañero de Salud Digital\\n\\n' +
-          'MediGo es una plataforma innovadora que revoluciona la forma en que gestionas tu salud. Nuestra misión es hacer que el acceso a los servicios médicos sea más fácil, eficiente y accesible para todos.\\n\\n' +
-          'Características principales:\\n' +
-          '• Gestión inteligente de citas médicas\\n' +
-          '• Historial médico digital completo\\n' +
-          '• Recetas médicas electrónicas\\n' +
-          '• Resultados de laboratorio en tiempo real\\n' +
-          '• Servicios de emergencia integrados\\n' +
-          '• Consultas virtuales\\n\\n' +
-          'Nuestra tecnología:\\n' +
-          '• Plataforma segura y confiable\\n' +
-          '• Interfaz intuitiva y fácil de usar\\n' +
-          '• Actualizaciones constantes\\n' +
-          '• Soporte 24/7\\n\\n' +
-          'Desarrollado con ❤️ por Panatec\\n' +
-          'Versión 1.0.0\\n\\n' +
+          'MediGo - Tu Compañero de Salud Digital\n\n' +
+          'MediGo es una plataforma innovadora que revoluciona la forma en que gestionas tu salud. Nuestra misión es hacer que el acceso a los servicios médicos sea más fácil, eficiente y accesible para todos.\n\n' +
+          'Características principales:\n' +
+          '• Gestión inteligente de citas médicas\n' +
+          '• Historial médico digital completo\n' +
+          '• Recetas médicas electrónicas\n' +
+          '• Resultados de laboratorio en tiempo real\n' +
+          '• Servicios de emergencia integrados\n' +
+          '• Consultas virtuales\n\n' +
+          'Nuestra tecnología:\n' +
+          '• Plataforma segura y confiable\n' +
+          '• Interfaz intuitiva y fácil de usar\n' +
+          '• Actualizaciones constantes\n' +
+          '• Soporte 24/7\n\n' +
+          'Desarrollado con ❤️ por Panatec\n' +
+          'Versión 1.0.0\n\n' +
           '© 2024 MediGo. Todos los derechos reservados.',
           [{ text: 'Entendido' }]
         );
       }
     }
-  ]);
+  ];
 
   useEffect(() => {
     loadSettings();
@@ -196,7 +214,6 @@ export default function ConfiguracionScreen() {
 
   const loadSettings = async () => {
     try {
-      // Notificaciones removidas - solo cargar dark mode
       setConfigOptions(options => 
         options.map(option => {
           if (option.id === 'darkMode') {
@@ -206,7 +223,7 @@ export default function ConfiguracionScreen() {
         })
       );
     } catch (error) {
-      console.error('Error loading settings:', error);
+      handleError(error);
     }
   };
 
@@ -214,8 +231,6 @@ export default function ConfiguracionScreen() {
     if (id === 'darkMode') {
       await toggleDarkMode(newValue);
     }
-    // Notificaciones removidas - solo manejar dark mode
-
     setConfigOptions(options => 
       options.map(option => 
         option.id === id 
@@ -231,71 +246,86 @@ export default function ConfiguracionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ExpoStatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
-      <LinearGradient
-        colors={isDarkMode ? [Colors.dark.primary, '#3A1C71'] : [Colors.light.primary, '#9B59B6']}
-        style={styles.header}
-      >
+      <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>Configuración</ThemedText>
-      </LinearGradient>
+      </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>General</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Preferencias</ThemedText>
           
-          {configOptions
-            .filter(option => ['darkMode', 'language'].includes(option.id))
-            .map(option => (
-              <TouchableOpacity
-                key={option.id}
-                style={styles.optionItem}
-                onPress={option.type === 'action' ? option.action : undefined}
-              >
-                <View style={styles.optionIcon}>
-                  <Ionicons name={option.icon} size={22} color={Colors.light.primary} />
-                </View>
+          {configOptions.map(option => (
+            <TouchableOpacity
+              key={option.id}
+              style={styles.optionItem}
+              onPress={option.type === 'action' ? option.action : undefined}
+            >
+              <View style={styles.optionLeft}>
+                <Ionicons 
+                  name={option.icon} 
+                  size={24} 
+                  color={MEDIGO_COLORS.primary}
+                />
                 <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-                {option.type === 'toggle' ? (
-                  <Switch
-                    value={option.value}
-                    onValueChange={(newValue) => handleToggleChange(option.id, newValue)}
-                    thumbColor={option.value ? Colors.light.primary : '#f4f3f4'}
-                    trackColor={{ false: '#E0E0E0', true: Colors.light.primary }}
-                    style={styles.switch}
-                  />
-                ) : (
-                  <Ionicons name="chevron-forward" size={20} color={Colors.light.textSecondary} />
-                )}
-              </TouchableOpacity>
-            ))}
+              </View>
+              {option.type === 'toggle' ? (
+                <Switch
+                  value={option.value}
+                  onValueChange={(newValue) => handleToggleChange(option.id, newValue)}
+                  trackColor={{ 
+                    false: '#767577',
+                    true: MEDIGO_COLORS.primary
+                  }}
+                  thumbColor="#f4f3f4"
+                />
+              ) : (
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={24} 
+                  color={isDarkMode ? '#ccc' : '#666'} 
+                />
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Legal y Soporte</ThemedText>
           
-          {configOptions
-            .filter(option => ['terms', 'privacy', 'help', 'about'].includes(option.id))
-            .map(option => (
-              <TouchableOpacity
-                key={option.id}
-                style={styles.optionItem}
-                onPress={option.action}
-              >
-                <View style={styles.optionIcon}>
-                  <Ionicons name={option.icon} size={22} color={Colors.light.primary} />
-                </View>
+          {legalOptions.map(option => (
+            <TouchableOpacity
+              key={option.id}
+              style={styles.optionItem}
+              onPress={option.action}
+            >
+              <View style={styles.optionLeft}>
+                <Ionicons 
+                  name={option.icon} 
+                  size={24} 
+                  color={MEDIGO_COLORS.primary}
+                />
                 <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-                <Ionicons name="chevron-forward" size={20} color={Colors.light.textSecondary} />
-              </TouchableOpacity>
-            ))}
+              </View>
+              <Ionicons 
+                name="chevron-forward" 
+                size={24} 
+                color={isDarkMode ? '#ccc' : '#666'} 
+              />
+            </TouchableOpacity>
+          ))}
         </View>
         
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
         >
-          <Ionicons name="log-out" size={22} color={Colors.light.error} />
+          <Ionicons 
+            name="log-out" 
+            size={24} 
+            color={Colors.light.error}
+          />
           <ThemedText style={styles.logoutText}>Cerrar sesión</ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -308,91 +338,61 @@ export default function ConfiguracionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   header: {
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
+    paddingTop: Platform.OS === 'android' ? 25 : 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    alignItems: 'center',
+    backgroundColor: '#00A0B0',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: Colors.dark.text,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 20,
   },
   section: {
     marginBottom: 24,
-    backgroundColor: Colors.light.background,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: Colors.light.shadowColor,
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: Colors.light.text,
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
   },
-  optionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
-    justifyContent: 'center',
+  optionLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
   },
   optionTitle: {
-    flex: 1,
     fontSize: 16,
-    color: Colors.light.text,
-  },
-  switch: {
-    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+    marginLeft: 12,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.background,
+    justifyContent: 'center',
+    backgroundColor: '#FEE2E2',
     borderRadius: 12,
     padding: 16,
-    marginTop: 8, 
-    marginBottom: 20, 
-    shadowColor: Colors.light.shadowColor,
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    marginTop: 8,
+    marginBottom: 20,
   },
   logoutText: {
+    marginLeft: 12,
     fontSize: 16,
-    fontWeight: 'bold',
     color: Colors.light.error,
-    marginLeft: 10,
+    fontWeight: '500',
   },
 }); 

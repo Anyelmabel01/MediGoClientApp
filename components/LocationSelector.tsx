@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { UserLocation, mockLocations } from '@/constants/UserModel';
+import { handleError } from '@/utils/errorHandler';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { UserLocation, mockLocations } from '@/constants/UserModel';
-import { WebView } from 'react-native-webview';
 
 interface LocationSelectorProps {
   isVisible: boolean;
@@ -140,7 +141,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
         setMapLoading(false);
       }
     } catch (error) {
-      console.error('Error al procesar mensaje del WebView:', error);
+      handleError(error);
     }
   };
 

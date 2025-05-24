@@ -12,6 +12,7 @@ import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { UserLocation } from '@/constants/UserModel';
 import { useUser } from '@/hooks/useUser';
+import { handleError } from '@/utils/errorHandler';
 
 type ServiceItem = {
   id: string;
@@ -83,7 +84,7 @@ export default function HomeScreen() {
         try {
           router.push(item.route as any);
         } catch (e) {
-          console.error('Error al navegar a la ruta:', item.route);
+          handleError(e);
         }
       }}
     >

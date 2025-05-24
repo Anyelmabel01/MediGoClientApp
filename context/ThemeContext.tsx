@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
@@ -5,6 +6,7 @@ import { useColorScheme } from 'react-native';
 type ThemeContextType = {
   isDarkMode: boolean;
   toggleDarkMode: (value: boolean) => Promise<void>;
+  themeColors: typeof Colors.light | typeof Colors.dark;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,6 +18,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadThemePreference();
   }, []);
+
+  useEffect(() => {
+    // Sincronizar con el tema del sistema si no hay preferencia guardada
+    const syncWithSystem = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('darkMode');
+        if (savedTheme === null) {
+          setIsDarkMode(systemColorScheme === 'dark');
+        }
+      } catch (error) {
+        console.error('Error syncing with system theme:', error);
+      }
+    };
+    syncWithSystem();
+  }, [systemColorScheme]);
 
   const loadThemePreference = async () => {
     try {
@@ -37,8 +54,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Obtener los colores basados en el tema actual
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
+
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, themeColors }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -72,11 +72,24 @@ export default function ConsultaScreen() {
             </ThemedText>
             
             <View style={styles.optionFeatures}>
-                            <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />                <ThemedText style={styles.featureText}>Consulta presencial</ThemedText>              </View>              <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />                <ThemedText style={styles.featureText}>Múltiples especialidades</ThemedText>              </View>              <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />                <ThemedText style={styles.featureText}>Evaluación completa</ThemedText>              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <ThemedText style={styles.featureText}>Consulta presencial</ThemedText>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <ThemedText style={styles.featureText}>Múltiples especialidades</ThemedText>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <ThemedText style={styles.featureText}>Evaluación completa</ThemedText>
+              </View>
             </View>
           </View>
           
-                    <View style={styles.optionAction}>            <Ionicons name="chevron-forward" size={24} color={Colors.light.success} />          </View>
+          <View style={styles.optionAction}>
+            <Ionicons name="chevron-forward" size={24} color={Colors.light.success} />
+          </View>
         </TouchableOpacity>
         
         {/* Telemedicina Option */}
@@ -88,7 +101,10 @@ export default function ConsultaScreen() {
           onPress={handleTelemedicineSelect}
           activeOpacity={0.8}
         >
-                    <LinearGradient            colors={[Colors.light.primary, Colors.light.primaryDark]}            style={styles.optionIconContainer}          >
+          <LinearGradient
+            colors={[Colors.light.primary, Colors.light.primaryDark]}
+            style={styles.optionIconContainer}
+          >
             <Ionicons name="videocam" size={32} color="white" />
           </LinearGradient>
           
@@ -101,11 +117,24 @@ export default function ConsultaScreen() {
             </ThemedText>
             
             <View style={styles.optionFeatures}>
-                            <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />                <ThemedText style={styles.featureText}>Desde casa</ThemedText>              </View>              <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />                <ThemedText style={styles.featureText}>Horarios flexibles</ThemedText>              </View>              <View style={styles.featureItem}>                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />                <ThemedText style={styles.featureText}>Disponible 24/7</ThemedText>              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+                <ThemedText style={styles.featureText}>Desde casa</ThemedText>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+                <ThemedText style={styles.featureText}>Horarios flexibles</ThemedText>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+                <ThemedText style={styles.featureText}>Disponible 24/7</ThemedText>
+              </View>
             </View>
           </View>
           
-                    <View style={styles.optionAction}>            <Ionicons name="chevron-forward" size={24} color={Colors.light.primary} />          </View>
+          <View style={styles.optionAction}>
+            <Ionicons name="chevron-forward" size={24} color={Colors.light.primary} />
+          </View>
         </TouchableOpacity>
 
         {/* Quick Info Section */}
