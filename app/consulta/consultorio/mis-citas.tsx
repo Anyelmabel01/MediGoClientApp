@@ -1,21 +1,26 @@
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import {
-    Alert,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+// Paleta de colores oficial MediGo
+const COLORS = {
+  primary: '#00A0B0',
+  primaryLight: '#33b5c2',
+  primaryDark: '#006070',
+  accent: '#70D0E0',
+  background: '#FFFFFF',
+  textPrimary: '#212529',
+  textSecondary: '#6C757D',
+  white: '#FFFFFF',
+  success: '#28a745',
+  error: '#dc3545',
+  warning: '#ffc107',
+  border: '#E9ECEF',
+  cardBg: '#f8f9fa',
+};
+
+type AppointmentStatus = 'CONFIRMED' | 'PENDING' | 'COMPLETED' | 'CANCELLED';
 
 type Appointment = {
   id: string;
@@ -25,25 +30,22 @@ type Appointment = {
   provider_type: string;
   organization_name?: string;
   status: AppointmentStatus;
-  address: string;
+  location: string;
   consultation_fee: number;
-  avatar_url?: string;
-  reason?: string;
 };
 
-const upcomingAppointments: Appointment[] = [
+// Mock data
+const mockAppointments: Appointment[] = [
   {
     id: '1',
     date: '2024-12-28',
     time: '10:00 AM',
     provider_name: 'Dr. María González',
-    provider_type: 'Cardiólogo',
+    provider_type: 'Cardióloga',
     organization_name: 'Centro Médico Integral',
     status: 'CONFIRMED',
-    address: 'Av. Reforma 123, Col. Roma Norte',
+    location: 'Col. Roma Norte, CDMX',
     consultation_fee: 800,
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    reason: 'Revisión cardiológica de rutina'
   },
   {
     id: '2',
@@ -53,68 +55,37 @@ const upcomingAppointments: Appointment[] = [
     provider_type: 'Médico General',
     organization_name: 'Clínica San Miguel',
     status: 'PENDING',
-    address: 'Calle Condesa 456, Col. Condesa',
+    location: 'Col. Condesa, CDMX',
     consultation_fee: 600,
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    reason: 'Consulta general'
-  }
-];
-
-const pastAppointments: Appointment[] = [
-  {
-    id: '3',
-    date: '2024-12-15',
-    time: '11:00 AM',
-    provider_name: 'Dra. Ana Martínez',
-    provider_type: 'Dermatólogo',
-    organization_name: 'Instituto Dermatológico',
-    status: 'COMPLETED',
-    address: 'Av. Polanco 789, Col. Polanco',
-    consultation_fee: 750,
-    avatar_url: 'https://images.unsplash.com/photo-1594824047323-65b2b4e20c9e?w=150&h=150&fit=crop&crop=face',
-    reason: 'Revisión de lunares'
   },
   {
-    id: '4',
-    date: '2024-12-10',
+    id: '3',
+    date: '2024-12-25',
     time: '2:00 PM',
-    provider_name: 'Dr. Roberto Silva',
-    provider_type: 'Pediatra',
-    organization_name: 'Hospital Infantil',
-    status: 'CANCELLED',
-    address: 'Calle Del Valle 321, Col. Del Valle',
-    consultation_fee: 650,
-    avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-    reason: 'Consulta pediátrica'
-  }
+    provider_name: 'Dra. Ana Martínez',
+    provider_type: 'Dermatóloga',
+    organization_name: 'Instituto Dermatológico',
+    status: 'COMPLETED',
+    location: 'Col. Polanco, CDMX',
+    consultation_fee: 750,
+  },
 ];
 
 export default function MisCitasScreen() {
   const router = useRouter();
-  const { isDarkMode } = useTheme();
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Simular carga de datos
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
 
   const getStatusColor = (status: AppointmentStatus) => {
     switch (status) {
       case 'CONFIRMED':
-        return Colors.light.success;
+        return COLORS.success;
       case 'PENDING':
-        return '#f59e0b';
-      case 'CANCELLED':
-        return Colors.light.error;
+        return COLORS.warning;
       case 'COMPLETED':
-        return Colors.light.primary;
+        return COLORS.primary;
+      case 'CANCELLED':
+        return COLORS.error;
       default:
-        return Colors.light.textSecondary;
+        return COLORS.textSecondary;
     }
   };
 
@@ -124,12 +95,27 @@ export default function MisCitasScreen() {
         return 'Confirmada';
       case 'PENDING':
         return 'Pendiente';
-      case 'CANCELLED':
-        return 'Cancelada';
       case 'COMPLETED':
         return 'Completada';
+      case 'CANCELLED':
+        return 'Cancelada';
       default:
         return 'Desconocido';
+    }
+  };
+
+  const getStatusIcon = (status: AppointmentStatus) => {
+    switch (status) {
+      case 'CONFIRMED':
+        return 'checkmark-circle';
+      case 'PENDING':
+        return 'time';
+      case 'COMPLETED':
+        return 'checkmark-done-circle';
+      case 'CANCELLED':
+        return 'close-circle';
+      default:
+        return 'help-circle';
     }
   };
 
@@ -137,151 +123,113 @@ export default function MisCitasScreen() {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
       weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      month: 'long'
     });
   };
 
-  const handleAppointmentPress = (appointment: Appointment) => {
+  const handleViewAppointment = (appointment: Appointment) => {
     router.push({
       pathname: '/consulta/consultorio/detalles-cita',
-      params: { appointmentId: appointment.id }
+      params: { 
+        appointmentId: appointment.id,
+        providerId: appointment.id
+      }
     });
-  };
-
-  const handleReschedule = (appointmentId: string) => {
-    Alert.alert(
-      'Reprogramar Cita',
-      '¿Estás seguro de que quieres reprogramar esta cita?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Reprogramar', 
-          onPress: () => {
-            // TODO: Implementar lógica de reprogramación
-            Alert.alert('Éxito', 'Cita reprogramada exitosamente');
-          }
-        }
-      ]
-    );
-  };
-
-  const handleCancel = (appointmentId: string) => {
-    Alert.alert(
-      'Cancelar Cita',
-      '¿Estás seguro de que quieres cancelar esta cita?',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Sí, cancelar', 
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implementar lógica de cancelación
-            Alert.alert('Éxito', 'Cita cancelada exitosamente');
-          }
-        }
-      ]
-    );
   };
 
   const renderAppointment = ({ item }: { item: Appointment }) => (
     <TouchableOpacity 
-      style={[styles.appointmentCard, {
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-      }]}
-      onPress={() => handleAppointmentPress(item)}
+      style={styles.appointmentCard}
+      onPress={() => handleViewAppointment(item)}
     >
       <View style={styles.appointmentHeader}>
         <View style={styles.dateTimeContainer}>
-          <ThemedText style={styles.dateText}>{formatDate(item.date)}</ThemedText>
-          <ThemedText style={[styles.timeText, { color: Colors.light.primary }]}>
+          <Text style={styles.dateText}>
+            {formatDate(item.date)}
+          </Text>
+          <Text style={styles.timeText}>
             {item.time}
-          </ThemedText>
+          </Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <ThemedText style={styles.statusText}>{getStatusLabel(item.status)}</ThemedText>
+          <Ionicons 
+            name={getStatusIcon(item.status) as any} 
+            size={14} 
+            color="white" 
+          />
+          <Text style={styles.statusText}>
+            {getStatusLabel(item.status)}
+          </Text>
         </View>
       </View>
-
-      <View style={styles.providerInfo}>
-        <ThemedText style={styles.providerName}>{item.provider_name}</ThemedText>
-        <ThemedText style={[styles.providerType, {
-          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-        }]}>
+      
+      <View style={styles.appointmentInfo}>
+        <Text style={styles.providerName}>
+          {item.provider_name}
+        </Text>
+        <Text style={styles.providerType}>
           {item.provider_type}
-        </ThemedText>
+        </Text>
         {item.organization_name && (
-          <ThemedText style={[styles.organizationName, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
+          <Text style={styles.organizationName}>
             {item.organization_name}
-          </ThemedText>
+          </Text>
         )}
       </View>
 
       <View style={styles.appointmentDetails}>
-        <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={16} color={Colors.light.primary} />
-          <ThemedText style={[styles.detailText, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
-            {item.address}
-          </ThemedText>
+        <View style={styles.detailItem}>
+          <Ionicons name="location-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.detailText}>
+            {item.location}
+          </Text>
         </View>
-        
-        {item.reason && (
-          <View style={styles.detailRow}>
-            <Ionicons name="document-text-outline" size={16} color={Colors.light.primary} />
-            <ThemedText style={[styles.detailText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {item.reason}
-            </ThemedText>
-          </View>
-        )}
-
-        <View style={styles.detailRow}>
-          <Ionicons name="card-outline" size={16} color={Colors.light.primary} />
-          <ThemedText style={[styles.priceText, { color: Colors.light.primary }]}>
+        <View style={styles.detailItem}>
+          <Ionicons name="cash-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.detailText}>
             ${item.consultation_fee}
-          </ThemedText>
+          </Text>
         </View>
       </View>
-
-      {/* Actions for upcoming appointments */}
-      {activeTab === 'upcoming' && item.status !== 'CANCELLED' && (
-        <View style={styles.actionsContainer}>
+      
+      <View style={styles.appointmentFooter}>
+        <View style={styles.actionButtons}>
           <TouchableOpacity 
-            style={[styles.actionButton, styles.rescheduleButton]}
-            onPress={() => handleReschedule(item.id)}
+            style={styles.actionButton}
+            onPress={() => handleViewAppointment(item)}
           >
-            <Ionicons name="calendar-outline" size={16} color={Colors.light.primary} />
-            <ThemedText style={[styles.actionButtonText, { color: Colors.light.primary }]}>
-              Reprogramar
-            </ThemedText>
+            <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
+            <Text style={styles.actionButtonText}>
+              Ver detalles
+            </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.cancelButton]}
-            onPress={() => handleCancel(item.id)}
-          >
-            <Ionicons name="close-outline" size={16} color={Colors.light.error} />
-            <ThemedText style={[styles.actionButtonText, { color: Colors.light.error }]}>
-              Cancelar
-            </ThemedText>
-          </TouchableOpacity>
+          {item.status === 'COMPLETED' && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.rateButton]}
+              onPress={() => router.push({
+                pathname: '/consulta/consultorio/calificar-cita',
+                params: { 
+                  appointmentId: item.id,
+                  providerId: item.id
+                }
+              })}
+            >
+              <Ionicons name="star-outline" size={16} color={COLORS.warning} />
+              <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
+                Calificar
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
-      )}
+        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+      </View>
     </TouchableOpacity>
   );
 
-  const currentData = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments;
-
   return (
-    <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -289,100 +237,99 @@ export default function MisCitasScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
-        <ThemedText style={styles.title}>Mis Citas</ThemedText>
+        <Text style={styles.title}>Mis Citas</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Tab Navigation */}
-      <View style={[styles.tabContainer, {
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-      }]}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'upcoming' && styles.activeTab,
-            { backgroundColor: activeTab === 'upcoming' ? Colors.light.primary : 'transparent' }
-          ]}
-          onPress={() => setActiveTab('upcoming')}
-        >
-          <ThemedText style={[
-            styles.tabText,
-            { color: activeTab === 'upcoming' ? 'white' : Colors.light.primary }
-          ]}>
-            Próximas ({upcomingAppointments.length})
-          </ThemedText>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'past' && styles.activeTab,
-            { backgroundColor: activeTab === 'past' ? Colors.light.primary : 'transparent' }
-          ]}
-          onPress={() => setActiveTab('past')}
-        >
-          <ThemedText style={[
-            styles.tabText,
-            { color: activeTab === 'past' ? 'white' : Colors.light.primary }
-          ]}>
-            Pasadas ({pastAppointments.length})
-          </ThemedText>
-        </TouchableOpacity>
+      {/* Stats Header */}
+      <View style={styles.statsHeader}>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>
+            {mockAppointments.length}
+          </Text>
+          <Text style={styles.statLabel}>
+            Total de citas
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>
+            {mockAppointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
+          </Text>
+          <Text style={styles.statLabel}>
+            Próximas
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>
+            {mockAppointments.filter(apt => apt.status === 'COMPLETED').length}
+          </Text>
+          <Text style={styles.statLabel}>
+            Completadas
+          </Text>
+        </View>
       </View>
 
       {/* Appointments List */}
-      <FlatList
-        data={currentData}
-        renderItem={renderAppointment}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.appointmentsList}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[Colors.light.primary]}
-            tintColor={Colors.light.primary}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons 
-              name={activeTab === 'upcoming' ? 'calendar-outline' : 'time-outline'} 
-              size={64} 
-              color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
-            />
-            <ThemedText style={[styles.emptyTitle, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {activeTab === 'upcoming' ? 'No tienes citas próximas' : 'No tienes citas pasadas'}
-            </ThemedText>
-            <ThemedText style={[styles.emptyText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {activeTab === 'upcoming' 
-                ? 'Agenda tu primera cita médica' 
-                : 'Tus citas completadas aparecerán aquí'
-              }
-            </ThemedText>
-          </View>
-        }
-      />
-    </ThemedView>
+      <View style={styles.content}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Historial de Citas
+          </Text>
+          <TouchableOpacity 
+            style={styles.newAppointmentButton}
+            onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
+          >
+            <Ionicons name="add" size={16} color="white" />
+            <Text style={styles.newAppointmentButtonText}>
+              Nueva cita
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <FlatList
+          data={mockAppointments}
+          renderItem={renderAppointment}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.appointmentsList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="calendar-outline" size={64} color={COLORS.textSecondary} />
+              <Text style={styles.emptyTitle}>
+                No tienes citas registradas
+              </Text>
+              <Text style={styles.emptyText}>
+                Agenda tu primera cita médica para comenzar
+              </Text>
+              <TouchableOpacity 
+                style={styles.emptyButton}
+                onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
+              >
+                <Ionicons name="add" size={20} color="white" />
+                <Text style={styles.emptyButtonText}>
+                  Agendar primera cita
+                </Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
     paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
   },
   backButton: {
@@ -393,40 +340,76 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    color: COLORS.textPrimary,
   },
   headerSpacer: {
     width: 40,
   },
-  tabContainer: {
+  statsHeader: {
     flexDirection: 'row',
-    margin: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  statItem: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  activeTab: {
-    // Styles applied via backgroundColor
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: COLORS.primary,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
-  appointmentsList: {
+  content: {
+    flex: 1,
     padding: 16,
     paddingTop: 0,
   },
-  appointmentCard: {
-    borderRadius: 12,
-    padding: 16,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+  },
+  newAppointmentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  newAppointmentButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  appointmentsList: {
+    gap: 12,
+  },
+  appointmentCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
+    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -436,7 +419,7 @@ const styles = StyleSheet.create({
   appointmentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
   },
   dateTimeContainer: {
@@ -445,93 +428,120 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
+    color: COLORS.textPrimary,
     textTransform: 'capitalize',
   },
   timeText: {
     fontSize: 14,
-    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
   },
   statusText: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
   },
-  providerInfo: {
+  appointmentInfo: {
     marginBottom: 12,
   },
   providerName: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: COLORS.textPrimary,
   },
   providerType: {
     fontSize: 14,
     marginBottom: 2,
+    color: COLORS.textSecondary,
   },
   organizationName: {
     fontSize: 13,
+    color: COLORS.textSecondary,
   },
   appointmentDetails: {
     gap: 8,
     marginBottom: 12,
   },
-  detailRow: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   detailText: {
-    fontSize: 13,
-    flex: 1,
-  },
-  priceText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    color: COLORS.textSecondary,
   },
-  actionsContainer: {
+  appointmentFooter: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+    borderTopColor: COLORS.border,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 16,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: 4,
+  },
+  rateButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: COLORS.warning + '20',
     borderRadius: 8,
-    borderWidth: 1,
-  },
-  rescheduleButton: {
-    borderColor: Colors.light.primary,
-  },
-  cancelButton: {
-    borderColor: Colors.light.error,
   },
   actionButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
+    color: COLORS.primary,
   },
   emptyState: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 16,
     marginBottom: 8,
+    textAlign: 'center',
+    color: COLORS.textPrimary,
   },
   emptyText: {
     fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    gap: 8,
+  },
+  emptyButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 }); 

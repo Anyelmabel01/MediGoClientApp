@@ -1,9 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Paleta de colores oficial MediGo
+const COLORS = {
+  primary: '#00A0B0',
+  primaryLight: '#33b5c2',
+  primaryDark: '#006070',
+  accent: '#70D0E0',
+  background: '#FFFFFF',
+  textPrimary: '#212529',
+  textSecondary: '#6C757D',
+  white: '#FFFFFF',
+  success: '#28a745',
+  error: '#dc3545',
+  warning: '#ffc107',
+  border: '#E9ECEF',
+  cardBg: '#f8f9fa',
+};
 
 type Appointment = {
   id: string;
@@ -11,25 +26,25 @@ type Appointment = {
   hora: string;
   nombreProveedor: string;
   tipoProveedor: string;
-  estado: 'pendiente' | 'confirmada' | 'cancelada';
+  estado: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
 };
 
 // Datos de ejemplo
 const proximasCitas: Appointment[] = [
   {
     id: '1',
-    fecha: '12 Nov 2023',
+    fecha: '28 Dic 2024',
     hora: '10:00 AM',
-    nombreProveedor: 'Dr. Juan Pérez',
-    tipoProveedor: 'Médico General',
+    nombreProveedor: 'Dr. María González',
+    tipoProveedor: 'Cardióloga',
     estado: 'confirmada',
   },
   {
     id: '2',
-    fecha: '15 Nov 2023',
+    fecha: '30 Dic 2024',
     hora: '3:30 PM',
-    nombreProveedor: 'Dra. María Rodríguez',
-    tipoProveedor: 'Cardióloga',
+    nombreProveedor: 'Dr. Carlos Ramírez',
+    tipoProveedor: 'Médico General',
     estado: 'pendiente',
   },
 ];
@@ -37,26 +52,36 @@ const proximasCitas: Appointment[] = [
 export default function ConsultorioScreen() {
   const router = useRouter();
 
-    const handleNuevaCita = () => {    router.push('/consulta/consultorio/buscar-proveedores');  };
+  const handleNuevaCita = () => {
+    router.push('/consulta/consultorio/buscar-proveedores');
+  };
 
-    const handleMisCitas = () => {    router.push('/consulta/consultorio/mis-citas');  };
+  const handleMisCitas = () => {
+    router.push('/consulta/consultorio/mis-citas');
+  };
 
-  const handleDetallesCita = (id: string) => {
-    // Corregido para usar una ruta de navegación válida
-    router.push('/consulta');
-    // En una implementación real, aquí navegaríamos a los detalles de la cita
+  const handleDetallesCita = (appointment: Appointment) => {
+    router.push({
+      pathname: '/consulta/consultorio/detalles-cita',
+      params: { 
+        appointmentId: appointment.id,
+        providerId: appointment.id // Using same ID for demo
+      }
+    });
   };
 
   const getColorEstado = (estado: Appointment['estado']) => {
     switch (estado) {
       case 'confirmada':
-        return '#4CAF50';
+        return COLORS.success;
       case 'pendiente':
-        return '#FFC107';
+        return COLORS.warning;
       case 'cancelada':
-        return '#F44336';
+        return COLORS.error;
+      case 'completada':
+        return COLORS.primary;
       default:
-        return '#757575';
+        return COLORS.textSecondary;
     }
   };
 
@@ -68,67 +93,182 @@ export default function ConsultorioScreen() {
         return 'Pendiente';
       case 'cancelada':
         return 'Cancelada';
+      case 'completada':
+        return 'Completada';
       default:
-        return '';
+        return 'Desconocido';
+    }
+  };
+
+  const getIconEstado = (estado: Appointment['estado']) => {
+    switch (estado) {
+      case 'confirmada':
+        return 'checkmark-circle';
+      case 'pendiente':
+        return 'time';
+      case 'cancelada':
+        return 'close-circle';
+      case 'completada':
+        return 'checkmark-done-circle';
+      default:
+        return 'help-circle';
     }
   };
 
   const renderItemCita = ({ item }: { item: Appointment }) => (
     <TouchableOpacity 
       style={styles.itemCita}
-      onPress={() => handleDetallesCita(item.id)}
+      onPress={() => handleDetallesCita(item)}
     >
-      <View style={styles.fechaCita}>
-        <ThemedText style={styles.diaFecha}>{item.fecha}</ThemedText>
-        <ThemedText style={styles.horaCita}>{item.hora}</ThemedText>
-      </View>
-      <View style={styles.infoCita}>
-        <ThemedText style={styles.nombreDoctor}>{item.nombreProveedor}</ThemedText>
-        <ThemedText style={styles.especialidadDoctor}>{item.tipoProveedor}</ThemedText>
+      <View style={styles.citaHeader}>
+        <View style={styles.fechaCita}>
+          <Text style={styles.diaFecha}>{item.fecha}</Text>
+          <Text style={styles.horaCita}>{item.hora}</Text>
+        </View>
         <View style={[styles.badgeEstado, { backgroundColor: getColorEstado(item.estado) }]}>
-          <ThemedText style={styles.textoEstado}>{getTextoEstado(item.estado)}</ThemedText>
+          <Ionicons 
+            name={getIconEstado(item.estado) as any} 
+            size={14} 
+            color="white" 
+          />
+          <Text style={styles.textoEstado}>{getTextoEstado(item.estado)}</Text>
         </View>
       </View>
-      <View style={styles.contenedorFlecha}>
-        <Ionicons name="chevron-forward" size={20} color="#999" />
+      
+      <View style={styles.infoCita}>
+        <Text style={styles.nombreDoctor}>{item.nombreProveedor}</Text>
+        <Text style={styles.especialidadDoctor}>{item.tipoProveedor}</Text>
+      </View>
+      
+      <View style={styles.citaFooter}>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleDetallesCita(item)}
+          >
+            <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
+            <Text style={styles.actionButtonText}>Ver detalles</Text>
+          </TouchableOpacity>
+          {item.estado === 'completada' && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.rateButton]}
+              onPress={() => router.push({
+                pathname: '/consulta/consultorio/calificar-cita',
+                params: { 
+                  appointmentId: item.id,
+                  providerId: item.id
+                }
+              })}
+            >
+              <Ionicons name="star-outline" size={16} color={COLORS.warning} />
+              <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
+                Calificar
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <ThemedView style={styles.contenedor}>
-      <StatusBar style="auto" />
+    <View style={styles.contenedor}>
+      <StatusBar style="dark" />
       
+      {/* Header */}
       <View style={styles.cabecera}>
         <TouchableOpacity 
           style={styles.botonRegresar}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
-        <ThemedText style={styles.titulo}>Consultorio</ThemedText>
+        <Text style={styles.titulo}>Consultorio</Text>
+        <View style={styles.headerSpacer} />
       </View>
       
+      {/* Welcome Card */}
+      <View style={styles.welcomeCard}>
+        <View style={styles.welcomeContent}>
+          <View style={styles.welcomeInfo}>
+            <Text style={styles.welcomeTitle}>¡Bienvenido al Consultorio!</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Agenda citas con los mejores médicos cerca de ti
+            </Text>
+          </View>
+          <View style={styles.welcomeIcon}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="medical" size={32} color={COLORS.primary} />
+            </View>
+          </View>
+        </View>
+      </View>
+      
+      {/* Action Buttons */}
       <View style={styles.contenedorBotones}>
         <TouchableOpacity 
-          style={styles.botonAccion}
+          style={[styles.botonAccion, styles.botonPrimario]}
           onPress={handleNuevaCita}
         >
-          <Ionicons name="add-circle" size={24} color="white" />
-          <ThemedText style={styles.textoBoton}>Nueva Cita</ThemedText>
+          <View style={styles.botonContent}>
+            <View style={styles.botonIconContainer}>
+              <Ionicons name="add-circle" size={24} color="white" />
+            </View>
+            <View style={styles.botonTextContainer}>
+              <Text style={styles.botonTitulo}>Nueva Cita</Text>
+              <Text style={styles.botonSubtitulo}>Buscar proveedores</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="white" />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.botonAccion, styles.botonSecundario]}
           onPress={handleMisCitas}
         >
-          <Ionicons name="calendar" size={24} color="white" />
-          <ThemedText style={styles.textoBoton}>Mis Citas</ThemedText>
+          <View style={styles.botonContent}>
+            <View style={styles.botonIconContainer}>
+              <Ionicons name="calendar" size={24} color="white" />
+            </View>
+            <View style={styles.botonTextContainer}>
+              <Text style={styles.botonTitulo}>Mis Citas</Text>
+              <Text style={styles.botonSubtitulo}>Ver programadas</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="white" />
         </TouchableOpacity>
       </View>
       
+      {/* Quick Stats */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Ionicons name="calendar-outline" size={24} color={COLORS.primary} />
+          <Text style={styles.statNumber}>{proximasCitas.length}</Text>
+          <Text style={styles.statLabel}>Próximas citas</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="people-outline" size={24} color={COLORS.success} />
+          <Text style={styles.statNumber}>12</Text>
+          <Text style={styles.statLabel}>Doctores favoritos</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="star-outline" size={24} color={COLORS.warning} />
+          <Text style={styles.statNumber}>4.8</Text>
+          <Text style={styles.statLabel}>Calificación promedio</Text>
+        </View>
+      </View>
+      
+      {/* Upcoming Appointments */}
       <View style={styles.seccionProximas}>
-        <ThemedText style={styles.tituloSeccion}>Próximas Citas</ThemedText>
+        <View style={styles.seccionHeader}>
+          <Text style={styles.tituloSeccion}>Próximas Citas</Text>
+          {proximasCitas.length > 0 && (
+            <TouchableOpacity onPress={handleMisCitas}>
+              <Text style={styles.verTodas}>Ver todas</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         
         {proximasCitas.length > 0 ? (
           <FlatList
@@ -136,136 +276,320 @@ export default function ConsultorioScreen() {
             renderItem={renderItemCita}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listaCitas}
+            showsVerticalScrollIndicator={false}
           />
         ) : (
-          <ThemedView style={styles.estadoVacio}>
-            <Ionicons name="calendar-outline" size={50} color="#ccc" />
-            <ThemedText style={styles.textoVacio}>No tienes citas programadas</ThemedText>
-          </ThemedView>
+          <View style={styles.estadoVacio}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="calendar-outline" size={64} color={COLORS.textSecondary} />
+            </View>
+            <Text style={styles.textoVacio}>No tienes citas programadas</Text>
+            <Text style={styles.subtextoVacio}>
+              Agenda tu primera cita médica hoy mismo
+            </Text>
+            <TouchableOpacity 
+              style={styles.botonAgendar}
+              onPress={handleNuevaCita}
+            >
+              <Ionicons name="add" size={20} color="white" />
+              <Text style={styles.botonAgendarText}>Agendar ahora</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    padding: 16,
+    backgroundColor: COLORS.background,
+    paddingTop: 50,
   },
   cabecera: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    padding: 16,
+    paddingBottom: 8,
   },
   botonRegresar: {
-    padding: 5,
+    padding: 8,
   },
   titulo: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginLeft: 10,
+    color: COLORS.textPrimary,
+    flex: 1,
   },
-  contenedorBotones: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
+  headerSpacer: {
+    width: 40,
   },
-  botonAccion: {
-    backgroundColor: '#2D7FF9',
+  welcomeCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  welcomeContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  welcomeInfo: {
+    flex: 1,
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: COLORS.textPrimary,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  welcomeIcon: {
+    marginLeft: 16,
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary + '20',
+    alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    padding: 12,
-    flex: 0.48,
+  },
+  contenedorBotones: {
+    padding: 16,
+    gap: 12,
+  },
+  botonAccion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  botonPrimario: {
+    backgroundColor: COLORS.primary,
   },
   botonSecundario: {
-    backgroundColor: '#5C6BC0',
+    backgroundColor: COLORS.primaryDark,
   },
-  textoBoton: {
+  botonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  botonIconContainer: {
+    marginRight: 16,
+  },
+  botonTextContainer: {
+    flex: 1,
+  },
+  botonTitulo: {
     color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginBottom: 2,
+  },
+  botonSubtitulo: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 12,
+    marginBottom: 8,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 4,
+    color: COLORS.textPrimary,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   seccionProximas: {
     flex: 1,
+    padding: 16,
+    paddingTop: 8,
+  },
+  seccionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   tituloSeccion: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
+    color: COLORS.textPrimary,
+  },
+  verTodas: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   listaCitas: {
-    paddingBottom: 20,
+    gap: 12,
   },
   itemCita: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  citaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
   fechaCita: {
-    marginRight: 16,
-    alignItems: 'center',
-    minWidth: 70,
+    flex: 1,
   },
   diaFecha: {
     fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 16,
+    marginBottom: 2,
+    color: COLORS.textPrimary,
   },
   horaCita: {
-    fontSize: 13,
-    color: '#777',
-  },
-  infoCita: {
-    flex: 1,
-  },
-  nombreDoctor: {
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  especialidadDoctor: {
-    fontSize: 13,
-    color: '#777',
-    marginBottom: 6,
+    fontSize: 14,
+    color: COLORS.textSecondary,
   },
   badgeEstado: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
   },
   textoEstado: {
     color: 'white',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
   },
-  contenedorFlecha: {
-    marginLeft: 8,
+  infoCita: {
+    marginBottom: 12,
+  },
+  nombreDoctor: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+    color: COLORS.textPrimary,
+  },
+  especialidadDoctor: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  citaFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rateButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: COLORS.warning + '20',
+    borderRadius: 8,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   estadoVacio: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   textoVacio: {
-    marginTop: 16,
-    color: '#777',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtextoVacio: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  botonAgendar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    gap: 8,
+  },
+  botonAgendarText: {
+    color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
   },
 }); 

@@ -1,22 +1,27 @@
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import {
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
+import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-type ProviderType = 'GENERAL_DOCTOR' | 'CARDIOLOGIST' | 'DERMATOLOGIST' | 'PEDIATRICIAN' | 'NEUROLOGIST' | 'PSYCHIATRIST';
+// Paleta de colores oficial MediGo
+const COLORS = {
+  primary: '#00A0B0',
+  primaryLight: '#33b5c2',
+  primaryDark: '#006070',
+  accent: '#70D0E0',
+  background: '#FFFFFF',
+  textPrimary: '#212529',
+  textSecondary: '#6C757D',
+  white: '#FFFFFF',
+  success: '#28a745',
+  error: '#dc3545',
+  warning: '#ffc107',
+  border: '#E9ECEF',
+  cardBg: '#f8f9fa',
+};
+
+type ProviderType = 'ALL' | 'GENERAL_DOCTOR' | 'CARDIOLOGIST' | 'DERMATOLOGIST' | 'PEDIATRICIAN' | 'NEUROLOGIST' | 'PSYCHIATRIST';
 
 type Provider = {
   id: string;
@@ -24,70 +29,22 @@ type Provider = {
   provider_type: ProviderType;
   organization_name?: string;
   avatar_url?: string;
-  license_number: string;
-  bio: string;
   rating: number;
+  total_reviews: number;
   next_availability: string;
   consultation_fee: number;
   location: string;
+  distance?: string;
 };
 
-const mockProviders: Provider[] = [
-  {
-    id: '1',
-    display_name: 'Dr. María González',
-    provider_type: 'CARDIOLOGIST',
-    organization_name: 'Centro Médico Integral',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    license_number: 'CDL12345',
-    bio: 'Cardióloga con 15 años de experiencia en diagnóstico y tratamiento de enfermedades cardiovasculares.',
-    rating: 4.9,
-    next_availability: 'Hoy, 3:00 PM',
-    consultation_fee: 800,
-    location: 'Col. Roma Norte, CDMX'
-  },
-  {
-    id: '2',
-    display_name: 'Dr. Carlos Ramírez',
-    provider_type: 'GENERAL_DOCTOR',
-    organization_name: 'Clínica San Miguel',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    license_number: 'GDL67890',
-    bio: 'Médico general especializado en medicina familiar y atención primaria.',
-    rating: 4.7,
-    next_availability: 'Mañana, 10:00 AM',
-    consultation_fee: 600,
-    location: 'Col. Condesa, CDMX'
-  },
-  {
-    id: '3',
-    display_name: 'Dra. Ana Martínez',
-    provider_type: 'DERMATOLOGIST',
-    organization_name: 'Instituto Dermatológico',
-    avatar_url: 'https://images.unsplash.com/photo-1594824047323-65b2b4e20c9e?w=150&h=150&fit=crop&crop=face',
-    license_number: 'DRM54321',
-    bio: 'Dermatóloga certificada con especialización en dermatología estética y médica.',
-    rating: 4.8,
-    next_availability: 'Viernes, 2:30 PM',
-    consultation_fee: 750,
-    location: 'Col. Polanco, CDMX'
-  },
-  {
-    id: '4',
-    display_name: 'Dr. Roberto Silva',
-    provider_type: 'PEDIATRICIAN',
-    organization_name: 'Hospital Infantil',
-    avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-    license_number: 'PDT98765',
-    bio: 'Pediatra con amplia experiencia en atención infantil y adolescente.',
-    rating: 4.9,
-    next_availability: 'Lunes, 9:00 AM',
-    consultation_fee: 650,
-    location: 'Col. Del Valle, CDMX'
-  }
-];
+type FilterOption = {
+  id: ProviderType;
+  label: string;
+  icon: string;
+};
 
 const providerTypeLabels: Record<ProviderType, string> = {
+  'ALL': 'Todos',
   'GENERAL_DOCTOR': 'Médico General',
   'CARDIOLOGIST': 'Cardiólogo',
   'DERMATOLOGIST': 'Dermatólogo',
@@ -96,44 +53,80 @@ const providerTypeLabels: Record<ProviderType, string> = {
   'PSYCHIATRIST': 'Psiquiatra'
 };
 
+const filterOptions: FilterOption[] = [
+  { id: 'ALL', label: 'Todos', icon: 'medical-outline' },
+  { id: 'CARDIOLOGIST', label: 'Cardiología', icon: 'heart-outline' },
+  { id: 'GENERAL_DOCTOR', label: 'General', icon: 'person-outline' },
+  { id: 'DERMATOLOGIST', label: 'Dermatología', icon: 'body-outline' },
+  { id: 'PEDIATRICIAN', label: 'Pediatría', icon: 'happy-outline' },
+];
+
+const mockProviders: Provider[] = [
+  {
+    id: '1',
+    display_name: 'Dr. María González',
+    provider_type: 'CARDIOLOGIST',
+    organization_name: 'Centro Médico Integral',
+    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
+    rating: 4.9,
+    total_reviews: 127,
+    next_availability: 'Hoy, 3:00 PM',
+    consultation_fee: 800,
+    location: 'Col. Roma Norte',
+    distance: '1.2 km'
+  },
+  {
+    id: '2',
+    display_name: 'Dr. Carlos Ramírez',
+    provider_type: 'GENERAL_DOCTOR',
+    organization_name: 'Clínica San Miguel',
+    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
+    rating: 4.7,
+    total_reviews: 89,
+    next_availability: 'Mañana, 10:00 AM',
+    consultation_fee: 600,
+    location: 'Col. Condesa',
+    distance: '2.1 km'
+  },
+  {
+    id: '3',
+    display_name: 'Dra. Ana Martínez',
+    provider_type: 'DERMATOLOGIST',
+    organization_name: 'Instituto Dermatológico',
+    avatar_url: 'https://images.unsplash.com/photo-1594824047323-65b2b4e20c9e?w=150&h=150&fit=crop&crop=face',
+    rating: 4.8,
+    total_reviews: 156,
+    next_availability: 'Viernes, 2:30 PM',
+    consultation_fee: 750,
+    location: 'Col. Polanco',
+    distance: '3.5 km'
+  },
+  {
+    id: '4',
+    display_name: 'Dr. Luis Hernández',
+    provider_type: 'PEDIATRICIAN',
+    organization_name: 'Hospital Infantil',
+    avatar_url: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&h=150&fit=crop&crop=face',
+    rating: 4.6,
+    total_reviews: 203,
+    next_availability: 'Lunes, 9:00 AM',
+    consultation_fee: 550,
+    location: 'Col. Del Valle',
+    distance: '4.2 km'
+  }
+];
+
 export default function BuscarProveedoresScreen() {
   const router = useRouter();
-  const { isDarkMode } = useTheme();
-  const [searchText, setSearchText] = useState('');
-  const [selectedProviderType, setSelectedProviderType] = useState<ProviderType | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [filteredProviders, setFilteredProviders] = useState(mockProviders);
-  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<ProviderType>('ALL');
 
-  const handleSearch = () => {
-    let filtered = mockProviders;
-
-    if (searchText) {
-      filtered = filtered.filter(provider => 
-        provider.display_name.toLowerCase().includes(searchText.toLowerCase()) ||
-        provider.organization_name?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    if (selectedProviderType) {
-      filtered = filtered.filter(provider => provider.provider_type === selectedProviderType);
-    }
-
-    if (selectedLocation) {
-      filtered = filtered.filter(provider => 
-        provider.location.toLowerCase().includes(selectedLocation.toLowerCase())
-      );
-    }
-
-    setFilteredProviders(filtered);
-  };
-
-  const clearFilters = () => {
-    setSearchText('');
-    setSelectedProviderType(null);
-    setSelectedLocation('');
-    setFilteredProviders(mockProviders);
-  };
+  const filteredProviders = mockProviders.filter(provider => {
+    const matchesSearch = provider.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         providerTypeLabels[provider.provider_type].toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = selectedFilter === 'ALL' || provider.provider_type === selectedFilter;
+    return matchesSearch && matchesFilter;
+  });
 
   const handleProviderSelect = (provider: Provider) => {
     router.push({
@@ -142,27 +135,27 @@ export default function BuscarProveedoresScreen() {
     });
   };
 
-  const renderStarRating = (rating: number) => {
+  const renderStarRating = (rating: number, size: number = 12) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(
-        <Ionicons key={i} name="star" size={14} color="#fbbf24" />
+        <Ionicons key={i} name="star" size={size} color="#fbbf24" />
       );
     }
 
     if (hasHalfStar) {
       stars.push(
-        <Ionicons key="half" name="star-half" size={14} color="#fbbf24" />
+        <Ionicons key="half" name="star-half" size={size} color="#fbbf24" />
       );
     }
 
     const emptyStars = 5 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
       stars.push(
-        <Ionicons key={`empty-${i}`} name="star-outline" size={14} color="#fbbf24" />
+        <Ionicons key={`empty-${i}`} name="star-outline" size={size} color="#fbbf24" />
       );
     }
 
@@ -171,403 +164,420 @@ export default function BuscarProveedoresScreen() {
 
   const renderProvider = ({ item }: { item: Provider }) => (
     <TouchableOpacity 
-      style={[styles.providerCard, {
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-      }]}
+      style={styles.providerCard}
       onPress={() => handleProviderSelect(item)}
+      activeOpacity={0.7}
     >
-      <View style={styles.providerHeader}>
+      {/* Header compacto */}
+      <View style={styles.cardHeader}>
         <Image 
-          source={{ uri: item.avatar_url || 'https://via.placeholder.com/60' }}
+          source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
           style={styles.avatar}
         />
         <View style={styles.providerInfo}>
-          <ThemedText style={styles.providerName}>{item.display_name}</ThemedText>
-          <ThemedText style={[styles.providerType, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
+          <Text style={styles.providerName} numberOfLines={1}>
+            {item.display_name}
+          </Text>
+          <Text style={styles.providerType} numberOfLines={1}>
             {providerTypeLabels[item.provider_type]}
-          </ThemedText>
-          {item.organization_name && (
-            <ThemedText style={[styles.organizationName, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {item.organization_name}
-            </ThemedText>
-          )}
-        </View>
-        <View style={styles.priceContainer}>
-          <ThemedText style={[styles.price, { color: Colors.light.primary }]}>
-            ${item.consultation_fee}
-          </ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.providerDetails}>
-        <View style={styles.ratingContainer}>
-          <View style={styles.stars}>
-            {renderStarRating(item.rating)}
+          </Text>
+          <View style={styles.ratingRow}>
+            <View style={styles.stars}>
+              {renderStarRating(item.rating)}
+            </View>
+            <Text style={styles.ratingText}>
+              {item.rating} ({item.total_reviews})
+            </Text>
           </View>
-          <ThemedText style={[styles.ratingText, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
-            {item.rating} ({Math.floor(Math.random() * 50) + 10} reseñas)
-          </ThemedText>
         </View>
-
-        <View style={styles.availabilityContainer}>
-          <Ionicons name="time-outline" size={16} color={Colors.light.primary} />
-          <ThemedText style={[styles.availability, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
-            Disponible: {item.next_availability}
-          </ThemedText>
-        </View>
-
-        <View style={styles.locationContainer}>
-          <Ionicons name="location-outline" size={16} color={Colors.light.primary} />
-          <ThemedText style={[styles.location, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
-            {item.location}
-          </ThemedText>
+        <View style={styles.priceColumn}>
+          <Text style={styles.price}>
+            ${item.consultation_fee}
+          </Text>
+          <Text style={styles.priceLabel}>
+            consulta
+          </Text>
         </View>
       </View>
 
-      <View style={styles.actionContainer}>
+      {/* Detalles compactos */}
+      <View style={styles.cardDetails}>
+        <View style={styles.detailRow}>
+          <Ionicons name="time-outline" size={14} color={COLORS.success} />
+          <Text style={styles.detailText} numberOfLines={1}>
+            {item.next_availability}
+          </Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Ionicons name="location-outline" size={14} color={COLORS.primary} />
+          <Text style={styles.detailText} numberOfLines={1}>
+            {item.location} • {item.distance}
+          </Text>
+        </View>
+      </View>
+
+      {/* Footer compacto */}
+      <View style={styles.cardFooter}>
         <TouchableOpacity 
-          style={[styles.viewProfileButton, { backgroundColor: Colors.light.primary }]}
+          style={styles.quickBookButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            router.push({
+              pathname: '/consulta/consultorio/agendar-cita',
+              params: { 
+                providerId: item.id,
+                selectedDate: 'today',
+                selectedTime: '3:00 PM'
+              }
+            });
+          }}
+        >
+          <Ionicons name="calendar" size={14} color="white" />
+          <Text style={styles.quickBookText}>
+            Agendar
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.profileButton}
           onPress={() => handleProviderSelect(item)}
         >
-          <ThemedText style={styles.viewProfileText}>Ver perfil</ThemedText>
+          <Text style={styles.profileButtonText}>
+            Ver perfil
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
+  const renderFilter = ({ item }: { item: FilterOption }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterChip,
+        selectedFilter === item.id && styles.selectedFilterChip
+      ]}
+      onPress={() => setSelectedFilter(item.id)}
+      activeOpacity={0.7}
+    >
+      <Ionicons 
+        name={item.icon as any} 
+        size={16} 
+        color={selectedFilter === item.id ? COLORS.white : COLORS.primary} 
+      />
+      <Text style={[
+        styles.filterText,
+        { color: selectedFilter === item.id ? COLORS.white : COLORS.primary }
+      ]}>
+        {item.label}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       
-      {/* Header */}
+      {/* Header compacto */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
-        <ThemedText style={styles.title}>Buscar Proveedores</ThemedText>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Ionicons name="options-outline" size={24} color={Colors.light.primary} />
+        <Text style={styles.title}>Buscar Proveedores</Text>
+        <TouchableOpacity style={styles.filterToggle}>
+          <Ionicons name="options-outline" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
-      <View style={[styles.searchContainer, {
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-        borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-      }]}>
-        <Ionicons name="search" size={20} color={Colors.light.primary} />
+      {/* Barra de búsqueda compacta */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={18} color={COLORS.textSecondary} />
         <TextInput
-          style={[styles.searchInput, {
-            color: isDarkMode ? Colors.dark.text : Colors.light.text
-          }]}
-          placeholder="Buscar por nombre o clínica..."
-          placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
+          style={styles.searchInput}
+          placeholder="Buscar médico o especialidad..."
+          placeholderTextColor={COLORS.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchText('')}>
-            <Ionicons name="close-circle" size={20} color={Colors.light.textSecondary} />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Filters */}
-      {showFilters && (
-        <View style={[styles.filtersContainer, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-        }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[styles.filterChip, {
-                  backgroundColor: selectedProviderType === null ? Colors.light.primary : 'transparent',
-                  borderColor: Colors.light.primary
-                }]}
-                onPress={() => setSelectedProviderType(null)}
-              >
-                <ThemedText style={[styles.filterChipText, {
-                  color: selectedProviderType === null ? 'white' : Colors.light.primary
-                }]}>
-                  Todos
-                </ThemedText>
-              </TouchableOpacity>
-              
-              {Object.entries(providerTypeLabels).map(([key, label]) => (
-                <TouchableOpacity
-                  key={key}
-                  style={[styles.filterChip, {
-                    backgroundColor: selectedProviderType === key ? Colors.light.primary : 'transparent',
-                    borderColor: Colors.light.primary
-                  }]}
-                  onPress={() => setSelectedProviderType(key as ProviderType)}
-                >
-                  <ThemedText style={[styles.filterChipText, {
-                    color: selectedProviderType === key ? 'white' : Colors.light.primary
-                  }]}>
-                    {label}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-          
-          <View style={styles.filterActions}>
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <ThemedText style={[styles.searchButtonText, { color: Colors.light.primary }]}>
-                Buscar
-              </ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
-              <ThemedText style={[styles.clearButtonText, { color: Colors.light.textSecondary }]}>
-                Limpiar
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Results */}
-      <View style={styles.resultsHeader}>
-        <ThemedText style={styles.resultsCount}>
-          {filteredProviders.length} proveedores encontrados
-        </ThemedText>
+      {/* Filtros horizontales compactos */}
+      <View style={styles.filtersSection}>
+        <FlatList
+          data={filterOptions}
+          renderItem={renderFilter}
+          keyExtractor={item => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContainer}
+        />
       </View>
 
+      {/* Resultados */}
+      <View style={styles.resultsHeader}>
+        <Text style={styles.resultsCount}>
+          {filteredProviders.length} proveedores encontrados
+        </Text>
+        <TouchableOpacity style={styles.sortButton}>
+          <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
+          <Text style={styles.sortText}>Ordenar</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lista de proveedores */}
       <FlatList
         data={filteredProviders}
         renderItem={renderProvider}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.providersList}
         showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={64} color={Colors.light.textSecondary} />
-            <ThemedText style={[styles.emptyTitle, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
+            <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
+            <Text style={styles.emptyTitle}>
               No se encontraron proveedores
-            </ThemedText>
-            <ThemedText style={[styles.emptyText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              Intenta ajustar los filtros de búsqueda
-            </ThemedText>
+            </Text>
+            <Text style={styles.emptyText}>
+              Intenta cambiar los filtros o términos de búsqueda
+            </Text>
           </View>
         }
       />
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
     paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   backButton: {
     padding: 8,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
+    color: COLORS.textPrimary,
     flex: 1,
     textAlign: 'center',
   },
-  filterButton: {
+  filterToggle: {
     padding: 8,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
     borderWidth: 1,
-    gap: 10,
+    borderColor: COLORS.border,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+  filtersSection: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
   },
   filtersContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    margin: 16,
-    marginTop: 0,
-    padding: 16,
-  },
-  filterRow: {
-    flexDirection: 'row',
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  filterActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    gap: 4,
   },
-  searchButton: {
-    padding: 8,
+  selectedFilterChip: {
+    backgroundColor: COLORS.primary,
   },
-  searchButtonText: {
-    fontSize: 16,
+  filterText: {
+    fontSize: 12,
     fontWeight: '600',
   },
-  clearButton: {
-    padding: 8,
-  },
-  clearButtonText: {
-    fontSize: 16,
-  },
   resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingVertical: 8,
   },
   resultsCount: {
     fontSize: 14,
-    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sortText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   providersList: {
-    padding: 16,
-    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  separator: {
+    height: 12,
   },
   providerCard: {
+    backgroundColor: COLORS.white,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
     borderWidth: 1,
+    borderColor: COLORS.border,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  providerHeader: {
+  cardHeader: {
     flexDirection: 'row',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     marginRight: 12,
   },
   providerInfo: {
     flex: 1,
   },
   providerName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
+    color: COLORS.textPrimary,
   },
   providerType: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  organizationName: {
     fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
   },
-  priceContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  providerDetails: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  ratingContainer: {
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   stars: {
     flexDirection: 'row',
     gap: 1,
   },
   ratingText: {
-    fontSize: 13,
+    fontSize: 12,
+    color: COLORS.textSecondary,
   },
-  availabilityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  availability: {
-    fontSize: 13,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  location: {
-    fontSize: 13,
-  },
-  actionContainer: {
+  priceColumn: {
     alignItems: 'flex-end',
   },
-  viewProfileButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+  price: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
   },
-  viewProfileText: {
+  priceLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  cardDetails: {
+    gap: 4,
+    marginBottom: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    flex: 1,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  quickBookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  quickBookText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  profileButtonText: {
+    fontSize: 12,
+    color: COLORS.primary,
     fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 16,
     marginBottom: 8,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
   },
   emptyText: {
     fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
   },
-}); 
+});

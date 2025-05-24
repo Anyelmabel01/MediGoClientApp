@@ -47,6 +47,11 @@ export default function EmergenciaScreen() {
     router.push(route as any);
   };
 
+  const handleQuickEmergency = () => {
+    // Ir directamente a emergencia médica como acción rápida
+    router.push('/emergencia/medica' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
@@ -59,7 +64,29 @@ export default function EmergenciaScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Emergencia</ThemedText>
+        
+        {/* Botón de emergencia prominente */}
+        <TouchableOpacity 
+          style={styles.emergencyQuickButton}
+          onPress={handleQuickEmergency}
+        >
+          <Ionicons name="flash" size={20} color="white" />
+        </TouchableOpacity>
       </View>
+
+      {/* Botón de emergencia prominente principal */}
+      <TouchableOpacity 
+        style={styles.prominentEmergencyButton}
+        onPress={handleQuickEmergency}
+      >
+        <View style={styles.emergencyButtonContent}>
+          <Ionicons name="flash" size={32} color="white" />
+          <View style={styles.emergencyButtonText}>
+            <ThemedText style={styles.emergencyButtonTitle}>EMERGENCIA</ThemedText>
+            <ThemedText style={styles.emergencyButtonSubtitle}>Solicitar ayuda inmediata</ThemedText>
+          </View>
+        </View>
+      </TouchableOpacity>
       
       <ScrollView style={styles.content}>
         <View style={[styles.alertBox, { 
@@ -200,5 +227,45 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
     fontSize: 14,
+  },
+  emergencyQuickButton: {
+    backgroundColor: '#F44336',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  prominentEmergencyButton: {
+    backgroundColor: '#F44336',
+    borderRadius: 16,
+    padding: 20,
+    marginVertical: 16,
+    shadowColor: '#F44336',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  emergencyButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emergencyButtonText: {
+    marginLeft: 16,
+  },
+  emergencyButtonTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  emergencyButtonSubtitle: {
+    color: 'white',
+    fontSize: 14,
+    opacity: 0.9,
   },
 }); 
