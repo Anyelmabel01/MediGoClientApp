@@ -16,7 +16,10 @@ import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TouchableOpac
 interface ConfigOption {
   id: string;
   title: string;
+  description?: string;
   icon: keyof typeof Ionicons.glyphMap;
+  iconBackground: string;
+  iconColor: string;
   type: 'toggle' | 'action';
   value?: boolean;
   action?: () => void;
@@ -39,21 +42,30 @@ export default function ConfiguracionScreen() {
     {
       id: 'notifications',
       title: 'Notificaciones',
+      description: 'Recibe alertas importantes',
       icon: 'notifications',
+      iconBackground: '#FFE5E5',
+      iconColor: '#FF4444',
       type: 'toggle',
       value: true
     },
     {
       id: 'darkMode',
       title: 'Modo oscuro',
+      description: 'Cambia el tema de la aplicación',
       icon: 'moon',
+      iconBackground: '#E5E7EB',
+      iconColor: '#6B7280',
       type: 'toggle',
       value: isDarkMode
     },
     {
       id: 'language',
       title: 'Idioma',
+      description: 'Español (ES)',
       icon: 'language',
+      iconBackground: '#E5F3FF',
+      iconColor: Colors.light.primary,
       type: 'action',
       action: () => {
         Alert.alert(
@@ -85,7 +97,10 @@ export default function ConfiguracionScreen() {
     {
       id: 'terms',
       title: 'Términos y condiciones',
+      description: 'Revisa nuestros términos de uso',
       icon: 'document-text',
+      iconBackground: '#F3E8FF',
+      iconColor: '#8B5CF6',
       type: 'action',
       action: () => {
         Alert.alert(
@@ -110,7 +125,10 @@ export default function ConfiguracionScreen() {
     {
       id: 'privacy',
       title: 'Política de privacidad',
+      description: 'Cómo protegemos tu información',
       icon: 'shield',
+      iconBackground: '#E8F5E8',
+      iconColor: '#4CAF50',
       type: 'action',
       action: () => {
         Alert.alert(
@@ -152,7 +170,10 @@ export default function ConfiguracionScreen() {
     {
       id: 'help',
       title: 'Ayuda y soporte',
+      description: 'Obtén asistencia técnica',
       icon: 'help-circle',
+      iconBackground: '#FEF3C7',
+      iconColor: '#F59E0B',
       type: 'action',
       action: () => {
         Alert.alert(
@@ -180,7 +201,10 @@ export default function ConfiguracionScreen() {
     {
       id: 'about',
       title: 'Acerca de MediGo',
+      description: 'Información sobre la aplicación',
       icon: 'information-circle',
+      iconBackground: '#E0F2FE',
+      iconColor: '#0891B2',
       type: 'action',
       action: () => {
         Alert.alert(
@@ -244,90 +268,117 @@ export default function ConfiguracionScreen() {
     signOut();
   };
 
+  const renderOptionCard = (option: ConfigOption) => (
+    <TouchableOpacity
+      key={option.id}
+      style={[styles.optionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
+      onPress={option.type === 'action' ? option.action : undefined}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.optionIcon, { backgroundColor: option.iconBackground }]}>
+        <Ionicons 
+          name={option.icon} 
+          size={24} 
+          color={option.iconColor}
+        />
+      </View>
+      
+      <View style={styles.optionContent}>
+        <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
+        {option.description && (
+          <ThemedText style={[styles.optionDescription, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+            {option.description}
+          </ThemedText>
+        )}
+      </View>
+      
+      {option.type === 'toggle' ? (
+        <Switch
+          value={option.value}
+          onValueChange={(newValue) => handleToggleChange(option.id, newValue)}
+          trackColor={{ 
+            false: '#E5E5E5',
+            true: Colors.light.primary
+          }}
+          thumbColor="#FFFFFF"
+        />
+      ) : (
+        <View style={styles.chevronContainer}>
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color={Colors.light.primary}
+          />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
+      {/* Header moderno unificado */}
       <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Configuración</ThemedText>
+        <View style={styles.headerContent}>
+          <ThemedText style={styles.headerTitle}>Configuración</ThemedText>
+          <ThemedText style={styles.headerSubtitle}>Personaliza tu experiencia</ThemedText>
+        </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Sección de Preferencias */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Preferencias</ThemedText>
-          
-          {configOptions.map(option => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.optionItem}
-              onPress={option.type === 'action' ? option.action : undefined}
-            >
-              <View style={styles.optionLeft}>
-                <Ionicons 
-                  name={option.icon} 
-                  size={24} 
-                  color={MEDIGO_COLORS.primary}
-                />
-                <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-              </View>
-              {option.type === 'toggle' ? (
-                <Switch
-                  value={option.value}
-                  onValueChange={(newValue) => handleToggleChange(option.id, newValue)}
-                  trackColor={{ 
-                    false: '#767577',
-                    true: MEDIGO_COLORS.primary
-                  }}
-                  thumbColor="#f4f3f4"
-                />
-              ) : (
-                <Ionicons 
-                  name="chevron-forward" 
-                  size={24} 
-                  color={isDarkMode ? '#ccc' : '#666'} 
-                />
-              )}
-            </TouchableOpacity>
-          ))}
+          <View style={styles.cardsContainer}>
+            {configOptions.map(renderOptionCard)}
+          </View>
         </View>
 
+        {/* Sección Legal y Soporte */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Legal y Soporte</ThemedText>
-          
-          {legalOptions.map(option => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.optionItem}
-              onPress={option.action}
-            >
-              <View style={styles.optionLeft}>
-                <Ionicons 
-                  name={option.icon} 
-                  size={24} 
-                  color={MEDIGO_COLORS.primary}
-                />
-                <ThemedText style={styles.optionTitle}>{option.title}</ThemedText>
-              </View>
-              <Ionicons 
-                name="chevron-forward" 
-                size={24} 
-                color={isDarkMode ? '#ccc' : '#666'} 
-              />
-            </TouchableOpacity>
-          ))}
+          <View style={styles.cardsContainer}>
+            {legalOptions.map(renderOptionCard)}
+          </View>
         </View>
         
+        {/* Botón de Cerrar Sesión */}
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={styles.logoutCard}
           onPress={handleLogout}
+          activeOpacity={0.7}
         >
-          <Ionicons 
-            name="log-out" 
-            size={24} 
-            color={Colors.light.error}
-          />
-          <ThemedText style={styles.logoutText}>Cerrar sesión</ThemedText>
+          <View style={[styles.optionIcon, { backgroundColor: '#FFE5E5' }]}>
+            <Ionicons 
+              name="log-out" 
+              size={24} 
+              color="#FF4444"
+            />
+          </View>
+          
+          <View style={styles.optionContent}>
+            <ThemedText style={[styles.optionTitle, { color: '#FF4444' }]}>Cerrar sesión</ThemedText>
+            <ThemedText style={[styles.optionDescription, { color: '#FF6B6B' }]}>
+              Salir de tu cuenta de MediGo
+            </ThemedText>
+          </View>
+          
+          <View style={styles.chevronContainer}>
+            <Ionicons 
+              name="chevron-forward" 
+              size={20} 
+              color="#FF4444"
+            />
+          </View>
         </TouchableOpacity>
+
+        {/* Espaciado inferior para la bottom navbar */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
       
       <BottomNavbar />
@@ -338,61 +389,99 @@ export default function ConfiguracionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   header: {
+    backgroundColor: Colors.light.primary,
     paddingTop: Platform.OS === 'android' ? 25 : 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
-    backgroundColor: '#00A0B0',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: 'white',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '400',
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 24,
     paddingHorizontal: 20,
-    paddingTop: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#1F2937',
   },
-  optionItem: {
+  cardsContainer: {
+    gap: 12,
+  },
+  optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  optionLeft: {
-    flexDirection: 'row',
+  optionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
+  },
+  optionContent: {
+    flex: 1,
   },
   optionTitle: {
-    fontSize: 16,
-    marginLeft: 12,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
-  logoutButton: {
+  optionDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  chevronContainer: {
+    padding: 8,
+  },
+  logoutCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 20,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    shadowColor: '#FF4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 8,
   },
-  logoutText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: Colors.light.error,
-    fontWeight: '500',
+  bottomSpacer: {
+    height: 100,
   },
 }); 

@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -59,7 +60,7 @@ export function BottomNavbar() {
           <Ionicons
             name={isActive(item.route) ? item.activeIcon : item.icon}
             size={24}
-            color={isActive(item.route) ? '#2D7FF9' : '#777'}
+            color="white"
           />
           <ThemedText
             style={[
@@ -81,9 +82,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     height: 60,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
+    borderTopWidth: 0,
+    backgroundColor: Colors.light.primary,
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -94,9 +94,9 @@ const styles = StyleSheet.create({
       width: 0,
       height: -2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
   },
   navItem: {
     flex: 1,
@@ -107,10 +107,11 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 12,
     marginTop: 4,
-    color: '#777',
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
   },
   activeNavText: {
-    color: '#2D7FF9',
+    color: 'white',
     fontWeight: 'bold',
   },
 }); 

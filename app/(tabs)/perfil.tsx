@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function PerfilScreen() {
   const { user, currentLocation } = useUser();
@@ -21,30 +21,41 @@ export default function PerfilScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
-      <View style={[styles.header, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+      {/* Header moderno unificado */}
+      <View style={styles.header}>
         <View style={styles.headerContent}>
-          <ThemedText style={styles.title}>Mi Perfil</ThemedText>
+          <ThemedText style={styles.headerTitle}>Mi Perfil</ThemedText>
+          <ThemedText style={styles.headerSubtitle}>Gestiona tu información personal</ThemedText>
         </View>
       </View>
       
-      <ScrollView style={styles.content}>
-        <View style={[styles.profileSection, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Card de Perfil Principal */}
+        <View style={[styles.profileCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
           <TouchableOpacity 
             style={styles.profileHeader}
             onPress={() => setShowUserProfile(true)}
+            activeOpacity={0.7}
           >
             <View style={styles.avatarContainer}>
               {user.avatar ? (
                 <Image source={{ uri: user.avatar }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: Colors.light.primary }]}>
+                <View style={styles.avatarPlaceholder}>
                   <ThemedText style={styles.avatarText}>
                     {user.nombre.charAt(0)}{user.apellido.charAt(0)}
                   </ThemedText>
                 </View>
               )}
+              <View style={styles.avatarBadge}>
+                <Ionicons name="camera" size={16} color="white" />
+              </View>
             </View>
             
             <View style={styles.profileInfo}>
@@ -55,82 +66,111 @@ export default function PerfilScreen() {
                 {user.email}
               </ThemedText>
               <View style={styles.editProfileButton}>
+                <Ionicons name="pencil" size={14} color={Colors.light.primary} />
                 <ThemedText style={[styles.editProfileText, { color: Colors.light.primary }]}>
                   Editar perfil
                 </ThemedText>
-                <Ionicons name="pencil" size={14} color={Colors.light.primary} />
               </View>
             </View>
+            
+            <View style={styles.chevronContainer}>
+              <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
+            </View>
           </TouchableOpacity>
-          
+        </View>
+
+        {/* Cards de Información Médica */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
           <View style={styles.infoCardsContainer}>
-            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]}>
-              <Ionicons name="water" size={24} color={Colors.light.primary} />
-              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Tipo de sangre</ThemedText>
+            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              <View style={[styles.infoCardIcon, { backgroundColor: '#FFE5E5' }]}>
+                <Ionicons name="water" size={24} color="#FF4444" />
+              </View>
+              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                Tipo de sangre
+              </ThemedText>
               <ThemedText style={styles.infoCardValue}>{user.tipoSangre}</ThemedText>
             </View>
             
-            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]}>
-              <Ionicons name="fitness" size={24} color={Colors.light.primary} />
-              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Peso</ThemedText>
+            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              <View style={[styles.infoCardIcon, { backgroundColor: '#E5F3FF' }]}>
+                <Ionicons name="fitness" size={24} color={Colors.light.primary} />
+              </View>
+              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                Peso
+              </ThemedText>
               <ThemedText style={styles.infoCardValue}>{user.peso} kg</ThemedText>
             </View>
             
-            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background }]}>
-              <Ionicons name="resize" size={24} color={Colors.light.primary} />
-              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Altura</ThemedText>
+            <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              <View style={[styles.infoCardIcon, { backgroundColor: '#E8F5E8' }]}>
+                <Ionicons name="resize" size={24} color="#4CAF50" />
+              </View>
+              <ThemedText style={[styles.infoCardTitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                Altura
+              </ThemedText>
               <ThemedText style={styles.infoCardValue}>{user.altura} cm</ThemedText>
             </View>
           </View>
         </View>
         
+        {/* Card de Ubicación */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Mi ubicación</ThemedText>
-          
+          <ThemedText style={styles.sectionTitle}>Mi Ubicación</ThemedText>
           <TouchableOpacity 
-            style={[styles.locationCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
+            style={[styles.actionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
             onPress={() => setShowLocationSelector(true)}
+            activeOpacity={0.7}
           >
-            <View style={styles.locationIconContainer}>
+            <View style={[styles.actionCardIcon, { backgroundColor: 'rgba(45, 127, 249, 0.1)' }]}>
               <Ionicons name="location" size={24} color={Colors.light.primary} />
             </View>
             
-            <View style={styles.locationInfo}>
-              <ThemedText style={styles.locationName}>
+            <View style={styles.actionCardContent}>
+              <ThemedText style={styles.actionCardTitle}>
                 {currentLocation.nombre}
               </ThemedText>
-              <ThemedText style={[styles.locationAddress, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+              <ThemedText style={[styles.actionCardSubtitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
                 {currentLocation.direccion}
               </ThemedText>
             </View>
             
-            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
+            <View style={styles.chevronContainer}>
+              <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
+            </View>
           </TouchableOpacity>
         </View>
         
+        {/* Card de Expediente */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Mi Expediente Médico</ThemedText>
-          
+          <ThemedText style={styles.sectionTitle}>Expediente Médico</ThemedText>
           <TouchableOpacity 
-            style={[styles.expedienteCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
+            style={[styles.actionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
             onPress={() => router.push('/expediente')}
+            activeOpacity={0.7}
           >
-            <View style={styles.expedienteIconContainer}>
-              <Ionicons name="document-text" size={24} color={Colors.light.primary} />
+            <View style={[styles.actionCardIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
+              <Ionicons name="document-text" size={24} color="#4CAF50" />
             </View>
             
-            <View style={styles.expedienteInfo}>
-              <ThemedText style={styles.expedienteName}>
+            <View style={styles.actionCardContent}>
+              <ThemedText style={styles.actionCardTitle}>
                 Ver Expediente Completo
               </ThemedText>
-              <ThemedText style={[styles.expedienteDescription, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+              <ThemedText style={[styles.actionCardSubtitle, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
                 Accede a tu historial médico y documentos
               </ThemedText>
             </View>
             
-            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
+            <View style={styles.chevronContainer}>
+              <Ionicons name="chevron-forward" size={20} color="#4CAF50" />
+            </View>
           </TouchableOpacity>
         </View>
+
+        {/* Espaciado inferior para la bottom navbar */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
       
       <BottomNavbar />
@@ -151,36 +191,53 @@ export default function PerfilScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    backgroundColor: Colors.light.primary,
+    paddingTop: Platform.OS === 'android' ? 25 : 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerContent: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  title: {
-    fontSize: 18,
+  headerTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '400',
   },
   content: {
     flex: 1,
-    paddingBottom: 80,
   },
-  profileSection: {
-    padding: 16,
-    marginBottom: 16,
+  scrollContent: {
+    paddingTop: 24,
+    paddingHorizontal: 20,
+  },
+  profileCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   profileHeader: {
     flexDirection: 'row',
-    marginBottom: 20,
+    alignItems: 'center',
   },
   avatarContainer: {
+    position: 'relative',
     marginRight: 16,
   },
   avatar: {
@@ -192,126 +249,134 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
-    color: Colors.light.white,
-    fontSize: 24,
+    color: 'white',
+    fontSize: 28,
     fontWeight: 'bold',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
   },
   profileInfo: {
     flex: 1,
     justifyContent: 'center',
   },
   userName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: 12,
   },
   editProfileButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   editProfileText: {
-    marginRight: 4,
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  chevronContainer: {
+    padding: 8,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#1F2937',
   },
   infoCardsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
   },
   infoCard: {
     flex: 1,
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 4,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  infoCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   infoCardTitle: {
     fontSize: 12,
-    marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 8,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   infoCardValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  section: {
-    marginBottom: 20,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 12,
+    textAlign: 'center',
   },
-  locationCard: {
+  actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  locationIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+  actionCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
-  locationInfo: {
+  actionCardContent: {
     flex: 1,
   },
-  locationName: {
-    fontSize: 16,
+  actionCardTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  locationAddress: {
+  actionCardSubtitle: {
     fontSize: 14,
+    lineHeight: 20,
   },
-  expedienteCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-    marginBottom: 10,
+  bottomSpacer: {
+    height: 100,
   },
-  expedienteIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 160, 176, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  expedienteInfo: {
-    flex: 1,
-  },
-  expedienteName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  expedienteDescription: {
-    fontSize: 14,
-  }
 }); 
