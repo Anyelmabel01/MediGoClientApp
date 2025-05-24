@@ -4,9 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import MapboxMap from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+
+const { height } = Dimensions.get('window');
 
 type EmergencyStatus = 'PAID' | 'ACCEPTED' | 'IN_PROGRESS' | 'ARRIVING' | 'COMPLETED';
 
@@ -49,8 +52,11 @@ export default function EmergenciaSeguimientoScreen() {
   const [currentStatus, setCurrentStatus] = useState<EmergencyStatus>('PAID');
   const [estimatedTime, setEstimatedTime] = useState(8);
   const [requestId] = useState('EMG-' + Date.now().toString().slice(-6));
+  const [paramedicLocation, setParamedicLocation] = useState({ lat: 8.9800, lng: -79.5150 });
+  const [patientLocation] = useState({ lat: 8.9824, lng: -79.5199 }); // Ubicación fija del paciente
+  const [showMap, setShowMap] = useState(false);
   
-  // Simular progreso de estados
+  // Simular progreso de estados y movimiento del paramédico
   useEffect(() => {
     const statusProgression: EmergencyStatus[] = ['PAID', 'ACCEPTED', 'IN_PROGRESS', 'ARRIVING'];
     let currentIndex = 0;
@@ -60,9 +66,10 @@ export default function EmergenciaSeguimientoScreen() {
         currentIndex++;
         setCurrentStatus(statusProgression[currentIndex]);
         
-        // Reducir tiempo estimado
+        // Reducir tiempo estimado y mostrar mapa cuando sea aceptado
         if (statusProgression[currentIndex] === 'ACCEPTED') {
           setEstimatedTime(6);
+          setShowMap(true);
         } else if (statusProgression[currentIndex] === 'IN_PROGRESS') {
           setEstimatedTime(3);
         } else if (statusProgression[currentIndex] === 'ARRIVING') {
@@ -74,18 +81,52 @@ export default function EmergenciaSeguimientoScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Simular movimiento del paramédico hacia el paciente
+  useEffect(() => {
+    if (!showMap) return;
+
+    const moveTowardsPatient = () => {
+      setParamedicLocation(prevLocation => {
+        const latDiff = patientLocation.lat - prevLocation.lat;
+        const lngDiff = patientLocation.lng - prevLocation.lng;
+        
+        // Mover 10% más cerca en cada actualización
+        const moveSpeed = 0.1;
+        
+        return {
+          lat: prevLocation.lat + (latDiff * moveSpeed),
+          lng: prevLocation.lng + (lngDiff * moveSpeed)
+        };
+      });
+    };
+
+    const interval = setInterval(moveTowardsPatient, 3000); // Actualizar cada 3 segundos
+    return () => clearInterval(interval);
+  }, [showMap, patientLocation]);
+
   const handleCallEmergency = () => {
-    // Simular llamada de emergencia
     console.log('Llamando a línea de emergencia...');
   };
 
   const handleCallParamedic = () => {
-    // Simular llamada al paramédico
     console.log('Llamando al paramédico...');
   };
 
   const handleCompleteService = () => {
     router.push('/emergencia/completado' as any);
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return (distance * 1000).toFixed(0); // Convertir a metros
   };
 
   const emergencyData = {
@@ -95,10 +136,32 @@ export default function EmergenciaSeguimientoScreen() {
     requestTime: new Date().toLocaleTimeString(),
     paramedicName: 'Dr. María González',
     paramedicPhone: '+507 6987-6543',
-    paramedicDistance: '2.1 km',
+    paramedicDistance: calculateDistance(
+      paramedicLocation.lat, 
+      paramedicLocation.lng, 
+      patientLocation.lat, 
+      patientLocation.lng
+    ),
   };
 
   const statusConfig = STATUS_CONFIG[currentStatus];
+
+  const mapMarkers = [
+    {
+      id: 'patient',
+      latitude: patientLocation.lat,
+      longitude: patientLocation.lng,
+      color: '#FF0000',
+      title: 'Ubicación del Paciente'
+    },
+    {
+      id: 'paramedic',
+      latitude: paramedicLocation.lat,
+      longitude: paramedicLocation.lng,
+      color: '#00FF00',
+      title: 'Paramédico en Camino'
+    }
+  ];
 
   return (
     <ThemedView style={styles.container}>
@@ -140,6 +203,37 @@ export default function EmergenciaSeguimientoScreen() {
             </View>
           )}
         </View>
+
+        {/* Mapa de Tracking en Tiempo Real */}
+        {showMap && (
+          <View style={[styles.infoCard, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={styles.cardTitle}>Ubicación en Tiempo Real</ThemedText>
+            <View style={styles.mapContainer}>
+              <MapboxMap
+                latitude={(patientLocation.lat + paramedicLocation.lat) / 2}
+                longitude={(patientLocation.lng + paramedicLocation.lng) / 2}
+                zoom={14}
+                markers={mapMarkers}
+                showCurrentLocation={false}
+                interactive={true}
+                style={styles.map}
+              />
+            </View>
+            <View style={styles.mapLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
+                <ThemedText style={styles.legendText}>Tu ubicación</ThemedText>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#00FF00' }]} />
+                <ThemedText style={styles.legendText}>Paramédico</ThemedText>
+              </View>
+            </View>
+          </View>
+        )}
 
         {/* Información de la Solicitud */}
         <View style={[styles.infoCard, { 
@@ -190,7 +284,7 @@ export default function EmergenciaSeguimientoScreen() {
                 <ThemedText style={[styles.paramedicDistance, { 
                   color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
                 }]}>
-                  Distancia actual: {emergencyData.paramedicDistance}
+                  Distancia actual: {emergencyData.paramedicDistance}m
                 </ThemedText>
               </View>
               <TouchableOpacity 
@@ -203,65 +297,29 @@ export default function EmergenciaSeguimientoScreen() {
           </View>
         )}
 
-        {/* Seguimiento de Ubicación */}
-        {(currentStatus === 'IN_PROGRESS' || currentStatus === 'ARRIVING') && (
-          <View style={[styles.infoCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-          }]}>
-            <ThemedText style={styles.cardTitle}>Seguimiento en Tiempo Real</ThemedText>
-            
-            <View style={styles.trackingContainer}>
-              <View style={styles.trackingItem}>
-                <View style={[styles.trackingIcon, { backgroundColor: '#4CAF50' }]}>
-                  <Ionicons name="location" size={20} color="white" />
-                </View>
-                <ThemedText style={styles.trackingText}>Tu ubicación</ThemedText>
-              </View>
-              
-              <View style={styles.trackingLine} />
-              
-              <View style={styles.trackingItem}>
-                <View style={[styles.trackingIcon, { backgroundColor: Colors.light.primary }]}>
-                  <Ionicons name="medical" size={20} color="white" />
-                </View>
-                <ThemedText style={styles.trackingText}>Paramédico ({emergencyData.paramedicDistance})</ThemedText>
-              </View>
-            </View>
-            
-            <ThemedText style={[styles.trackingNote, { 
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-            }]}>
-              La ubicación se actualiza cada 30 segundos
-            </ThemedText>
-          </View>
-        )}
-
         {/* Contacto de Emergencia */}
-        <View style={[styles.emergencyContactCard, { 
-          backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.1)' : '#FFEBEE',
-          borderColor: isDarkMode ? 'rgba(244, 67, 54, 0.2)' : '#FFCDD2'
+        <View style={[styles.infoCard, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
         }]}>
-          <ThemedText style={styles.emergencyContactTitle}>Contacto de Emergencia</ThemedText>
-          <ThemedText style={[styles.emergencyContactText, { color: '#D32F2F' }]}>
-            Si la situación se agrava, llama inmediatamente al 911
-          </ThemedText>
+          <ThemedText style={styles.cardTitle}>Contacto de Emergencia</ThemedText>
+          
           <TouchableOpacity 
-            style={styles.emergencyButton}
+            style={styles.emergencyCallButton}
             onPress={handleCallEmergency}
           >
-            <Ionicons name="call" size={20} color="white" />
-            <ThemedText style={styles.emergencyButtonText}>Línea de Emergencia</ThemedText>
+            <Ionicons name="call" size={24} color="white" />
+            <ThemedText style={styles.emergencyCallText}>Llamar línea de emergencia</ThemedText>
           </TouchableOpacity>
         </View>
 
-        {/* Botón para completar (solo para demo) */}
+        {/* Botón de Completar Servicio (solo para demo) */}
         {currentStatus === 'ARRIVING' && (
           <TouchableOpacity 
             style={styles.completeButton}
             onPress={handleCompleteService}
           >
-            <ThemedText style={styles.completeButtonText}>Simular Finalización del Servicio</ThemedText>
+            <ThemedText style={styles.completeButtonText}>Completar Servicio (Demo)</ThemedText>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -277,7 +335,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
     fontSize: 22,
@@ -292,7 +350,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     borderWidth: 2,
@@ -303,9 +361,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statusIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -320,17 +378,19 @@ const styles = StyleSheet.create({
   },
   statusDescription: {
     fontSize: 14,
-    opacity: 0.8,
+    lineHeight: 20,
   },
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 8,
   },
   estimatedTime: {
     marginLeft: 8,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   infoCard: {
     borderRadius: 12,
@@ -343,30 +403,57 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
+  mapContainer: {
+    height: height * 0.3,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  map: {
+    flex: 1,
+  },
+  mapLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendMarker: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
   infoLabel: {
-    marginLeft: 12,
     fontSize: 14,
-    fontWeight: '500',
-    width: 80,
+    fontWeight: '600',
+    marginLeft: 12,
+    flex: 1,
   },
   infoValue: {
-    flex: 1,
     fontSize: 14,
+    flex: 2,
   },
   paramedicInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   paramedicAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -383,72 +470,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   callButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.light.primary,
+    borderRadius: 20,
     width: 40,
     height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trackingContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  trackingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trackingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  trackingText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  trackingLine: {
-    width: 2,
-    height: 30,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 8,
-    marginLeft: 19,
-  },
-  trackingNote: {
-    fontSize: 12,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  emergencyContactCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  emergencyContactTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#D32F2F',
-    marginBottom: 8,
-  },
-  emergencyContactText: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  emergencyButton: {
+  emergencyCallButton: {
     backgroundColor: '#F44336',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     borderRadius: 8,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  emergencyButtonText: {
+  emergencyCallText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
@@ -456,10 +493,10 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    height: 50,
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 20,
     marginBottom: 40,
   },
   completeButtonText: {

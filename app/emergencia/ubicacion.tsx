@@ -1,28 +1,98 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import MapboxMap from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+
+const { height } = Dimensions.get('window');
 
 export default function EmergenciaUbicacionScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const [selectedOption, setSelectedOption] = useState<'current' | 'saved' | 'new' | null>(null);
+  const [selectedOption, setSelectedOption] = useState<'current' | 'saved' | 'new' | 'map' | null>(null);
   const [newAddress, setNewAddress] = useState('');
   const [reference, setReference] = useState('');
   const [buildingDetails, setBuildingDetails] = useState('');
   const [accessInstructions, setAccessInstructions] = useState('');
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [selectedMapLocation, setSelectedMapLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationPermission, setLocationPermission] = useState<boolean>(false);
+  
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos de ubicación',
+          'Necesitamos acceso a tu ubicación para ofrecerte el mejor servicio',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      setLocationPermission(true);
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    if (!locationPermission) {
+      await requestLocationPermission();
+      return;
+    }
+
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      
+      const { latitude, longitude } = location.coords;
+      setCurrentLocation({ lat: latitude, lng: longitude });
+      setSelectedOption('current');
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert(
+        'Error de ubicación',
+        'No pudimos obtener tu ubicación actual. Intenta nuevamente.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleMapLocationSelect = (lat: number, lng: number) => {
+    setSelectedMapLocation({ lat, lng });
+    setSelectedOption('map');
+  };
+
+  const getLocationText = () => {
+    if (selectedOption === 'current' && currentLocation) {
+      return `Lat: ${currentLocation.lat.toFixed(6)}, Lng: ${currentLocation.lng.toFixed(6)}`;
+    }
+    if (selectedOption === 'map' && selectedMapLocation) {
+      return `Lat: ${selectedMapLocation.lat.toFixed(6)}, Lng: ${selectedMapLocation.lng.toFixed(6)}`;
+    }
+    return '';
+  };
   
   const handleContinue = () => {
     router.push('/emergencia/paciente' as any);
   };
 
   const canContinue = selectedOption && (
-    selectedOption !== 'new' || (newAddress.trim() !== '')
+    selectedOption === 'current' ||
+    selectedOption === 'saved' ||
+    selectedOption === 'map' ||
+    (selectedOption === 'new' && newAddress.trim() !== '')
   );
 
   return (
@@ -61,7 +131,7 @@ export default function EmergenciaUbicacionScreen() {
                 borderColor: selectedOption === 'current' ? Colors.light.primary : (isDarkMode ? Colors.dark.border : Colors.light.border)
               }
             ]}
-            onPress={() => setSelectedOption('current')}
+            onPress={getCurrentLocation}
           >
             <View style={styles.optionHeader}>
               <Ionicons name="navigate" size={24} color={Colors.light.primary} />
@@ -73,7 +143,10 @@ export default function EmergenciaUbicacionScreen() {
             <ThemedText style={[styles.optionDescription, { 
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
             }]}>
-              Detectamos automáticamente tu ubicación GPS actual
+              {selectedOption === 'current' && currentLocation ? 
+                getLocationText() : 
+                'Detectamos automáticamente tu ubicación GPS actual'
+              }
             </ThemedText>
           </TouchableOpacity>
 
@@ -106,6 +179,33 @@ export default function EmergenciaUbicacionScreen() {
               styles.optionCard,
               { 
                 backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                borderColor: selectedOption === 'map' ? Colors.light.primary : (isDarkMode ? Colors.dark.border : Colors.light.border)
+              }
+            ]}
+            onPress={() => setSelectedOption('map')}
+          >
+            <View style={styles.optionHeader}>
+              <Ionicons name="map" size={24} color={Colors.light.primary} />
+              <ThemedText style={styles.optionTitle}>Seleccionar en el mapa</ThemedText>
+              {selectedOption === 'map' && (
+                <Ionicons name="checkmark-circle" size={20} color={Colors.light.primary} />
+              )}
+            </View>
+            <ThemedText style={[styles.optionDescription, { 
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+            }]}>
+              {selectedOption === 'map' && selectedMapLocation ? 
+                getLocationText() : 
+                'Toca en el mapa para seleccionar la ubicación exacta'
+              }
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[
+              styles.optionCard,
+              { 
+                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
                 borderColor: selectedOption === 'new' ? Colors.light.primary : (isDarkMode ? Colors.dark.border : Colors.light.border)
               }
             ]}
@@ -125,6 +225,28 @@ export default function EmergenciaUbicacionScreen() {
             </ThemedText>
           </TouchableOpacity>
         </View>
+
+        {selectedOption === 'map' && (
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Selecciona la ubicación en el mapa</ThemedText>
+            <View style={styles.mapContainer}>
+              <MapboxMap
+                latitude={currentLocation?.lat || 8.9824}
+                longitude={currentLocation?.lng || -79.5199}
+                zoom={15}
+                onLocationSelect={handleMapLocationSelect}
+                showCurrentLocation={true}
+                interactive={true}
+                style={styles.map}
+              />
+            </View>
+            <ThemedText style={[styles.mapInstructions, { 
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+            }]}>
+              Toca en cualquier punto del mapa para seleccionar la ubicación de la emergencia
+            </ThemedText>
+          </View>
+        )}
 
         {selectedOption === 'new' && (
           <View style={styles.section}>
@@ -228,31 +350,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertBox: {
-    borderRadius: 12,
-    padding: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
+    padding: 16,
+    borderRadius: 8,
     borderWidth: 1,
+    marginBottom: 20,
+    alignItems: 'flex-start',
   },
   alertText: {
-    marginLeft: 12,
     flex: 1,
+    marginLeft: 10,
     fontSize: 14,
+    fontWeight: '500',
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
   },
   optionCard: {
+    borderWidth: 1,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 2,
   },
   optionHeader: {
     flexDirection: 'row',
@@ -261,45 +384,63 @@ const styles = StyleSheet.create({
   },
   optionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginLeft: 12,
     flex: 1,
   },
   optionDescription: {
     fontSize: 14,
+    lineHeight: 20,
     marginLeft: 36,
+  },
+  mapContainer: {
+    height: height * 0.4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  map: {
+    flex: 1,
+  },
+  mapInstructions: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   textAreaInput: {
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    height: 80,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   continueButton: {
-    backgroundColor: '#F44336',
-    borderRadius: 10,
-    height: 50,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 20,
     marginBottom: 40,
   },
   disabledButton: {
-    backgroundColor: '#FFCDD2',
+    backgroundColor: '#ccc',
   },
   continueButtonText: {
     color: 'white',
