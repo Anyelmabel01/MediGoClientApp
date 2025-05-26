@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -307,48 +308,59 @@ export default function CatalogoScreen() {
     setHomeCollectionOnly(false);
   };
 
+  const handleBackPress = () => {
+    router.push('/laboratorio');
+  };
+
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Catálogo de Pruebas</ThemedText>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Ionicons 
-            name="filter" 
-            size={24} 
-            color={showFilters ? colors.primary : colors.text} 
-          />
-        </TouchableOpacity>
-      </View>
+      <LinearGradient
+        colors={['#00A0B0', '#0081B0']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={handleBackPress}
+          >
+            <Ionicons 
+              name="arrow-back" 
+              size={24} 
+              color="#fff" 
+            />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Catálogo de Pruebas</ThemedText>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons name={showFilters ? "options" : "options-outline"} size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
-      {/* Barra de búsqueda */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+      {/* Búsqueda */}
+      <View style={styles.searchContainer}>
         <View style={[styles.searchBar, { 
-          backgroundColor: isDarkMode ? Colors.dark.border : '#F8F9FA',
+          backgroundColor: colors.background, 
           borderColor: colors.border 
         }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
-          <TextInput 
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Buscar prueba, examen o análisis..." 
+            placeholder="Buscar prueba, examen o síntoma"
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            returnKeyType="search"
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -432,47 +444,44 @@ export default function CatalogoScreen() {
         </View>
       )}
 
-      {/* Categorías horizontales */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        style={styles.categoriesContainer}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      >
-        {categories.map(category => (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.categoryCard,
-              { 
-                backgroundColor: selectedCategory === category.id ? category.color : colors.background,
-                borderColor: selectedCategory === category.id ? category.color : colors.border
-              }
-            ]}
-            onPress={() => setSelectedCategory(category.id)}
-          >
-            <Ionicons 
-              name={category.icon} 
-              size={22} 
-              color={selectedCategory === category.id ? '#fff' : category.color} 
-            />
-            <ThemedText style={[
-              styles.categoryLabel,
-              { color: selectedCategory === category.id ? '#fff' : colors.text }
-            ]}>
-              {category.name}
-            </ThemedText>
-            {category.id !== 'all' && (
+      {/* Categorías en grid */}
+      <View style={styles.categoriesContainer}>
+        <View style={styles.categoriesGrid}>
+          {categories.map(category => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.categoryCard,
+                { 
+                  backgroundColor: selectedCategory === category.id ? category.color : colors.background,
+                  borderColor: selectedCategory === category.id ? category.color : colors.border
+                }
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <Ionicons 
+                name={category.icon} 
+                size={20} 
+                color={selectedCategory === category.id ? '#fff' : category.color} 
+              />
               <ThemedText style={[
-                styles.categoryCount,
-                { color: selectedCategory === category.id ? '#fff' : colors.textSecondary }
+                styles.categoryLabel,
+                { color: selectedCategory === category.id ? '#fff' : colors.text }
               ]}>
-                {category.count}
+                {category.name}
               </ThemedText>
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              {category.id !== 'all' && (
+                <ThemedText style={[
+                  styles.categoryCount,
+                  { color: selectedCategory === category.id ? '#fff' : colors.textSecondary }
+                ]}>
+                  {category.count}
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       {/* Resultados */}
       <View style={styles.resultsHeader}>
@@ -485,6 +494,15 @@ export default function CatalogoScreen() {
       <FlatList
         data={filteredAndSortedTests}
         keyExtractor={item => item.id}
+        contentContainerStyle={{ 
+          paddingHorizontal: 16, 
+          paddingBottom: insets.bottom + 20,
+          flexGrow: filteredAndSortedTests.length === 0 ? 1 : undefined
+        }}
+        initialNumToRender={6}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={[styles.testCard, { 
@@ -492,11 +510,12 @@ export default function CatalogoScreen() {
               borderColor: colors.border 
             }]}
             onPress={() => handleTestPress(item)}
+            activeOpacity={0.7}
           >
             <View style={styles.testCardHeader}>
               <View style={styles.testInfo}>
                 <ThemedText style={styles.testName}>{item.name}</ThemedText>
-                <ThemedText style={[styles.testDescription, { color: colors.textSecondary }]}>
+                <ThemedText style={[styles.testDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                   {item.description}
                 </ThemedText>
               </View>
@@ -539,23 +558,17 @@ export default function CatalogoScreen() {
                 )}
               </View>
 
-              <View style={styles.testActions}>
-                <TouchableOpacity
-                  style={[styles.bookButton, { backgroundColor: colors.primary }]}
-                  onPress={() => handleBookTest(item)}
-                >
-                  <Ionicons name="calendar-outline" size={16} color="#fff" />
-                  <ThemedText style={styles.bookButtonText}>Agendar</ThemedText>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[styles.bookButton, { backgroundColor: colors.primary }]}
+                onPress={() => handleBookTest(item)}
+              >
+                <Ionicons name="calendar-outline" size={16} color="#fff" />
+                <ThemedText style={styles.bookButtonText}>Agendar</ThemedText>
+              </TouchableOpacity>
             </View>
           </TouchableOpacity>
         )}
         style={styles.testsList}
-        contentContainerStyle={{ 
-          paddingHorizontal: 16, 
-          paddingBottom: insets.bottom + 20 
-        }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
@@ -583,44 +596,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   backButton: {
     padding: 8,
   },
-  title: {
+  headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: -40,
   },
   filterButton: {
     padding: 8,
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderWidth: 1,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: 8,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   filtersContainer: {
     padding: 16,
@@ -674,19 +696,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   categoriesContainer: {
-    marginVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   categoryCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginRight: 12,
+    padding: 8,
+    borderRadius: 10,
+    marginBottom: 8,
     borderWidth: 1,
-    minWidth: 80,
+    width: '48%',
+    height: 70,
   },
   categoryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginTop: 4,
     textAlign: 'center',
@@ -697,7 +727,7 @@ const styles = StyleSheet.create({
   },
   resultsHeader: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   resultsCount: {
     fontSize: 14,
@@ -708,33 +738,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   testCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
-    elevation: 2,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 2,
   },
   testCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   testInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   testName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   testDescription: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   testMeta: {
     alignItems: 'flex-end',
@@ -742,7 +772,7 @@ const styles = StyleSheet.create({
   testPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   preparationIndicator: {
     flexDirection: 'row',
@@ -756,7 +786,8 @@ const styles = StyleSheet.create({
   testCardDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    marginTop: 4,
   },
   testAttributes: {
     flex: 1,
@@ -764,10 +795,10 @@ const styles = StyleSheet.create({
   testAttribute: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   attributeText: {
-    fontSize: 12,
+    fontSize: 11,
     marginLeft: 6,
   },
   testActions: {
@@ -776,13 +807,13 @@ const styles = StyleSheet.create({
   bookButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   bookButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     marginLeft: 4,
   },

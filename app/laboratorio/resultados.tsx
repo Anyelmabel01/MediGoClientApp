@@ -308,14 +308,14 @@ export default function ResultadosScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <ThemedText style={styles.title}>Mis Resultados</ThemedText>
+        <ThemedText style={[styles.title, { color: colors.white }]}>Mis Resultados</ThemedText>
         <TouchableOpacity 
           style={styles.filterButton}
           onPress={() => setShowFilters(!showFilters)}
@@ -323,7 +323,7 @@ export default function ResultadosScreen() {
           <Ionicons 
             name="filter" 
             size={24} 
-            color={showFilters ? colors.primary : colors.text} 
+            color={colors.white} 
           />
         </TouchableOpacity>
       </View>
