@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
+import { COLORS } from '../constants/UIConstants';
 
 
 export default function RegisterScreen() {
@@ -29,27 +30,29 @@ export default function RegisterScreen() {
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D7FF9" />
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Registro</ThemedText>
       </View>
 
       <View style={styles.form}>
         <View style={styles.inputContainer}>
-          <Ionicons name="person-outline" size={20} color="#777" style={styles.inputIcon} />
+          <Ionicons name="person-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Nombre completo"
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.placeholder}
           />
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#777" style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Correo electrónico"
@@ -57,50 +60,52 @@ export default function RegisterScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.placeholder}
           />
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#777" style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.placeholder}
           />
           <TouchableOpacity 
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeIcon}
+            activeOpacity={0.7}
           >
             <Ionicons 
               name={showPassword ? "eye-off-outline" : "eye-outline"} 
               size={20} 
-              color="#777" 
+              color={COLORS.textSecondary} 
             />
           </TouchableOpacity>
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#777" style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Confirmar contraseña"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry={!showConfirmPassword}
-            placeholderTextColor="#777"
+            placeholderTextColor={COLORS.placeholder}
           />
           <TouchableOpacity 
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             style={styles.eyeIcon}
+            activeOpacity={0.7}
           >
             <Ionicons 
               name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
               size={20} 
-              color="#777" 
+              color={COLORS.textSecondary} 
             />
           </TouchableOpacity>
         </View>
@@ -129,6 +134,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
@@ -137,12 +143,18 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   backButton: {
-    padding: 5,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 160, 176, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: 12,
+    color: COLORS.textPrimary,
   },
   form: {
     width: '100%',
@@ -150,47 +162,62 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    marginBottom: 15,
-    paddingHorizontal: 15,
+    backgroundColor: COLORS.inputBgSecondary,
+    borderRadius: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
     height: 55,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.inputShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
     height: 55,
-    color: '#333',
+    color: COLORS.textPrimary,
+    fontSize: 16,
   },
   eyeIcon: {
-    padding: 5,
+    padding: 8,
   },
   button: {
-    backgroundColor: '#2D7FF9',
-    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
     height: 55,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 16,
     marginBottom: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   terms: {
-    marginTop: 10,
+    marginTop: 16,
+    paddingHorizontal: 8,
   },
   termsText: {
     fontSize: 13,
-    color: '#777',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   termsLink: {
-    color: '#2D7FF9',
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 }); 

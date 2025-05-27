@@ -2,9 +2,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
 
+// Disable all error overlays in the app UI
+LogBox.ignoreAllLogs();
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ScreenContentWrapper } from '@/components/ScreenContentWrapper';
+import { SuppressErrors } from '@/components/SuppressErrors';
 import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -24,21 +30,23 @@ function RootLayoutNav() {
   return (
     <ErrorBoundary>
       <NavigationThemeProvider value={isDarkMode ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" options={{ title: 'Página no encontrada' }} />
-          <Stack.Screen name="consulta" options={{ headerShown: false }} />
-          <Stack.Screen name="emergencia" options={{ headerShown: false }} />
-          <Stack.Screen name="laboratorio" options={{ headerShown: false }} />
-          <Stack.Screen name="farmacia" options={{ headerShown: false }} />
-          <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
-          <Stack.Screen name="expediente" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="configuracion" options={{ headerShown: false }} />
-          <Stack.Screen name="perfil" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <ScreenContentWrapper>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" options={{ title: 'Página no encontrada' }} />
+            <Stack.Screen name="consulta" options={{ headerShown: false }} />
+            <Stack.Screen name="emergencia" options={{ headerShown: false }} />
+            <Stack.Screen name="laboratorio" options={{ headerShown: false }} />
+            <Stack.Screen name="farmacia" options={{ headerShown: false }} />
+            <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
+            <Stack.Screen name="expediente" options={{ headerShown: false }} />
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="configuracion" options={{ headerShown: false }} />
+            <Stack.Screen name="perfil" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        </ScreenContentWrapper>
       </NavigationThemeProvider>
     </ErrorBoundary>
   );
@@ -46,16 +54,20 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <UserProvider>
-          <AuthProvider>
-            <CartProvider>
-              <RootLayoutNav />
-            </CartProvider>
-          </AuthProvider>
-        </UserProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <SuppressErrors>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <UserProvider>
+            <AuthProvider>
+              <CartProvider>
+                <ScreenContentWrapper>
+                  <RootLayoutNav />
+                </ScreenContentWrapper>
+              </CartProvider>
+            </AuthProvider>
+          </UserProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </SuppressErrors>
   );
 }

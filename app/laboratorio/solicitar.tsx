@@ -1,7 +1,10 @@
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -16,8 +19,6 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
 
 type StepData = {
   collectionMethod: 'laboratory' | 'home' | null;
@@ -745,7 +746,7 @@ export default function SolicitarScreen() {
               
               <View style={styles.costRow}>
                 <ThemedText style={[styles.costLabel, { color: colors.textSecondary }]}>
-                  {nombrePrueba}
+                  Prueba de laboratorio
                 </ThemedText>
                 <ThemedText style={[styles.costValue, { color: colors.text }]}>
                   ${basePrice.toLocaleString()} MXN
@@ -781,46 +782,6 @@ export default function SolicitarScreen() {
                 <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
                   ${totalPrice.toLocaleString()} MXN
                 </ThemedText>
-              </View>
-            </View>
-
-            {/* Código promocional */}
-            <View style={styles.formGroup}>
-              <ThemedText style={[styles.formLabel, { color: colors.text }]}>
-                Código promocional
-              </ThemedText>
-              <View style={styles.promoCodeRow}>
-                <TextInput
-                  style={[styles.promoCodeInput, { 
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    color: colors.text 
-                  }]}
-                  placeholder="Ingresa tu código"
-                  placeholderTextColor={colors.textSecondary}
-                  value={stepData.payment.promoCode}
-                  onChangeText={(text) => setStepData(prev => ({
-                    ...prev,
-                    payment: { ...prev.payment, promoCode: text }
-                  }))}
-                />
-                <TouchableOpacity 
-                  style={[styles.applyPromoButton, { backgroundColor: colors.primary }]}
-                  onPress={() => {
-                    // Simular aplicación de código promocional
-                    if (stepData.payment.promoCode.toUpperCase() === 'DESCUENTO10') {
-                      setStepData(prev => ({
-                        ...prev,
-                        payment: { ...prev.payment, discount: basePrice * 0.1 }
-                      }));
-                      Alert.alert('¡Código aplicado!', '10% de descuento aplicado correctamente.');
-                    } else if (stepData.payment.promoCode) {
-                      Alert.alert('Código inválido', 'El código promocional ingresado no es válido.');
-                    }
-                  }}
-                >
-                  <ThemedText style={styles.applyPromoText}>Aplicar</ThemedText>
-                </TouchableOpacity>
               </View>
             </View>
 
@@ -896,7 +857,7 @@ export default function SolicitarScreen() {
                   Prueba:
                 </ThemedText>
                 <ThemedText style={[styles.confirmationValue, { color: colors.text }]}>
-                  {nombrePrueba}
+                  {nombrePrueba || 'Prueba de laboratorio'}
                 </ThemedText>
               </View>
 
@@ -936,24 +897,6 @@ export default function SolicitarScreen() {
                 </ThemedText>
               </View>
             </View>
-
-            <TouchableOpacity
-              style={[styles.confirmButton, { 
-                backgroundColor: colors.primary,
-                opacity: isLoading ? 0.7 : 1
-              }]}
-              onPress={handleSubmit}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ThemedText style={styles.confirmButtonText}>Procesando...</ThemedText>
-              ) : (
-                <>
-                  <Ionicons name="calendar-outline" size={20} color="#fff" />
-                  <ThemedText style={styles.confirmButtonText}>Confirmar Cita</ThemedText>
-                </>
-              )}
-            </TouchableOpacity>
           </View>
         );
 
@@ -965,16 +908,23 @@ export default function SolicitarScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Agendar Prueba</ThemedText>
-        <View style={styles.headerSpacer} />
-      </View>
+      <LinearGradient
+        colors={['#00A0B0', '#0081B0']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <ThemedText style={styles.title}>Agendar Prueba</ThemedText>
+          <View style={styles.headerSpacer} />
+        </View>
+      </LinearGradient>
 
       {/* Indicador de progreso */}
       <View style={[styles.progressContainer, { backgroundColor: colors.background }]}>
@@ -1076,13 +1026,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerGradient: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingVertical: 16,
+    height: 60,
   },
   backButton: {
     padding: 8,
@@ -1092,6 +1045,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    color: '#fff',
   },
   headerSpacer: {
     width: 40,
@@ -1240,6 +1194,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  navigationContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  navButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 8,
+    gap: 8,
+  },
+  prevButton: {
+    borderWidth: 1,
+  },
+  nextButton: {
+    borderWidth: 0,
+  },
+  navButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   formGroup: {
     marginBottom: 16,
   },
@@ -1338,27 +1317,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  promoCodeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  promoCodeInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  applyPromoButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
-  },
-  applyPromoText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   paymentMethod: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1418,43 +1376,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     textAlign: 'right',
-  },
-  confirmButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  navButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    borderRadius: 8,
-    gap: 8,
-  },
-  prevButton: {
-    borderWidth: 1,
-  },
-  nextButton: {
-    borderWidth: 0,
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 }); 

@@ -41,7 +41,7 @@ type TechnicalCheck = {
 export default function SalaEsperaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { specialistId, appointmentTime } = useLocalSearchParams();
+  const { consultationId, specialistId, appointmentTime, specialistName, specialty } = useLocalSearchParams();
   
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
     {
@@ -153,7 +153,13 @@ export default function SalaEsperaScreen() {
 
     router.push({
       pathname: '/consulta/telemedicina/videollamada',
-      params: { specialistId, appointmentTime }
+      params: { 
+        consultationId, 
+        specialistId, 
+        appointmentTime,
+        specialistName,
+        specialty
+      }
     });
   };
 
@@ -220,11 +226,13 @@ export default function SalaEsperaScreen() {
               <Ionicons name="medical" size={32} color={PRIMARY_COLOR} />
             </View>
             <View style={styles.waitingInfo}>
-              <ThemedText style={styles.waitingTitle}>Tu consulta comenzará pronto</ThemedText>
+              <ThemedText style={styles.waitingTitle}>
+                {specialistName ? `Consulta con ${specialistName}` : 'Tu consulta comenzará pronto'}
+              </ThemedText>
               <ThemedText style={[styles.waitingSubtitle, {
                 color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
               }]}>
-                Consulta virtual programada
+                {specialty ? `${specialty} - ` : ''}Consulta virtual programada {appointmentTime ? `a las ${appointmentTime}` : ''}
               </ThemedText>
               {waitingTime > 0 ? (
                 <ThemedText style={[styles.waitingTime, { color: PRIMARY_COLOR }]}>

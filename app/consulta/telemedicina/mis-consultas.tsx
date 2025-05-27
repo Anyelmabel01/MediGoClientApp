@@ -117,8 +117,11 @@ export default function MisConsultasTelemedicina() {
       router.push({
         pathname: '/consulta/telemedicina/sala-espera',
         params: { 
-          specialistId: consultation.id,
-          appointmentTime: `${consultation.date} ${consultation.time}`
+          consultationId: consultation.id,
+          specialistId: consultation.specialist_name,
+          appointmentTime: consultation.time,
+          specialistName: consultation.specialist_name,
+          specialty: consultation.specialty
         }
       });
     } else {

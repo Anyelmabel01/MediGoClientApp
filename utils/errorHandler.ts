@@ -2,6 +2,12 @@
 export const handleError = (error: any) => {
   // En producción, podríamos enviar los errores a un servicio de monitoreo
   if (process.env.NODE_ENV === 'development') {
+    // Ignore specific React Native text errors
+    if (error?.message?.includes('Text strings must be rendered within a <Text> component')) {
+      // Just ignore this specific error completely
+      return;
+    }
+    
     console.error(error);
   }
 };

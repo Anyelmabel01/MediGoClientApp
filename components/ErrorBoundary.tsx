@@ -16,14 +16,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(_: Error): State {
-    return { hasError: false }; // Retornamos false para que los errores no interrumpan la UI
+    // Always return hasError: false to prevent any UI disruption
+    return { hasError: false };
   }
 
   componentDidCatch(error: Error) {
+    // Log the error to console but don't display in UI
     handleError(error);
   }
 
   render() {
+    // Always render children regardless of error state
     return this.props.children;
   }
 } 

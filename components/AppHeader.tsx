@@ -1,11 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { ThemedText } from './ThemedText';
-import * as Haptics from 'expo-haptics';
 import { useAuth } from '../hooks/useAuth';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ThemedText } from './ThemedText';
 
 // Paleta de colores para el header
 const COLORS = {
@@ -135,10 +135,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    marginRight: 8,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    marginRight: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(0, 160, 176, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -149,9 +149,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   logoutButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(0, 160, 176, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',

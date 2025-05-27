@@ -1,3 +1,4 @@
+import { ScreenContentWrapper } from '@/components/ScreenContentWrapper';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useEffect } from '@/hooks/react';
@@ -24,32 +25,34 @@ export default function TabLayout() {
   useProtectedRoute(isAuthenticated);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[isDarkMode ? 'dark' : 'light'].tint,
-        headerShown: false,
-        tabBarStyle: {
-          display: 'none',
-        },
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Inicio',
-        }}
-      />
-      <Tabs.Screen
-        name="perfil"
-        options={{
-          title: 'Perfil',
-        }}
-      />
-      <Tabs.Screen
-        name="configuracion"
-        options={{
-          title: 'Configuración',
-        }}
-      />
-    </Tabs>
+    <ScreenContentWrapper>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[isDarkMode ? 'dark' : 'light'].tint,
+          headerShown: false,
+          tabBarStyle: {
+            display: 'none',
+          },
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Inicio',
+          }}
+        />
+        <Tabs.Screen
+          name="perfil"
+          options={{
+            title: 'Perfil',
+          }}
+        />
+        <Tabs.Screen
+          name="configuracion"
+          options={{
+            title: 'Configuración',
+          }}
+        />
+      </Tabs>
+    </ScreenContentWrapper>
   );
 }

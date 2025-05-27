@@ -2,11 +2,26 @@ import { Colors } from '@/constants/Colors';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    Alert,
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import MapView from 'react-native-maps';
+import { MapboxMap } from '../components/MapboxMap';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 
@@ -135,6 +150,52 @@ const userLocation = {
   y: 0.3,
 };
 
+// Coordenadas de farmacia simulada para seguimiento real
+const pharmacyLocation = {
+  latitude: 8.9700,
+  longitude: -79.5200,
+  name: 'Farmacia Central'
+};
+
+// Función para calcular distancia entre dos puntos
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return (distance * 1000).toFixed(0); // Convertir a metros
+};
+
+// Función para obtener la ruta de Mapbox Directions API
+const getMapboxRoute = async (start: any, end: any) => {
+  const MAPBOX_API_KEY = "pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xobXljODM0MiJ9.48MFADtQhp_sFuQjewLFeA";
+  
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_API_KEY}`
+    );
+    
+    const data = await response.json();
+    
+    if (data.routes && data.routes.length > 0) {
+      return {
+        coordinates: data.routes[0].geometry.coordinates,
+        duration: data.routes[0].duration,
+        distance: data.routes[0].distance
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error obteniendo ruta:', error);
+    return null;
+  }
+};
+
 export default function FarmaciaScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,48 +219,105 @@ export default function FarmaciaScreen() {
   const [cardInfo, setCardInfo] = useState<CardInfo>({ cardNumber: '', cardHolder: '', expiryDate: '', cvv: '' });
   const [showCardInfo, setShowCardInfo] = useState(false);
   
-  // Simulate delivery courier movement
+  // Estados para seguimiento real con GPS
+  const [userGPSLocation, setUserGPSLocation] = useState<any>(null);
+  const [realDeliveryLocation, setRealDeliveryLocation] = useState(pharmacyLocation);
+  const [deliveryRoute, setDeliveryRoute] = useState<any>(null);
+  const [routeProgress, setRouteProgress] = useState(0);
+  const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(15);
+  const [locationPermission, setLocationPermission] = useState<boolean>(false);
+  
+  // Obtener ubicación real del usuario cuando se activa el seguimiento
   useEffect(() => {
-    if (showDeliveryTracking) {
-      // Animate courier movement toward user location
-      Animated.timing(animatedPosition, {
-        toValue: { 
-          x: userLocation.x * width * 0.8, 
-          y: userLocation.y * height * 0.3 
-        },
-        duration: 15000, // 15 seconds animation
-        useNativeDriver: false,
-      }).start();
+    const getLocationPermission = async () => {
+      if (!showDeliveryTracking) return;
       
-      // Update courier position and status
-      const interval = setInterval(() => {
-        setCourierPosition(prev => {
-          const newX = prev.x + (userLocation.x - prev.x) * 0.1;
-          const newY = prev.y + (userLocation.y - prev.y) * 0.1;
-          
-          // Calculate distance from destination
-          const distance = Math.sqrt(
-            Math.pow(newX - userLocation.x, 2) +
-            Math.pow(newY - userLocation.y, 2)
-          );
-          
-          // Update delivery status based on distance
-          if (distance < 0.05) {
-            setDeliveryStatus('Entregado');
-            clearInterval(interval);
-          } else if (distance < 0.2) {
-            setDeliveryStatus('Llegando a tu ubicación');
-          } else {
-            setDeliveryStatus('En camino');
-          }
-          
-          return { x: newX, y: newY };
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para mostrar tu posición en el mapa.');
+          return;
+        }
+
+        setLocationPermission(true);
+        
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
         });
-      }, 1000);
-      
-      return () => clearInterval(interval);
-    }
+
+        const userCoords = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude
+        };
+
+        setUserGPSLocation(userCoords);
+
+        // Obtener ruta desde farmacia hasta usuario
+        const routeData = await getMapboxRoute(pharmacyLocation, userCoords);
+        if (routeData) {
+          setDeliveryRoute(routeData);
+          setEstimatedDeliveryTime(Math.ceil(routeData.duration / 60)); // Convertir a minutos
+        }
+
+      } catch (error) {
+        console.error('Error obteniendo ubicación:', error);
+        Alert.alert('Error', 'No se pudo obtener tu ubicación. Usando ubicación por defecto.');
+        // Usar ubicación por defecto en Panama City
+        setUserGPSLocation({
+          latitude: 8.9824,
+          longitude: -79.5199
+        });
+      }
+    };
+
+    getLocationPermission();
   }, [showDeliveryTracking]);
+
+  // Simular movimiento del repartidor a lo largo de la ruta real
+  useEffect(() => {
+    if (!showDeliveryTracking || !deliveryRoute || !deliveryRoute.coordinates || deliveryRoute.coordinates.length === 0) return;
+
+    const moveAlongRoute = () => {
+      setRouteProgress(prevProgress => {
+        const newProgress = prevProgress + 0.015; // Aumentar 1.5% cada vez
+        
+        if (newProgress >= 1) {
+          setDeliveryStatus('Entregado');
+          setEstimatedDeliveryTime(0);
+          return 1;
+        }
+
+        // Calcular posición en la ruta
+        const routeIndex = Math.floor(newProgress * (deliveryRoute.coordinates.length - 1));
+        const routeCoord = deliveryRoute.coordinates[routeIndex];
+        
+        if (routeCoord) {
+          setRealDeliveryLocation({
+            latitude: routeCoord[1], // Lat/Lng están invertidos en GeoJSON
+            longitude: routeCoord[0],
+            name: 'Repartidor en ruta'
+          });
+        }
+
+        // Actualizar tiempo estimado y estado
+        const remainingTime = Math.ceil((1 - newProgress) * (deliveryRoute.duration / 60));
+        setEstimatedDeliveryTime(remainingTime);
+        
+        if (newProgress > 0.8) {
+          setDeliveryStatus('Llegando a tu ubicación');
+        } else if (newProgress > 0.3) {
+          setDeliveryStatus('En camino');
+        } else {
+          setDeliveryStatus('Preparando pedido');
+        }
+
+        return newProgress;
+      });
+    };
+
+    const interval = setInterval(moveAlongRoute, 2500); // Actualizar cada 2.5 segundos
+    return () => clearInterval(interval);
+  }, [showDeliveryTracking, deliveryRoute]);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
@@ -266,10 +384,14 @@ export default function FarmaciaScreen() {
   
   const handlePaymentConfirm = () => {
     if (selectedDeliveryMethod === '1') { // A domicilio
-      // Reiniciar estado de seguimiento
+      // Reiniciar estado de seguimiento real
       setDeliveryStatus('Preparando pedido');
-      setCourierPosition({ x: deliveryLocation.x, y: deliveryLocation.y });
-      animatedPosition.setValue({ x: deliveryLocation.x * width * 0.8, y: deliveryLocation.y * height * 0.3 });
+      setRealDeliveryLocation(pharmacyLocation);
+      setDeliveryRoute(null);
+      setRouteProgress(0);
+      setEstimatedDeliveryTime(15);
+      setUserGPSLocation(null);
+      setLocationPermission(false);
       setShowDeliveryTracking(true);
     }
     setShowPaymentModal(false);
@@ -787,26 +909,47 @@ export default function FarmaciaScreen() {
             
             {/* Simulated Map */}
             <View style={styles.mapContainer}>
-              <View style={styles.simulatedMap}>
-                {/* Delivery Route Line */}
-                <View style={styles.routeLine} />
-                
-                {/* User Location Marker */}
-                <View style={[styles.locationMarker, styles.userMarker, {
-                  left: `${userLocation.x * 100}%`,
-                  top: `${userLocation.y * 100}%`,
-                }]}>
-                  <Ionicons name="home" size={24} color="#ff3b30" />
+              {userGPSLocation ? (
+                <MapboxMap
+                  latitude={(realDeliveryLocation.latitude + userGPSLocation.latitude) / 2}
+                  longitude={(realDeliveryLocation.longitude + userGPSLocation.longitude) / 2}
+                  zoom={13}
+                  markers={[
+                    {
+                      id: 'delivery',
+                      latitude: realDeliveryLocation.latitude,
+                      longitude: realDeliveryLocation.longitude,
+                      color: Colors.light.primary,
+                      title: 'Repartidor'
+                    },
+                    {
+                      id: 'user',
+                      latitude: userGPSLocation.latitude,
+                      longitude: userGPSLocation.longitude,
+                      color: '#ff3b30',
+                      title: 'Tu ubicación'
+                    },
+                    {
+                      id: 'pharmacy',
+                      latitude: pharmacyLocation.latitude,
+                      longitude: pharmacyLocation.longitude,
+                      color: '#28a745',
+                      title: pharmacyLocation.name
+                    }
+                  ]}
+                  route={deliveryRoute?.coordinates}
+                  showCurrentLocation={false}
+                  interactive={true}
+                  style={styles.map}
+                />
+              ) : (
+                <View style={styles.loadingMapContainer}>
+                  <Ionicons name="location" size={48} color={Colors.light.primary} />
+                  <ThemedText style={styles.loadingMapText}>
+                    Obteniendo tu ubicación...
+                  </ThemedText>
                 </View>
-                
-                {/* Courier Location Marker (Animated) */}
-                <Animated.View style={[styles.locationMarker, styles.courierMarker, {
-                  left: animatedPosition.x,
-                  top: animatedPosition.y,
-                }]}>
-                  <Ionicons name="bicycle" size={24} color={Colors.light.primary} />
-                </Animated.View>
-              </View>
+              )}
               
               {/* Map Legend */}
               <View style={styles.mapLegend}>
@@ -815,8 +958,12 @@ export default function FarmaciaScreen() {
                   <ThemedText style={styles.legendText}>Repartidor</ThemedText>
                 </View>
                 <View style={styles.legendItem}>
-                  <Ionicons name="home" size={18} color="#ff3b30" />
+                  <Ionicons name="person" size={18} color="#ff3b30" />
                   <ThemedText style={styles.legendText}>Tu ubicación</ThemedText>
+                </View>
+                <View style={styles.legendItem}>
+                  <Ionicons name="storefront" size={18} color="#28a745" />
+                  <ThemedText style={styles.legendText}>Farmacia</ThemedText>
                 </View>
               </View>
             </View>
@@ -824,7 +971,7 @@ export default function FarmaciaScreen() {
             <View style={styles.deliveryInfoContainer}>
               <View style={styles.deliveryInfoItem}>
                 <Ionicons name="time-outline" size={24} color={Colors.light.primary} />
-                <ThemedText style={styles.deliveryInfoText}>Tiempo estimado: 15-20 min</ThemedText>
+                <ThemedText style={styles.deliveryInfoText}>Tiempo estimado: {estimatedDeliveryTime} min</ThemedText>
               </View>
               <View style={styles.deliveryInfoItem}>
                 <Ionicons name="person-outline" size={24} color={Colors.light.primary} />
@@ -834,6 +981,19 @@ export default function FarmaciaScreen() {
                 <Ionicons name="call-outline" size={24} color={Colors.light.primary} />
                 <ThemedText style={styles.deliveryInfoText}>Contacto: 55-1234-5678</ThemedText>
               </View>
+              {userGPSLocation && (
+                <View style={styles.deliveryInfoItem}>
+                  <Ionicons name="location-outline" size={24} color={Colors.light.primary} />
+                  <ThemedText style={styles.deliveryInfoText}>
+                    Distancia: {calculateDistance(
+                      realDeliveryLocation.latitude, 
+                      realDeliveryLocation.longitude, 
+                      userGPSLocation.latitude, 
+                      userGPSLocation.longitude
+                    )}m aprox.
+                  </ThemedText>
+                </View>
+              )}
             </View>
             
             {/* Delivery Progress */}
@@ -1447,5 +1607,17 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#ccc',
+  },
+  map: {
+    flex: 1,
+  },
+  loadingMapContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingMapText: {
+    fontSize: 16,
+    color: Colors.light.primary,
   },
 });

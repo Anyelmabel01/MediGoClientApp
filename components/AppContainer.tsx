@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
-import { StyleSheet, SafeAreaView, ScrollView, KeyboardAvoidingView, Platform, View, StatusBar as RNStatusBar, Dimensions } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { ReactNode } from 'react';
+import { Dimensions, KeyboardAvoidingView, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, View } from 'react-native';
 import { AppHeader } from './AppHeader';
 import { ThemedView } from './ThemedView';
 

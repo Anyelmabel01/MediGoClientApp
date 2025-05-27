@@ -1,9 +1,10 @@
+import { Colors } from '@/constants/Colors';
 import { UserLocation, mockLocations } from '@/constants/UserModel';
-import { handleError } from '@/utils/errorHandler';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { MapboxMap } from './MapboxMap';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 
@@ -14,6 +15,7 @@ interface LocationSelectorProps {
 }
 
 export function LocationSelector({ isVisible, onClose, onLocationSelect }: LocationSelectorProps) {
+  const { isDarkMode } = useTheme();
   const [locations, setLocations] = useState<UserLocation[]>(mockLocations);
   const [isEditing, setIsEditing] = useState(false);
   const [editingLocation, setEditingLocation] = useState<UserLocation | null>(null);
@@ -24,9 +26,8 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     latitude: 8.9673,
     longitude: -79.5314,
   });
-  const [mapLoading, setMapLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState(false);
-  const webViewRef = useRef(null);
 
   // Cargar ubicaciones (en una app real vendría de una API)
   useEffect(() => {
@@ -103,7 +104,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingAddress(location.direccion);
     setIsEditing(true);
     setIsAddingNew(false);
-    setMapLoading(true);
+    setMapLoading(false);
     setMapError(false);
   };
 
@@ -113,7 +114,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingAddress('');
     setIsEditing(true);
     setIsAddingNew(true);
-    setMapLoading(true);
+    setMapLoading(false);
     setMapError(false);
   };
 
@@ -125,222 +126,116 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setIsAddingNew(false);
   };
 
-  // Manejar mensajes desde el WebView
-  const handleWebViewMessage = (event: any) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === 'markerDragEnd' || data.type === 'mapClick') {
-        setSelectedCoords({
-          latitude: data.latitude,
-          longitude: data.longitude
-        });
-      } else if (data.type === 'mapLoaded') {
-        setMapLoading(false);
-      } else if (data.type === 'mapError') {
-        setMapError(true);
-        setMapLoading(false);
-      }
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
-  // HTML simplificado para el WebView
-  const getMapHtml = () => {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
-          html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-          }
-          #map {
-            width: 100%;
-            height: 100%;
-            background-color: #f2f2f2;
-          }
-          .error-message {
-            text-align: center;
-            color: red;
-            padding: 20px;
-            display: none;
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <div id="error" class="error-message">No se pudo cargar el mapa. Verifica tu conexión a internet.</div>
-        
-        <script>
-          // Función para informar al React Native que ocurrió un error
-          function notifyError() {
-            try {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'mapError'
-              }));
-              document.getElementById('error').style.display = 'block';
-              document.getElementById('map').style.display = 'none';
-            } catch (e) {
-              console.error('Error al notificar estado:', e);
-            }
-          }
-
-          // Intenta cargar las librerías de Leaflet
-          try {
-            // Carga la hoja de estilos de Leaflet
-            var linkElement = document.createElement('link');
-            linkElement.rel = 'stylesheet';
-            linkElement.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
-            document.head.appendChild(linkElement);
-            
-            // Carga el script de Leaflet
-            var scriptElement = document.createElement('script');
-            scriptElement.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
-            
-            scriptElement.onload = function() {
-              // Inicializa el mapa cuando se carga Leaflet
-              try {
-                var map = L.map('map').setView([${selectedCoords.latitude}, ${selectedCoords.longitude}], 15);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(map);
-                
-                var marker = L.marker([${selectedCoords.latitude}, ${selectedCoords.longitude}], {
-                  draggable: true
-                }).addTo(map);
-                
-                marker.on('dragend', function(e) {
-                  var position = marker.getLatLng();
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'markerDragEnd',
-                    latitude: position.lat,
-                    longitude: position.lng
-                  }));
-                });
-                
-                map.on('click', function(e) {
-                  marker.setLatLng(e.latlng);
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'mapClick',
-                    latitude: e.latlng.lat,
-                    longitude: e.latlng.lng
-                  }));
-                });
-                
-                // Notifica que el mapa se cargó correctamente
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'mapLoaded'
-                }));
-              } catch (e) {
-                console.error('Error al inicializar el mapa:', e);
-                notifyError();
-              }
-            };
-            
-            scriptElement.onerror = function() {
-              console.error('Error al cargar Leaflet');
-              notifyError();
-            };
-            
-            document.body.appendChild(scriptElement);
-          } catch (e) {
-            console.error('Error al cargar las librerías:', e);
-            notifyError();
-          }
-        </script>
-      </body>
-      </html>
-    `;
+  // Manejar la selección de ubicación en el mapa de Mapbox
+  const handleMapLocationSelect = (latitude: number, longitude: number) => {
+    setSelectedCoords({
+      latitude,
+      longitude
+    });
   };
 
   const renderLocationItem = ({ item }: { item: UserLocation }) => (
-    <View style={styles.locationItem}>
+    <View style={[styles.locationItem, { 
+      backgroundColor: isDarkMode ? Colors.dark.background : '#f8f8f8',
+      borderColor: isDarkMode ? Colors.dark.border : 'transparent'
+    }]}>
       <TouchableOpacity 
         style={styles.locationMainContent}
         onPress={() => handleSelectLocation(item)}
       >
-        <View style={styles.locationIconContainer}>
+        <View style={[styles.locationIconContainer, { 
+          backgroundColor: isDarkMode ? Colors.dark.border : '#f1f1f1' 
+        }]}>
           <Ionicons
             name={item.esPrincipal ? "location" : "location-outline"}
             size={24}
-            color={item.esPrincipal ? "#2D7FF9" : "#777"}
+            color={item.esPrincipal ? Colors.light.primary : (isDarkMode ? Colors.dark.textSecondary : "#777")}
           />
         </View>
         <View style={styles.locationInfo}>
           <ThemedText style={styles.locationName}>
             {item.nombre}
-            {item.esPrincipal && <ThemedText style={styles.defaultBadge}> (Principal)</ThemedText>}
+            {item.esPrincipal && <ThemedText style={[styles.defaultBadge, { color: Colors.light.primary }]}> (Principal)</ThemedText>}
           </ThemedText>
-          <ThemedText style={styles.locationAddress}>{item.direccion}</ThemedText>
+          <ThemedText style={[styles.locationAddress, { 
+            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+          }]}>{item.direccion}</ThemedText>
         </View>
       </TouchableOpacity>
       
       <View style={styles.locationActions}>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, { 
+            backgroundColor: isDarkMode ? Colors.dark.border : '#f1f1f1' 
+          }]}
           onPress={() => handleEditLocation(item)}
         >
-          <Ionicons name="pencil" size={18} color="#777" />
+          <Ionicons name="pencil" size={18} color={isDarkMode ? Colors.dark.textSecondary : "#777"} />
         </TouchableOpacity>
         
         {!item.esPrincipal && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { 
+              backgroundColor: isDarkMode ? Colors.dark.border : '#f1f1f1' 
+            }]}
             onPress={() => handleSetDefault(item.id)}
           >
-            <Ionicons name="star-outline" size={18} color="#777" />
+            <Ionicons name="star-outline" size={18} color={isDarkMode ? Colors.dark.textSecondary : "#777"} />
           </TouchableOpacity>
         )}
         
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, { 
+            backgroundColor: isDarkMode ? Colors.dark.border : '#f1f1f1' 
+          }]}
           onPress={() => handleDeleteLocation(item.id)}
         >
-          <Ionicons name="trash-outline" size={18} color="#777" />
+          <Ionicons name="trash-outline" size={18} color={Colors.light.error} />
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  // Renderizar el contenido del mapa con estados de carga y error
+  // Renderizar el contenido del mapa con Mapbox
   const renderMapContent = () => {
     return (
       <View style={styles.mapContainer}>
-        <ThemedText style={styles.fieldLabel}>Selecciona la ubicación en el mapa</ThemedText>
+        <ThemedText style={[styles.fieldLabel, { 
+          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+        }]}>
+          Selecciona la ubicación en el mapa
+        </ThemedText>
         
-        <View style={styles.mapWrapper}>
-          <WebView
-            ref={webViewRef}
+        <View style={[styles.mapWrapper, { 
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+        }]}>
+          <MapboxMap
+            latitude={selectedCoords.latitude}
+            longitude={selectedCoords.longitude}
+            zoom={15}
+            onLocationSelect={handleMapLocationSelect}
+            showCurrentLocation={false}
+            interactive={true}
             style={styles.map}
-            originWhitelist={['*']}
-            source={{ html: getMapHtml() }}
-            onMessage={handleWebViewMessage}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            onError={() => {
-              setMapError(true);
-              setMapLoading(false);
-            }}
+            markers={[{
+              id: 'selected-location',
+              latitude: selectedCoords.latitude,
+              longitude: selectedCoords.longitude,
+              color: Colors.light.primary,
+              title: 'Ubicación seleccionada'
+            }]}
           />
           
           {mapLoading && (
             <View style={styles.mapLoadingOverlay}>
-              <ActivityIndicator size="large" color="#2D7FF9" />
+              <ActivityIndicator size="large" color={Colors.light.primary} />
               <ThemedText style={styles.loadingText}>Cargando mapa...</ThemedText>
             </View>
           )}
           
           {mapError && (
             <View style={styles.mapErrorOverlay}>
-              <Ionicons name="cloud-offline-outline" size={40} color="#888" />
+              <Ionicons name="cloud-offline-outline" size={40} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
               <ThemedText style={styles.errorText}>
                 No se pudo cargar el mapa. Verifica tu conexión a internet.
               </ThemedText>
@@ -348,8 +243,10 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
           )}
         </View>
         
-        <ThemedText style={styles.mapInstructions}>
-          Toca en el mapa o arrastra el marcador para seleccionar la ubicación exacta
+        <ThemedText style={[styles.mapInstructions, { 
+          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+        }]}>
+          Toca en el mapa para seleccionar la ubicación exacta
         </ThemedText>
       </View>
     );
@@ -363,8 +260,13 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
       onRequestClose={onClose}
     >
       <ThemedView style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalView, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          shadowColor: Colors.light.shadowColor 
+        }]}>
+          <View style={[styles.modalHeader, { 
+            borderBottomColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+          }]}>
             <ThemedText style={styles.modalTitle}>
               {isEditing 
                 ? (isAddingNew ? 'Añadir ubicación' : 'Editar ubicación')
@@ -372,29 +274,43 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
               }
             </ThemedText>
             <TouchableOpacity onPress={isEditing ? resetEditState : onClose} style={styles.closeButton}>
-              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color="#777" />
+              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color={isDarkMode ? Colors.dark.textSecondary : "#777"} />
             </TouchableOpacity>
           </View>
 
           {isEditing ? (
             <View style={styles.editForm}>
               <View style={styles.formField}>
-                <ThemedText style={styles.fieldLabel}>Nombre</ThemedText>
+                <ThemedText style={[styles.fieldLabel, { 
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                }]}>Nombre</ThemedText>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { 
+                    borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary 
+                  }]}
                   value={editingName}
                   onChangeText={setEditingName}
                   placeholder="Ej: Casa, Trabajo, Gimnasio..."
+                  placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
                 />
               </View>
               
               <View style={styles.formField}>
-                <ThemedText style={styles.fieldLabel}>Dirección</ThemedText>
+                <ThemedText style={[styles.fieldLabel, { 
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                }]}>Dirección</ThemedText>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { 
+                    borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary 
+                  }]}
                   value={editingAddress}
                   onChangeText={setEditingAddress}
                   placeholder="Dirección completa"
+                  placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
                   multiline
                 />
               </View>
@@ -404,6 +320,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
               <TouchableOpacity 
                 style={[
                   styles.saveButton,
+                  { backgroundColor: Colors.light.primary },
                   (!editingName || !editingAddress) && styles.saveButtonDisabled
                 ]}
                 onPress={handleSaveLocation}
@@ -421,14 +338,16 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
                 contentContainerStyle={styles.locationsList}
                 ListEmptyComponent={
                   <View style={styles.emptyState}>
-                    <Ionicons name="location-outline" size={50} color="#ccc" />
-                    <ThemedText style={styles.emptyText}>No hay ubicaciones guardadas</ThemedText>
+                    <Ionicons name="location-outline" size={50} color={isDarkMode ? Colors.dark.textSecondary : "#ccc"} />
+                    <ThemedText style={[styles.emptyText, { 
+                      color: isDarkMode ? Colors.dark.textSecondary : "#999" 
+                    }]}>No hay ubicaciones guardadas</ThemedText>
                   </View>
                 }
               />
               
               <TouchableOpacity 
-                style={styles.addButton}
+                style={[styles.addButton, { backgroundColor: Colors.light.primary }]}
                 onPress={handleAddNewLocation}
               >
                 <Ionicons name="add" size={24} color="white" />
@@ -451,11 +370,9 @@ const styles = StyleSheet.create({
   },
   modalView: {
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '85%',
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -470,7 +387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 18,
@@ -488,7 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#f8f8f8',
+    borderWidth: 1,
   },
   locationMainContent: {
     flex: 1,
@@ -499,7 +415,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f1f1f1',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -514,11 +429,9 @@ const styles = StyleSheet.create({
   },
   defaultBadge: {
     fontSize: 12,
-    color: '#2D7FF9',
   },
   locationAddress: {
     fontSize: 14,
-    color: '#666',
   },
   locationActions: {
     flexDirection: 'row',
@@ -528,7 +441,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f1f1f1',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -537,9 +449,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2D7FF9',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     margin: 16,
   },
   addButtonText: {
@@ -555,7 +466,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#999',
   },
   editForm: {
     padding: 16,
@@ -565,14 +475,13 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 14,
-    color: '#777',
     marginBottom: 6,
+    fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
     fontSize: 16,
   },
   mapContainer: {
@@ -580,17 +489,15 @@ const styles = StyleSheet.create({
   },
   mapWrapper: {
     position: 'relative',
-    height: 200,
-    borderRadius: 8,
+    height: 220,
+    borderRadius: 12,
     marginVertical: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ddd',
   },
   map: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f5f5f5',
+    height: 220,
   },
   mapLoadingOverlay: {
     position: 'absolute',
@@ -624,18 +531,17 @@ const styles = StyleSheet.create({
   },
   mapInstructions: {
     fontSize: 12,
-    color: '#777',
     textAlign: 'center',
     marginTop: 4,
+    fontStyle: 'italic',
   },
   saveButton: {
-    backgroundColor: '#2D7FF9',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: '#a0c4f2',
+    opacity: 0.5,
   },
   saveButtonText: {
     color: 'white',

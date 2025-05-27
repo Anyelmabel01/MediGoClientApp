@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -308,25 +309,32 @@ export default function ResultadosScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <ThemedText style={[styles.title, { color: colors.white }]}>Mis Resultados</ThemedText>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Ionicons 
-            name="filter" 
-            size={24} 
-            color={colors.white} 
-          />
-        </TouchableOpacity>
-      </View>
+      <LinearGradient
+        colors={['#00A0B0', '#0081B0']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <ThemedText style={styles.title}>Mis Resultados</ThemedText>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons 
+              name="filter" 
+              size={24} 
+              color="#fff" 
+            />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
       {/* Barra de búsqueda */}
       <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
@@ -579,14 +587,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerGradient: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingVertical: 16,
+    height: 60,
   },
   backButton: {
     padding: 8,
@@ -597,6 +608,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginHorizontal: -40,
+    color: '#fff',
   },
   filterButton: {
     padding: 8,

@@ -48,7 +48,7 @@ type Prescription = {
 export default function VideollamadaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { specialistId, appointmentTime } = useLocalSearchParams();
+  const { consultationId, specialistId, appointmentTime, specialistName, specialty } = useLocalSearchParams();
   const cameraRef = useRef<CameraView>(null);
   
   // Camera permissions
@@ -72,10 +72,16 @@ export default function VideollamadaScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
 
-  // Mock doctor data
+  // Doctor data from params
   const doctorInfo = {
-    name: 'Dr. Carlos Mendoza',
-    initials: 'CM'
+    name: specialistName || 'Especialista',
+    initials: specialistName && typeof specialistName === 'string' ? 
+      specialistName.split(' ')
+        .map((word: string) => word[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase() 
+      : 'ES'
   };
 
   useEffect(() => {

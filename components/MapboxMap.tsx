@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
-import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { ActivityIndicator, Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { ThemedText } from './ThemedText';
 
@@ -18,6 +19,7 @@ interface MapboxMapProps {
     color?: string;
     title?: string;
   }>;
+  route?: Array<[number, number]>; // Coordenadas de la ruta [lng, lat]
   showCurrentLocation?: boolean;
   interactive?: boolean;
   style?: any;
@@ -27,26 +29,67 @@ const MAPBOX_API_KEY = "pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xob
 
 export const MapboxMap: React.FC<MapboxMapProps> = ({
   latitude = 8.9824,
-  longitude = -79.5199, // Panamá City default
-  zoom = 14,
+  longitude = -79.5199,
+  zoom = 13,
   onLocationSelect,
   markers = [],
-  showCurrentLocation = true,
+  route,
+  showCurrentLocation = false,
   interactive = true,
   style
 }) => {
-  const webViewRef = useRef<WebView>(null);
-  const [mapReady, setMapReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const generateMapHTML = () => {
     const markersJS = markers.map(marker => `
-      new mapboxgl.Marker({ color: '${marker.color || '#FF0000'}' })
+      new mapboxgl.Marker({ color: '${marker.color || '#3887BE'}' })
         .setLngLat([${marker.longitude}, ${marker.latitude}])
-        .setPopup(new mapboxgl.Popup().setHTML('<h3>${marker.title || ''}</h3>'))
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<h3>${marker.title || ''}</h3>'))
         .addTo(map);
     `).join('');
+
+    const routeJS = route ? `
+      map.on('load', () => {
+        map.addSource('route', {
+          'type': 'geojson',
+          'data': {
+            'type': 'Feature',
+            'properties': {},
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': ${JSON.stringify(route)}
+            }
+          }
+        });
+        
+        map.addLayer({
+          'id': 'route',
+          'type': 'line',
+          'source': 'route',
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          'paint': {
+            'line-color': '#3887be',
+            'line-width': 5,
+            'line-opacity': 0.75
+          }
+        });
+      });
+    ` : '';
+
+    const clickHandlerJS = onLocationSelect ? `
+      map.on('click', (e) => {
+        const coords = e.lngLat;
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'locationSelect',
+          latitude: coords.lat,
+          longitude: coords.lng
+        }));
+      });
+    ` : '';
 
     return `
       <!DOCTYPE html>
@@ -55,38 +98,19 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
         <style>
           body { 
             margin: 0; 
             padding: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
           #map { 
             width: 100vw; 
             height: 100vh; 
           }
-          .mapboxgl-ctrl-bottom-left,
-          .mapboxgl-ctrl-bottom-right {
-            display: none;
-          }
-          #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            z-index: 1000;
-          }
         </style>
       </head>
       <body>
-        <div id="loading">
-          <div>Cargando mapa...</div>
-        </div>
         <div id="map"></div>
         <script>
           try {
@@ -100,99 +124,45 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
               interactive: ${interactive}
             });
 
-            let currentMarker = null;
-
-            map.on('load', function() {
-              document.getElementById('loading').style.display = 'none';
-              
-              window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'mapReady'
-              }));
-
-              // Add markers
+            map.on('load', () => {
+              // Agregar marcadores
               ${markersJS}
 
-              // Add current location marker if enabled
+              // Agregar ubicación actual si está habilitada
               ${showCurrentLocation ? `
                 if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition(function(position) {
-                    const userLocation = [position.coords.longitude, position.coords.latitude];
-                    
-                    new mapboxgl.Marker({ color: '#007AFF' })
-                      .setLngLat(userLocation)
-                      .setPopup(new mapboxgl.Popup().setHTML('<h3>Tu ubicación</h3>'))
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    new mapboxgl.Marker({ color: '#FF0000' })
+                      .setLngLat([position.coords.longitude, position.coords.latitude])
+                      .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<h3>Tu ubicación</h3>'))
                       .addTo(map);
-                      
-                    window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'currentLocation',
-                      latitude: position.coords.latitude,
-                      longitude: position.coords.longitude
-                    }));
-                  }, function(error) {
-                    console.log('Geolocation error:', error);
                   });
                 }
               ` : ''}
 
-              // Handle map clicks for location selection
-              ${onLocationSelect ? `
-                map.on('click', function(e) {
-                  const coords = e.lngLat;
-                  
-                  // Remove previous marker
-                  if (currentMarker) {
-                    currentMarker.remove();
-                  }
-                  
-                  // Add new marker
-                  currentMarker = new mapboxgl.Marker({ color: '#FF6B6B' })
-                    .setLngLat([coords.lng, coords.lat])
-                    .addTo(map);
-                  
-                  // Send coordinates to React Native
-                  window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'locationSelected',
-                    latitude: coords.lat,
-                    longitude: coords.lng
-                  }));
-                });
-              ` : ''}
-            });
-
-            map.on('error', function(e) {
-              window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'error',
-                message: 'Error cargando el mapa'
+              // Notificar que el mapa está listo
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'mapReady'
               }));
             });
 
-            // Function to update map center
-            window.updateMapCenter = function(lat, lng, zoomLevel = ${zoom}) {
-              map.flyTo({
-                center: [lng, lat],
-                zoom: zoomLevel,
-                essential: true
-              });
-            };
+            // Agregar ruta si existe
+            ${routeJS}
 
-            // Function to add marker
-            window.addMarker = function(lat, lng, color = '#FF0000', title = '') {
-              new mapboxgl.Marker({ color: color })
-                .setLngLat([lng, lat])
-                .setPopup(new mapboxgl.Popup().setHTML('<h3>' + title + '</h3>'))
-                .addTo(map);
-            };
+            // Manejar clics en el mapa
+            ${clickHandlerJS}
 
-            // Function to clear all markers
-            window.clearMarkers = function() {
-              const markers = document.querySelectorAll('.mapboxgl-marker');
-              markers.forEach(marker => marker.remove());
-            };
+            map.on('error', (e) => {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'error',
+                message: 'Error de Mapbox: ' + e.error.message
+              }));
+            });
 
           } catch (error) {
-            window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({
+            window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'error',
-              message: 'Error inicializando el mapa: ' + error.message
+              message: 'Error: ' + error.message
             }));
           }
         </script>
@@ -201,66 +171,44 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
     `;
   };
 
-  const handleWebViewMessage = (event: any) => {
+  const handleMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       
-      switch (data.type) {
-        case 'mapReady':
-          setMapReady(true);
-          setLoading(false);
-          setError(null);
-          break;
-        case 'locationSelected':
-          onLocationSelect && onLocationSelect(data.latitude, data.longitude);
-          break;
-        case 'currentLocation':
-          // Handle current location if needed
-          break;
-        case 'error':
-          setError(data.message);
-          setLoading(false);
-          break;
+      if (data.type === 'mapReady') {
+        setLoading(false);
+        setError(null);
+      } else if (data.type === 'error') {
+        setError(data.message);
+        setLoading(false);
+      } else if (data.type === 'locationSelect' && onLocationSelect) {
+        onLocationSelect(data.latitude, data.longitude);
       }
     } catch (error) {
-      console.error('Error parsing WebView message:', error);
-      setError('Error de comunicación con el mapa');
+      setError('Error de comunicación');
       setLoading(false);
     }
   };
 
-  const handleWebViewError = () => {
-    setError('Error cargando el mapa. Verifica tu conexión a internet.');
+  const handleError = () => {
+    setError('Error cargando el mapa');
     setLoading(false);
-  };
-
-  const updateMapCenter = (lat: number, lng: number, zoomLevel?: number) => {
-    if (webViewRef.current && mapReady) {
-      webViewRef.current.postMessage(JSON.stringify({
-        type: 'updateCenter',
-        latitude: lat,
-        longitude: lng,
-        zoom: zoomLevel || zoom
-      }));
-    }
-  };
-
-  const addMarker = (lat: number, lng: number, color?: string, title?: string) => {
-    if (webViewRef.current && mapReady) {
-      webViewRef.current.postMessage(JSON.stringify({
-        type: 'addMarker',
-        latitude: lat,
-        longitude: lng,
-        color: color || '#FF0000',
-        title: title || ''
-      }));
-    }
   };
 
   if (error) {
     return (
       <View style={[styles.container, styles.errorContainer, style]}>
+        <Ionicons name="warning" size={48} color="#F44336" style={{ marginBottom: 16 }} />
         <ThemedText style={styles.errorText}>{error}</ThemedText>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => {
+            setError(null);
+            setLoading(true);
+          }}
+        >
+          <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -274,21 +222,13 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
         </View>
       )}
       <WebView
-        ref={webViewRef}
         source={{ html: generateMapHTML() }}
         style={styles.webview}
-        onMessage={handleWebViewMessage}
-        onError={handleWebViewError}
+        onMessage={handleMessage}
+        onError={handleError}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={false}
-        scalesPageToFit={true}
-        mixedContentMode="compatibility"
-        allowsInlineMediaPlayback={true}
-        mediaPlaybackRequiresUserAction={false}
-        geolocationEnabled={true}
-        onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
       />
     </View>
   );
@@ -326,6 +266,18 @@ const styles = StyleSheet.create({
     color: '#F44336',
     textAlign: 'center',
     padding: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
 });
 
