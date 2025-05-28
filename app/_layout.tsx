@@ -39,6 +39,10 @@ function RootLayoutNav() {
             <Stack.Screen name="laboratorio" options={{ headerShown: false }} />
             <Stack.Screen name="farmacia" options={{ headerShown: false }} />
             <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
+            <Stack.Screen name="enfermeria/buscar-enfermera" options={{ headerShown: false }} />
+            <Stack.Screen name="enfermeria/agendar-servicio" options={{ headerShown: false }} />
+            <Stack.Screen name="enfermeria/mis-servicios" options={{ headerShown: false }} />
+            <Stack.Screen name="enfermeria/perfil-enfermera/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="expediente" options={{ headerShown: false }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="register" options={{ headerShown: false }} />

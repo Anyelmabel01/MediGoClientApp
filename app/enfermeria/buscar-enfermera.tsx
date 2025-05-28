@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Dimensions, FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -76,7 +77,13 @@ const nurses: Nurse[] = [
 type SpecialtyFilter = 'all' | 'geriatria' | 'pediatria' | 'cardiologia' | 'heridas' | 'medicamentos';
 type AvailabilityFilter = 'all' | 'available' | 'today' | 'tomorrow';
 
-export default function BuscarEnfermeraScreen() {  const router = useRouter();  const { isDarkMode } = useTheme();  const insets = useSafeAreaInsets();  const [searchQuery, setSearchQuery] = useState('');  const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyFilter>('all');  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityFilter>('all');
+export default function BuscarEnfermeraScreen() {
+  const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyFilter>('all');
+  const [selectedAvailability, setSelectedAvailability] = useState<AvailabilityFilter>('all');
 
   const filteredNurses = nurses.filter(nurse => {
     const matchesSearch = nurse.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -320,61 +327,61 @@ export default function BuscarEnfermeraScreen() {  const router = useRouter();  
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 16,
+    marginBottom: 12,
   },
   backButton: {
-    padding: 5,
+    padding: 4,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: 8,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 15,
   },
   filterTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   filtersContainer: {
-    marginBottom: 16,
+    marginBottom: 6,
   },
   filtersContent: {
     paddingRight: 16,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginRight: 3,
+    borderWidth: 0.5,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: '500',
   },
   resultsHeader: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   resultsCount: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   nursesList: {
@@ -383,24 +390,24 @@ const styles = StyleSheet.create({
   nurseCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
     elevation: 2,
   },
   nursePhoto: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    marginRight: 12,
   },
   nurseInfo: {
     flex: 1,
@@ -409,10 +416,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   nurseName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     flex: 1,
   },
@@ -421,48 +428,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   availabilityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
   },
   availabilityText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   experienceRating: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   experience: {
-    fontSize: 14,
+    fontSize: 13,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginLeft: 4,
+    marginLeft: 3,
   },
   reviewsCount: {
-    fontSize: 14,
-    marginLeft: 4,
+    fontSize: 13,
+    marginLeft: 3,
   },
   specialtiesContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   specialtyTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginRight: 6,
   },
   specialtyText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   priceContainer: {
@@ -470,11 +477,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 14,
-    marginRight: 8,
+    fontSize: 13,
+    marginRight: 6,
   },
   price: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 }); 

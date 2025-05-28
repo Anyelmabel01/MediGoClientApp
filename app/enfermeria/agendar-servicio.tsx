@@ -1,14 +1,16 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { Alert, Dimensions, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MapboxMap } from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type ServiceType = {
   id: string;
@@ -50,6 +52,68 @@ export default function AgendarServicioScreen() {
   const [serviceAddress, setServiceAddress] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  
+  // Map related states
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+  } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  // Get current location on component mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permisos requeridos', 'Se necesitan permisos de ubicación para usar esta función');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
+
+  const handleLocationSelect = async (latitude: number, longitude: number) => {
+    try {
+      // Reverse geocoding to get address from coordinates
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (reverseGeocode.length > 0) {
+        const address = reverseGeocode[0];
+        const fullAddress = `${address.street || ''} ${address.streetNumber || ''}, ${address.district || ''}, ${address.city || ''}`.trim();
+        
+        setSelectedLocation({ latitude, longitude, address: fullAddress });
+        setServiceAddress(fullAddress);
+      } else {
+        setSelectedLocation({ latitude, longitude });
+        setServiceAddress(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+      }
+      setShowMapModal(false);
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+      setSelectedLocation({ latitude, longitude });
+      setServiceAddress(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+      setShowMapModal(false);
+    }
+  };
 
   const nurseRate = parseFloat(rate as string) || 350;
   const serviceCost = selectedService ? selectedService.basePrice : 0;
@@ -258,7 +322,142 @@ export default function AgendarServicioScreen() {
               multiline
             />
           </View>
+          
+          {/* Map Button */}
+          <TouchableOpacity
+            style={[styles.mapButton, { backgroundColor: Colors.light.primary }]}
+            onPress={() => setShowMapModal(true)}
+          >
+            <Ionicons name="map" size={20} color="white" />
+            <ThemedText style={styles.mapButtonText}>
+              {selectedLocation ? 'Cambiar ubicación en mapa' : 'Seleccionar en mapa'}
+            </ThemedText>
+          </TouchableOpacity>
+          
+          {selectedLocation && (
+            <View style={styles.selectedLocationInfo}>
+              <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+              <ThemedText style={[styles.selectedLocationText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]} numberOfLines={2}>
+                Ubicación seleccionada en mapa
+              </ThemedText>
+            </View>
+          )}
         </View>
+        
+        {/* Map Modal */}
+        <Modal
+          visible={showMapModal}
+          animationType="slide"
+          presentationStyle="fullScreen"
+        >
+          <View style={styles.mapModalContainer}>
+            <View style={[styles.mapModalHeader, {
+              backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+              borderBottomColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            }]}>
+              <TouchableOpacity
+                style={styles.mapModalCloseButton}
+                onPress={() => setShowMapModal(false)}
+              >
+                <Ionicons name="close" size={24} color={Colors.light.primary} />
+              </TouchableOpacity>
+              <ThemedText style={styles.mapModalTitle}>Seleccionar ubicación</ThemedText>
+              <View style={{ width: 24 }} />
+            </View>
+            
+            <View style={styles.mapContainer}>
+              <MapboxMap
+                latitude={currentLocation?.latitude || 9.9281}
+                longitude={currentLocation?.longitude || -84.0907}
+                zoom={13}
+                onLocationSelect={handleLocationSelect}
+                markers={selectedLocation ? [{
+                  id: 'selected',
+                  latitude: selectedLocation.latitude,
+                  longitude: selectedLocation.longitude,
+                  color: Colors.light.primary,
+                  title: 'Ubicación seleccionada'
+                }] : []}
+                showCurrentLocation={true}
+                interactive={true}
+                style={styles.map}
+              />
+              
+              {/* Current Location Button */}
+              <TouchableOpacity
+                style={[styles.currentLocationButton, { backgroundColor: Colors.light.primary }]}
+                onPress={() => {
+                  if (currentLocation) {
+                    handleLocationSelect(currentLocation.latitude, currentLocation.longitude);
+                  } else {
+                    getCurrentLocation();
+                  }
+                }}
+              >
+                <Ionicons name="locate" size={20} color="white" />
+                <ThemedText style={styles.currentLocationText}>
+                  Usar mi ubicación actual
+                </ThemedText>
+              </TouchableOpacity>
+              
+              {/* Sample Locations for Demo */}
+              <View style={styles.sampleLocationsContainer}>
+                <ThemedText style={[styles.sampleLocationsTitle, {
+                  color: isDarkMode ? Colors.dark.text : Colors.light.text
+                }]}>
+                  Ubicaciones de ejemplo:
+                </ThemedText>
+                
+                <TouchableOpacity
+                  style={[styles.sampleLocationButton, {
+                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                    borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                  }]}
+                  onPress={() => handleLocationSelect(9.9281, -84.0907)} // San José, Costa Rica
+                >
+                  <Ionicons name="business" size={16} color={Colors.light.primary} />
+                  <ThemedText style={[styles.sampleLocationText, {
+                    color: isDarkMode ? Colors.dark.text : Colors.light.text
+                  }]}>
+                    Centro de San José
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.sampleLocationButton, {
+                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                    borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                  }]}
+                  onPress={() => handleLocationSelect(9.9342, -84.0879)} // Escazú
+                >
+                  <Ionicons name="home" size={16} color={Colors.light.primary} />
+                  <ThemedText style={[styles.sampleLocationText, {
+                    color: isDarkMode ? Colors.dark.text : Colors.light.text
+                  }]}>
+                    Escazú Centro
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.sampleLocationButton, {
+                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                    borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+                  }]}
+                  onPress={() => handleLocationSelect(9.9355, -84.1059)} // Santa Ana
+                >
+                  <Ionicons name="leaf" size={16} color={Colors.light.primary} />
+                  <ThemedText style={[styles.sampleLocationText, {
+                    color: isDarkMode ? Colors.dark.text : Colors.light.text
+                  }]}>
+                    Santa Ana
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Additional Notes */}
         <View style={[styles.section, {
@@ -545,5 +744,112 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  mapButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  selectedLocationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+  },
+  selectedLocationText: {
+    fontSize: 12,
+    marginLeft: 8,
+    flex: 1,
+  },
+  mapModalContainer: {
+    flex: 1,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  mapModalCloseButton: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  mapModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  mapContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  map: {
+    height: 300,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  mapInstructionsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  mapInstructionsText: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 32,
+    lineHeight: 20,
+  },
+  currentLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  currentLocationText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  sampleLocationsContainer: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  sampleLocationsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  sampleLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  sampleLocationText: {
+    fontSize: 14,
+    marginLeft: 8,
   },
 }); 

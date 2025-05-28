@@ -96,7 +96,7 @@ export default function EnfermeriaScreen() {
   };
 
   const handleServicePress = (serviceId: string) => {
-    router.push(`/enfermeria/servicio/${serviceId}` as any);
+    router.push('/enfermeria/buscar-enfermera' as any);
   };
 
   const handleNurseSearch = () => {
@@ -162,32 +162,25 @@ export default function EnfermeriaScreen() {
     </TouchableOpacity>
   );
 
-  const renderServiceItem = ({ item }: { item: NursingService }) => (
+  const renderServiceItem = ({ item, index }: { item: NursingService; index: number }) => (
     <TouchableOpacity 
       style={[styles.serviceCard, { 
         backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+        width: (SCREEN_WIDTH - 48) / 2,
       }]}
       onPress={() => handleServicePress(item.id)}
     >
       <View style={[styles.serviceIconContainer, { 
         backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(0, 160, 176, 0.1)'
       }]}>
-        <Ionicons name={item.icon} size={32} color={Colors.light.primary} />
+        <Ionicons name={item.icon} size={24} color={Colors.light.primary} />
       </View>
       <View style={styles.serviceContent}>
         <ThemedText style={styles.serviceName} numberOfLines={2}>{item.name}</ThemedText>
-        <ThemedText style={[styles.serviceDescription, { 
-          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-        }]} numberOfLines={3}>{item.description}</ThemedText>
         <ThemedText style={[styles.servicePrice, { color: Colors.light.primary }]}>
-          ${item.price.toFixed(2)}
+          ${item.price}
         </ThemedText>
       </View>
-      <Ionicons 
-        name="chevron-forward" 
-        size={20} 
-        color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
-      />
     </TouchableOpacity>
   );
 
@@ -291,9 +284,9 @@ export default function EnfermeriaScreen() {
         </ThemedText>
         
         <View style={styles.servicesList}>
-          {filteredServices.map((item) => (
+          {filteredServices.map((item, index) => (
             <View key={item.id}>
-              {renderServiceItem({ item })}
+              {renderServiceItem({ item, index })}
             </View>
           ))}
         </View>
@@ -323,8 +316,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 40,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -332,15 +325,15 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   avatarContainer: {
-    marginRight: 12,
+    marginRight: 10,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -349,7 +342,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   greetingContainer: {
@@ -357,40 +350,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
   editProfileIndicator: {
     backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
+    borderRadius: 10,
+    padding: 3,
+    marginLeft: 6,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
   },
   locationIcon: {
-    marginRight: 6,
+    marginRight: 5,
   },
   locationText: {
     flex: 1,
     color: Colors.light.white,
-    fontSize: 14,
+    fontSize: 13,
     marginRight: 4,
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
@@ -402,59 +395,59 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   infoBox: {
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     borderWidth: 1,
   },
   infoText: {
-    marginLeft: 12,
+    marginLeft: 10,
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 16,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    minHeight: 32,
+    marginLeft: 10,
+    fontSize: 15,
+    minHeight: 28,
   },
   nurseSearchButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
   },
   nurseSearchText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
   },
   filtersContainer: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   filtersContent: {
     paddingRight: 16,
@@ -462,111 +455,114 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 10,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 10,
     color: Colors.light.primary,
   },
   servicesList: {
-    gap: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   serviceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
   serviceIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 8,
+    alignSelf: 'center',
   },
   serviceContent: {
-    flex: 1,
-    paddingRight: 8,
+    alignItems: 'center',
   },
   serviceName: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
     marginBottom: 4,
     color: Colors.light.primary,
+    textAlign: 'center',
   },
   serviceDescription: {
-    fontSize: 14,
-    marginBottom: 8,
-    lineHeight: 20,
+    fontSize: 13,
+    marginBottom: 6,
+    lineHeight: 18,
   },
   servicePrice: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: Colors.light.primary,
+    textAlign: 'center',
   },
   quickActionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: 16,
+    gap: 10,
   },
   quickActionCard: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 10,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
   },
   quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   quickActionText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
     color: Colors.light.primary,
   },
   servicesSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
 });
