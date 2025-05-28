@@ -1,9 +1,13 @@
 import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // import * as Notifications from 'expo-notifications'; // REMOVIDO
@@ -37,6 +41,9 @@ export default function ConfiguracionScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   
   const [configOptions, setConfigOptions] = useState<ConfigOption[]>([
     {
@@ -232,6 +239,10 @@ export default function ConfiguracionScreen() {
     }
   ];
 
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -316,14 +327,48 @@ export default function ConfiguracionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
       
-      {/* Header moderno unificado */}
+      {/* Header igual al diseño principal */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <ThemedText style={styles.headerTitle}>Configuración</ThemedText>
-          <ThemedText style={styles.headerSubtitle}>Personaliza tu experiencia</ThemedText>
+        <TouchableOpacity 
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Configuración
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
         </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>Personaliza tu experiencia</ThemedText>
       </View>
 
       <ScrollView 
@@ -382,6 +427,17 @@ export default function ConfiguracionScreen() {
       </ScrollView>
       
       <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </ThemedView>
   );
 }
@@ -389,45 +445,96 @@ export default function ConfiguracionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: Platform.OS === 'android' ? 25 : 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerContent: {
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 28,
+  greeting: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
+    color: Colors.light.white,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '400',
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 24,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#1F2937',
+    color: Colors.light.primary,
   },
   cardsContainer: {
     gap: 12,
@@ -435,13 +542,32 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  logoutCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 24,
   },
   optionIcon: {
     width: 48,
@@ -455,33 +581,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: Colors.light.primary,
   },
   optionDescription: {
     fontSize: 14,
     lineHeight: 20,
   },
   chevronContainer: {
-    padding: 8,
-  },
-  logoutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: '#FFF5F5',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    shadowColor: '#FF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    marginBottom: 8,
+    marginLeft: 8,
   },
   bottomSpacer: {
-    height: 100,
+    height: 20,
   },
 }); 

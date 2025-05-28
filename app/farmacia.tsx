@@ -1,29 +1,34 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import MapView from 'react-native-maps';
 import { MapboxMap } from '../components/MapboxMap';
-import { ThemedText } from '../components/ThemedText';
-import { ThemedView } from '../components/ThemedView';
 
 // Get screen dimensions for responsive layout
 const { width, height } = Dimensions.get('window');
@@ -198,15 +203,17 @@ const getMapboxRoute = async (start: any, end: any) => {
 
 export default function FarmaciaScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [cartItems, setCartItems] = useState<Medicine[]>([]);
+  const [showCart, setShowCart] = useState(false);
   const [availability, setAvailability] = useState<'all' | 'available'>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const { isDarkMode } = useTheme();
-  
-  // Cart state ahora viene del contexto
-  const { cartItems, addToCart, removeFromCart, setCartItems } = useCart();
-  const [showCart, setShowCart] = useState(false);
+  const { addToCart, removeFromCart, setCartItems: cartContextSetCartItems } = useCart();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
@@ -320,7 +327,7 @@ export default function FarmaciaScreen() {
   }, [showDeliveryTracking, deliveryRoute]);
 
   const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
+    setSelectedCategory(selectedCategory === categoryId ? '' : categoryId);
   };
 
   const handleMedicineSelect = (medicineId: string) => {
@@ -342,8 +349,8 @@ export default function FarmaciaScreen() {
   const handleRemoveFromCart = (medicineId: string) => {
     // Si hay más de 1, solo resta 1; si hay 1, elimina el producto
     const item = cartItems.find(ci => ci.id === medicineId);
-    if (item && item.quantity > 1) {
-      setCartItems(prev => prev.map(ci => ci.id === medicineId ? { ...ci, quantity: ci.quantity - 1 } : ci));
+    if (item && (item.quantity || 1) > 1) {
+      setCartItems(prev => prev.map(ci => ci.id === medicineId ? { ...ci, quantity: (ci.quantity || 1) - 1 } : ci));
     } else {
       removeFromCart(medicineId);
     }
@@ -508,31 +515,51 @@ export default function FarmaciaScreen() {
     return getCartSubtotal() + getDeliveryFee();
   };
 
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
+
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
+      {/* Header igual al diseño principal */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Farmacia
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="medical" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
         </TouchableOpacity>
-        <ThemedText style={styles.title}>Farmacia</ThemedText>
-        <View style={styles.headerButtons}>
+        
+        <View style={styles.headerActions}>
           <TouchableOpacity 
             style={styles.headerButton}
             onPress={handleRecetasPress}
           >
-            <Ionicons name="document-text" size={24} color={Colors.light.primary} />
+            <Ionicons name="document-text" size={20} color="white" />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.headerButton}
             onPress={handleCartPress}
           >
             <View>
-              <Ionicons name="cart" size={24} color={Colors.light.primary} />
+              <Ionicons name="cart" size={20} color="white" />
               {getCartItemCount() > 0 && (
                 <View style={styles.cartBadge}>
                   <ThemedText style={styles.cartBadgeText}>{getCartItemCount()}</ThemedText>
@@ -541,75 +568,98 @@ export default function FarmaciaScreen() {
             </View>
           </TouchableOpacity>
         </View>
-      </View>
-      
-      <View style={[styles.searchContainer, { 
-        backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
-        borderColor: isDarkMode ? Colors.dark.border : 'transparent',
-        borderWidth: 1
-      }]}>
-        <Ionicons 
-          name="search" 
-          size={20} 
-          color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
-          style={styles.searchIcon} 
-        />
-        <TextInput
-          style={[styles.searchInput, { 
-            color: isDarkMode ? Colors.dark.text : Colors.light.text 
-          }]}
-          placeholder="Buscar medicamentos..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
-        />
-      </View>
-      
-      <View style={styles.filtersRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity style={[styles.filterBtn, availability === 'all' && styles.selectedFilter]} onPress={() => setAvailability('all')}>
-            <ThemedText style={availability === 'all' ? styles.selectedFilterText : undefined}>Todos</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.filterBtn, availability === 'available' && styles.selectedFilter]} onPress={() => setAvailability('available')}>
-            <ThemedText style={availability === 'available' ? styles.selectedFilterText : undefined}>Disponibles</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 130])}>
-            <ThemedText>Hasta $130</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 1000])}>
-            <ThemedText>Todos los precios</ThemedText>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-      
-      <ThemedText style={styles.sectionTitle}>Categorías</ThemedText>
-      <FlatList
-        horizontal
-        data={categories}
-        renderItem={renderCategoryItem}
-        keyExtractor={item => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesList}
-      />
-      
-      <ThemedText style={styles.sectionTitle}>Medicamentos disponibles</ThemedText>
-      <FlatList
-        data={filteredMedicines}
-        renderItem={renderMedicineItem}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.medicineRow}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.medicinesList}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="search" size={48} color="#ccc" />
-            <ThemedText style={styles.emptyText}>
-              No se encontraron medicamentos
-            </ThemedText>
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
           </View>
-        }
-      />
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>Medicamentos y productos de salud</ThemedText>
+      </View>
+      
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.searchContainer, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
+          borderColor: isDarkMode ? Colors.dark.border : 'transparent',
+          borderWidth: 1
+        }]}>
+          <Ionicons 
+            name="search" 
+            size={20} 
+            color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
+            style={styles.searchIcon} 
+          />
+          <TextInput
+            style={[styles.searchInput, { 
+              color: isDarkMode ? Colors.dark.text : Colors.light.text 
+            }]}
+            placeholder="Buscar medicamentos..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
+          />
+        </View>
+        
+        <View style={styles.filtersRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <TouchableOpacity style={[styles.filterBtn, availability === 'all' && styles.selectedFilter]} onPress={() => setAvailability('all')}>
+              <ThemedText style={availability === 'all' ? styles.selectedFilterText : undefined}>Todos</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.filterBtn, availability === 'available' && styles.selectedFilter]} onPress={() => setAvailability('available')}>
+              <ThemedText style={availability === 'available' ? styles.selectedFilterText : undefined}>Disponibles</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 130])}>
+              <ThemedText>Hasta $130</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 1000])}>
+              <ThemedText>Todos los precios</ThemedText>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+        
+        <ThemedText style={styles.sectionTitle}>Categorías</ThemedText>
+        <FlatList
+          horizontal
+          data={categories}
+          renderItem={renderCategoryItem}
+          keyExtractor={item => item.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesList}
+        />
+        
+        <ThemedText style={styles.sectionTitle}>Medicamentos disponibles</ThemedText>
+        <FlatList
+          data={filteredMedicines}
+          renderItem={renderMedicineItem}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.medicineRow}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.medicinesList}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search" size={48} color="#ccc" />
+              <ThemedText style={styles.emptyText}>
+                No se encontraron medicamentos
+              </ThemedText>
+            </View>
+          }
+        />
+      </ScrollView>
       
       {/* Cart Modal */}
       <Modal
@@ -1035,6 +1085,19 @@ export default function FarmaciaScreen() {
           </View>
         </View>
       </Modal>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </ThemedView>
   );
 }
@@ -1042,30 +1105,67 @@ export default function FarmaciaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Platform.OS === 'ios' ? 40 : 20,
-    marginBottom: 20,
-    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  backButton: {
-    padding: 5,
+  avatarContainer: {
+    marginRight: 12,
   },
-  title: {
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    flex: 1,
-    marginLeft: 10,
+    color: Colors.light.white,
   },
-  headerButtons: {
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 16,
+    top: 70,
   },
   headerButton: {
-    padding: 5,
-    marginLeft: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 8,
+    marginLeft: 8,
   },
   cartBadge: {
     position: 'absolute',
@@ -1082,6 +1182,40 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',

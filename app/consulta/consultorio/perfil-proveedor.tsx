@@ -1,3 +1,4 @@
+import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +12,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+
+// Unified design imports
 
 // Paleta de colores oficial MediGo
 const COLORS = {
@@ -272,8 +275,8 @@ export default function PerfilProveedorScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -535,7 +538,7 @@ export default function PerfilProveedorScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ThemedView>
   );
 }
 

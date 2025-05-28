@@ -1,3 +1,6 @@
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -243,24 +246,49 @@ export default function CalificarCitaScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar style="dark" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
-      {/* Header */}
+      {/* Unified Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={styles.userInfoContainer}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {provider.display_name.charAt(0)}{provider.display_name.charAt(1)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <View style={styles.titleContainer}>
+              <Ionicons name="star" size={20} color={Colors.light.white} />
+              <ThemedText style={styles.pageTitle}>Calificar Consulta</ThemedText>
+            </View>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.title}>Calificar Consulta</Text>
-        <View style={styles.headerSpacer} />
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => router.back()}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.white} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {provider.organization_name}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.white} />
+        </TouchableOpacity>
       </View>
 
+      <KeyboardAvoidingView 
+        style={styles.keyboardContainer} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -324,7 +352,7 @@ export default function CalificarCitaScreen() {
                   <Ionicons 
                     name={category.icon as any} 
                     size={20} 
-                    color={COLORS.primary} 
+                      color={Colors.light.primary} 
                   />
                   <View style={styles.categoryText}>
                     <Text style={styles.categoryTitle}>{category.title}</Text>
@@ -362,7 +390,7 @@ export default function CalificarCitaScreen() {
               >
                 <Text style={[
                   styles.highlightText,
-                  { color: highlight.selected ? COLORS.white : COLORS.primary }
+                    { color: highlight.selected ? Colors.light.white : Colors.light.primary }
                 ]}>
                   {highlight.label}
                 </Text>
@@ -389,11 +417,11 @@ export default function CalificarCitaScreen() {
               <Ionicons 
                 name="thumbs-up" 
                 size={24} 
-                color={wouldRecommend === true ? COLORS.white : COLORS.success} 
+                  color={wouldRecommend === true ? Colors.light.white : COLORS.success} 
               />
               <Text style={[
                 styles.recommendText,
-                { color: wouldRecommend === true ? COLORS.white : COLORS.success }
+                  { color: wouldRecommend === true ? Colors.light.white : COLORS.success }
               ]}>
                 Sí, lo recomiendo
               </Text>
@@ -409,11 +437,11 @@ export default function CalificarCitaScreen() {
               <Ionicons 
                 name="thumbs-down" 
                 size={24} 
-                color={wouldRecommend === false ? COLORS.white : COLORS.error} 
+                  color={wouldRecommend === false ? Colors.light.white : COLORS.error} 
               />
               <Text style={[
                 styles.recommendText,
-                { color: wouldRecommend === false ? COLORS.white : COLORS.error }
+                  { color: wouldRecommend === false ? Colors.light.white : COLORS.error }
               ]}>
                 No lo recomiendo
               </Text>
@@ -431,61 +459,14 @@ export default function CalificarCitaScreen() {
           <TextInput
             style={styles.commentsInput}
             placeholder="Escribe tus comentarios aquí..."
-            placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={Colors.light.textSecondary}
             value={comments}
             onChangeText={setComments}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
-            maxLength={500}
-          />
-          <Text style={styles.characterCount}>
-            {comments.length}/500 caracteres
-          </Text>
-        </View>
-
-        {/* Rating Summary */}
-        {overallRating > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Resumen de tu calificación</Text>
-            
-            <View style={styles.summaryContainer}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Calificación general:</Text>
-                <View style={styles.summaryRating}>
-                  {renderStarRating(overallRating, () => {}, 16, true)}
-                  <Text style={styles.summaryRatingText}>
-                    {overallRating}/5
-                  </Text>
-                </View>
-              </View>
-              
-              {calculateAverageRating() > 0 && (
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Promedio detallado:</Text>
-                  <View style={styles.summaryRating}>
-                    {renderStarRating(Math.round(calculateAverageRating()), () => {}, 16, true)}
-                    <Text style={styles.summaryRatingText}>
-                      {calculateAverageRating().toFixed(1)}/5
-                    </Text>
-                  </View>
-                </View>
-              )}
-              
-              {experienceHighlights.some(h => h.selected) && (
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Aspectos destacados:</Text>
-                  <Text style={styles.summaryHighlights}>
-                    {experienceHighlights
-                      .filter(h => h.selected)
-                      .map(h => h.label)
-                      .join(', ')}
-                  </Text>
-                </View>
-              )}
-            </View>
+            />
           </View>
-        )}
       </ScrollView>
 
       {/* Submit Button */}
@@ -493,56 +474,93 @@ export default function CalificarCitaScreen() {
         <TouchableOpacity 
           style={[
             styles.submitButton,
-            { 
-              backgroundColor: (overallRating > 0 && !isSubmitting) 
-                ? COLORS.primary 
-                : COLORS.textSecondary,
-              opacity: (overallRating > 0 && !isSubmitting) ? 1 : 0.6
-            }
+              { backgroundColor: overallRating > 0 ? Colors.light.primary : Colors.light.textSecondary }
           ]}
           onPress={handleSubmitRating}
-          disabled={overallRating === 0 || isSubmitting}
+            disabled={isSubmitting || overallRating === 0}
         >
-          {isSubmitting ? (
-            <Text style={styles.submitButtonText}>Enviando...</Text>
-          ) : (
-            <>
-              <Ionicons name="send" size={20} color="white" />
               <Text style={styles.submitButtonText}>
-                Enviar calificación
+              {isSubmitting ? 'Enviando...' : 'Enviar calificación'}
               </Text>
-            </>
-          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
-    color: COLORS.textPrimary,
   },
-  headerSpacer: {
-    width: 40,
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -552,23 +570,23 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   section: {
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.border,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   sectionSubtitle: {
     fontSize: 14,
+    color: Colors.light.textSecondary,
     marginBottom: 16,
-    color: COLORS.textSecondary,
     lineHeight: 20,
   },
   providerInfo: {
@@ -576,37 +594,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   providerAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
   },
   providerDetails: {
     flex: 1,
   },
   providerName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   providerType: {
-    fontSize: 16,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
     marginBottom: 2,
-    color: COLORS.textSecondary,
   },
   organizationName: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   overallRatingContainer: {
     alignItems: 'center',
-    paddingVertical: 8,
+    gap: 12,
   },
   starsContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 8,
   },
   starButton: {
     padding: 4,
@@ -614,21 +631,20 @@ const styles = StyleSheet.create({
   ratingLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
   categoryContainer: {
     marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
   categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 8,
   },
   categoryInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     gap: 12,
   },
   categoryText: {
@@ -638,11 +654,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   categorySubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   categoryRating: {
     flexDirection: 'row',
@@ -654,15 +670,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   highlightChip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.white,
   },
   selectedHighlightChip: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: Colors.light.primary,
   },
   highlightText: {
     fontSize: 14,
@@ -675,11 +691,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 2,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
   },
   selectedRecommendButton: {
     backgroundColor: COLORS.success,
@@ -695,50 +713,14 @@ const styles = StyleSheet.create({
   },
   commentsInput: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.white,
-    textAlignVertical: 'top',
-    height: 100,
+    color: Colors.light.text,
+    backgroundColor: Colors.light.white,
+    minHeight: 100,
     marginBottom: 8,
-  },
-  characterCount: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-  },
-  summaryContainer: {
-    gap: 12,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-  },
-  summaryRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  summaryRatingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  summaryHighlights: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-    flex: 1,
-    marginLeft: 16,
   },
   submitContainer: {
     position: 'absolute',
@@ -746,9 +728,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: Colors.light.border,
   },
   submitButton: {
     flexDirection: 'row',
@@ -762,6 +744,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    color: Colors.light.text,
+  },
+  headerSpacer: {
+    width: 40,
   },
   emptyState: {
     flex: 1,

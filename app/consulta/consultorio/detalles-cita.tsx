@@ -1,16 +1,26 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
+import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
-  Image,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    Image,
+    Linking,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 // Paleta de colores oficial MediGo
@@ -103,9 +113,17 @@ const mockAppointmentDetails: Record<string, AppointmentDetail> = {
 export default function DetallesCitaScreen() {
   const router = useRouter();
   const { appointmentId } = useLocalSearchParams();
+  const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const appointment = mockAppointmentDetails[appointmentId as string];
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   if (!appointment) {
     return (
@@ -266,19 +284,43 @@ export default function DetallesCitaScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
-      {/* Header */}
+      {/* Unified Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <View style={styles.titleContainer}>
+              <Ionicons name="calendar" size={20} color={Colors.light.white} />
+              <ThemedText style={styles.pageTitle}>Detalles de Cita</ThemedText>
+            </View>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.title}>Detalles de Cita</Text>
-        <View style={styles.headerSpacer} />
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.white} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.white} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -345,7 +387,7 @@ export default function DetallesCitaScreen() {
           
           <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="calendar-outline" size={20} color={Colors.light.primary} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Fecha y hora</Text>
                 <Text style={styles.detailValue}>
@@ -355,7 +397,7 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="location-outline" size={20} color={Colors.light.primary} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Dirección</Text>
                 <Text style={styles.detailValue}>
@@ -365,7 +407,7 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="medical-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="medical-outline" size={20} color={Colors.light.primary} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Motivo de consulta</Text>
                 <Text style={styles.detailValue}>
@@ -375,7 +417,7 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="cash-outline" size={20} color={Colors.light.primary} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Costo de consulta</Text>
                 <Text style={styles.detailValue}>
@@ -416,7 +458,7 @@ export default function DetallesCitaScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Instrucciones</Text>
             <View style={styles.instructionsContainer}>
-              <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="information-circle-outline" size={20} color={Colors.light.primary} />
               <Text style={styles.instructionsText}>
                 {appointment.instructions}
               </Text>
@@ -430,7 +472,7 @@ export default function DetallesCitaScreen() {
             <Text style={styles.sectionTitle}>Documentos</Text>
             {appointment.documents.map((document, index) => (
               <View key={index} style={styles.documentItem}>
-                <Ionicons name="document-outline" size={20} color={COLORS.primary} />
+                <Ionicons name="document-outline" size={20} color={Colors.light.primary} />
                 <Text style={styles.documentText}>
                   {document}
                 </Text>
@@ -448,7 +490,7 @@ export default function DetallesCitaScreen() {
               style={styles.contactButton}
               onPress={handleCallProvider}
             >
-              <Ionicons name="call" size={20} color={COLORS.primary} />
+              <Ionicons name="call" size={20} color={Colors.light.primary} />
               <Text style={styles.contactButtonText}>Llamar</Text>
             </TouchableOpacity>
             
@@ -456,7 +498,7 @@ export default function DetallesCitaScreen() {
               style={styles.contactButton}
               onPress={handleGetDirections}
             >
-              <Ionicons name="navigate" size={20} color={COLORS.primary} />
+              <Ionicons name="navigate" size={20} color={Colors.light.primary} />
               <Text style={styles.contactButtonText}>Cómo llegar</Text>
             </TouchableOpacity>
           </View>
@@ -501,21 +543,39 @@ export default function DetallesCitaScreen() {
           </View>
         )}
       </View>
-    </View>
+
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
   },
   backButton: {
     padding: 8,
@@ -525,7 +585,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
-    color: COLORS.textPrimary,
+    color: Colors.light.white,
   },
   headerSpacer: {
     width: 40,
@@ -538,12 +598,12 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   statusCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -576,28 +636,28 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
     textAlign: 'center',
     textTransform: 'capitalize',
   },
   appointmentTime: {
     fontSize: 18,
-    color: COLORS.primary,
+    color: Colors.light.primary,
     fontWeight: '600',
   },
   section: {
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.border,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   providerCard: {
     flexDirection: 'row',
@@ -616,21 +676,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   providerType: {
     fontSize: 16,
     marginBottom: 4,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   organizationName: {
     fontSize: 14,
     marginBottom: 4,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   licenseNumber: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   detailsContainer: {
     gap: 16,
@@ -647,11 +707,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   detailValue: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
     lineHeight: 20,
   },
   paymentContainer: {
@@ -665,11 +725,11 @@ const styles = StyleSheet.create({
   paymentLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: Colors.light.text,
   },
   paymentValue: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   paymentStatusBadge: {
     paddingHorizontal: 8,
@@ -686,14 +746,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     padding: 12,
-    backgroundColor: COLORS.primary + '10',
+    backgroundColor: Colors.light.primary + '10',
     borderRadius: 8,
   },
   instructionsText: {
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   documentItem: {
     flexDirection: 'row',
@@ -701,12 +761,12 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: Colors.light.border,
   },
   documentText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   contactActions: {
     flexDirection: 'row',
@@ -720,14 +780,14 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: Colors.light.primary,
     borderRadius: 8,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
   },
   contactButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
   actionButtonsContainer: {
     position: 'absolute',
@@ -735,9 +795,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: Colors.light.border,
   },
   appointmentActions: {
     flexDirection: 'row',
@@ -756,7 +816,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.warning,
   },
   rescheduleButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: Colors.light.primary,
   },
   cancelButton: {
     backgroundColor: COLORS.error,
@@ -783,5 +843,58 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flex: 1,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
   },
 }); 

@@ -1,8 +1,17 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
+import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Paleta de colores oficial MediGo
 const COLORS = {
@@ -118,8 +127,16 @@ const mockProviders: Provider[] = [
 
 export default function BuscarProveedoresScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<ProviderType>('ALL');
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   const filteredProviders = mockProviders.filter(provider => {
     const matchesSearch = provider.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,7 +189,7 @@ export default function BuscarProveedoresScreen() {
       <View style={styles.cardHeader}>
         <Image 
           source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
-          style={styles.avatar}
+          style={styles.providerAvatar}
         />
         <View style={styles.providerInfo}>
           <Text style={styles.providerName} numberOfLines={1}>
@@ -274,43 +291,81 @@ export default function BuscarProveedoresScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
-      {/* Header compacto */}
+      {/* Header igual al diseño principal */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Buscar Proveedores
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="search" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.title}>Buscar Proveedores</Text>
-        <TouchableOpacity style={styles.filterToggle}>
-          <Ionicons name="options-outline" size={24} color={COLORS.primary} />
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      {/* Barra de búsqueda compacta */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color={COLORS.textSecondary} />
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>Encuentra el especialista que necesitas</ThemedText>
+      </View>
+      
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Barra de búsqueda */}
+        <View style={[styles.searchContainer, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
+          borderColor: isDarkMode ? Colors.dark.border : 'transparent',
+          borderWidth: 1
+        }]}>
+          <Ionicons name="search" size={18} color={isDarkMode ? Colors.dark.textSecondary : '#777'} />
         <TextInput
-          style={styles.searchInput}
+            style={[styles.searchInput, { 
+              color: isDarkMode ? Colors.dark.text : Colors.light.text 
+            }]}
           placeholder="Buscar médico o especialidad..."
-          placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+              <Ionicons name="close-circle" size={18} color={isDarkMode ? Colors.dark.textSecondary : '#777'} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Filtros horizontales compactos */}
-      <View style={styles.filtersSection}>
+        {/* Filtros horizontales */}
+        <ThemedText style={styles.sectionTitle}>Especialidades</ThemedText>
         <FlatList
           data={filterOptions}
           renderItem={renderFilter}
@@ -319,16 +374,15 @@ export default function BuscarProveedoresScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersContainer}
         />
-      </View>
 
       {/* Resultados */}
       <View style={styles.resultsHeader}>
-        <Text style={styles.resultsCount}>
+          <ThemedText style={styles.resultsCount}>
           {filteredProviders.length} proveedores encontrados
-        </Text>
+          </ThemedText>
         <TouchableOpacity style={styles.sortButton}>
-          <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
-          <Text style={styles.sortText}>Ordenar</Text>
+            <Ionicons name="swap-vertical" size={16} color={Colors.light.primary} />
+            <ThemedText style={styles.sortText}>Ordenar</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -337,104 +391,152 @@ export default function BuscarProveedoresScreen() {
         data={filteredProviders}
         renderItem={renderProvider}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.providersList}
-        showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.emptyTitle}>
+              <Ionicons name="search-outline" size={48} color={isDarkMode ? Colors.dark.textSecondary : '#ccc'} />
+              <ThemedText style={styles.emptyTitle}>
               No se encontraron proveedores
-            </Text>
-            <Text style={styles.emptyText}>
+              </ThemedText>
+              <ThemedText style={styles.emptyText}>
               Intenta cambiar los filtros o términos de búsqueda
-            </Text>
+              </ThemedText>
           </View>
         }
       />
-    </View>
+      </ScrollView>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    marginBottom: 16,
   },
-  backButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
   },
-  title: {
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    flex: 1,
-    textAlign: 'center',
   },
-  filterToggle: {
-    padding: 8,
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-    marginTop: 8,
+    marginBottom: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: COLORS.white,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     gap: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
   },
-  filtersSection: {
-    paddingHorizontal: 16,
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
     marginBottom: 8,
-  },
-  filtersContainer: {
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
-    gap: 4,
-  },
-  selectedFilterChip: {
-    backgroundColor: COLORS.primary,
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    marginBottom: 16,
   },
   resultsCount: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   sortButton: {
     flexDirection: 'row',
@@ -443,12 +545,8 @@ const styles = StyleSheet.create({
   },
   sortText: {
     fontSize: 14,
-    color: COLORS.primary,
+    color: Colors.light.primary,
     fontWeight: '600',
-  },
-  providersList: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
   },
   separator: {
     height: 12,
@@ -470,7 +568,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  avatar: {
+  providerAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -561,6 +659,28 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
   },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    gap: 4,
+  },
+  selectedFilterChip: {
+    backgroundColor: COLORS.primary,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filtersContainer: {
+    gap: 8,
+    marginBottom: 16,
+  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
@@ -571,12 +691,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 16,
     marginBottom: 8,
-    color: COLORS.textPrimary,
+    color: Colors.light.textPrimary,
     textAlign: 'center',
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },

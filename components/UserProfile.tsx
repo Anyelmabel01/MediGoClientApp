@@ -104,14 +104,16 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
             styles.modalHeader,
             isDarkMode && styles.modalHeaderDark
           ]}>
+            <View style={styles.headerTitleContainer}>
             <ThemedText style={styles.modalTitle}>
               {isEditing ? 'Editar Perfil' : 'Mi Perfil'}
             </ThemedText>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons 
                 name="close" 
                 size={24} 
-                color={isDarkMode ? '#ccc' : '#777'} 
+                color="white" 
               />
             </TouchableOpacity>
           </View>
@@ -268,18 +270,21 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    backgroundColor: '#fff',
+    backgroundColor: '#00A0B0',
   },
   modalHeaderDark: {
     borderBottomColor: '#333',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#00A0B0',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
   },
   closeButton: {
-    padding: 5,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
   },
   profileHeader: {
     alignItems: 'center',
@@ -410,5 +415,9 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 }); 

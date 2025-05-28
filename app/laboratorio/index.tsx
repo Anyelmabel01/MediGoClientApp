@@ -1,15 +1,17 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
+import { Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 type LabOption = {
   id: string;
@@ -95,11 +97,16 @@ const healthTips = [
 export default function LaboratorioScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { user } = useUser();
-  const insets = useSafeAreaInsets();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   // Rotar consejos de salud cada 5 segundos
   useEffect(() => {
@@ -137,53 +144,59 @@ export default function LaboratorioScreen() {
   const currentTip = healthTips[currentTipIndex];
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar style="light" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
-          >
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#fff" 
-            />
-          </TouchableOpacity>
-          <ThemedText style={styles.title}>Laboratorio</ThemedText>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={handleNotificationPress}
-          >
-            <Ionicons 
-              name="notifications-outline" 
-              size={24} 
-              color="#fff" 
-            />
-            <View style={[styles.notificationBadge, { backgroundColor: '#ff6b6b' }]} />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+      {/* Header igual al diseño principal */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Laboratorio
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="flask" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>Servicios de laboratorio y análisis</ThemedText>
+      </View>
       
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <ThemedText style={styles.welcomeMessage}>
-          Bienvenido/a, {user?.nombre || 'Usuario'}
-        </ThemedText>
-        
         {/* Consejo de salud rotativo */}
         <View style={[styles.healthTipCard, { 
           backgroundColor: isDarkMode ? Colors.dark.primary : Colors.light.primary 
@@ -200,170 +213,50 @@ export default function LaboratorioScreen() {
               <View 
                 key={index}
                 style={[
-                  styles.tipIndicator, 
-                  { backgroundColor: index === currentTipIndex ? '#fff' : 'rgba(255,255,255,0.4)' }
+                  styles.indicator, 
+                  { backgroundColor: currentTipIndex === index ? '#fff' : 'rgba(255, 255, 255, 0.3)' }
                 ]} 
               />
             ))}
           </View>
         </View>
-        
-        {/* Servicios de Laboratorio */}
-        <ThemedText style={styles.sectionTitle}>Servicios de Laboratorio</ThemedText>
-        <View style={styles.quickGrid}>
+
+        {/* Opciones de laboratorio */}
+        <View style={styles.optionsGrid}>
           {labOptions.map((option) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={option.id}
-              style={[styles.quickCard, { 
-                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+              style={[styles.optionCard, { 
+                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white 
               }]}
               onPress={() => handleOptionPress(option.route)}
-              activeOpacity={0.7}
             >
-              <View style={styles.quickIconContainer}>
-                <Ionicons 
-                  name={option.icon} 
-                  size={32} 
-                  color={isDarkMode ? Colors.dark.primary : Colors.light.primary} 
-                />
+              <View style={[styles.optionIcon, { 
+                backgroundColor: isDarkMode ? 'rgba(0, 160, 176, 0.15)' : 'rgba(0, 160, 176, 0.1)' 
+              }]}>
+                <Ionicons name={option.icon} size={32} color={Colors.light.primary} />
               </View>
-              <ThemedText style={styles.quickLabel}>{option.name}</ThemedText>
-              <ThemedText style={[styles.quickDescription, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              <ThemedText style={styles.optionName}>{option.name}</ThemedText>
+              <ThemedText style={[styles.optionDescription, { 
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
               }]}>{option.description}</ThemedText>
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Seguir Entrega - Barra larga especial */}
-        <TouchableOpacity 
-          style={[styles.deliveryTrackingCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-          }]}
-          onPress={() => setShowDeliveryModal(true)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.deliveryTrackingContent}>
-            <View style={[styles.deliveryTrackingIcon, { backgroundColor: Colors.light.primary + '20' }]}>
-              <Ionicons 
-                name="bicycle-outline" 
-                size={32} 
-                color={Colors.light.primary} 
-              />
-            </View>
-            <View style={styles.deliveryTrackingInfo}>
-              <ThemedText style={styles.deliveryTrackingTitle}>Seguir Entrega</ThemedText>
-              <ThemedText style={[styles.deliveryTrackingDescription, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>Rastrea tu resultado en tiempo real</ThemedText>
-            </View>
-            <View style={styles.deliveryTrackingIndicator}>
-              <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
-            </View>
-          </View>
-        </TouchableOpacity>
       </ScrollView>
-
-      {/* Modal de Seguimiento de Entrega */}
-      <Modal
-        visible={showDeliveryModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowDeliveryModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.deliveryModalContent, {
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-          }]}>
-            {/* Header del modal */}
-            <View style={styles.deliveryModalHeader}>
-              <View style={[styles.deliveryIcon, { backgroundColor: Colors.light.primary }]}>
-                <Ionicons name="bicycle" size={32} color="white" />
-              </View>
-              <ThemedText style={[styles.deliveryTitle, {
-                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-              }]}>
-                Seguimiento de Entrega
-              </ThemedText>
-              <ThemedText style={[styles.deliveryDescription, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Rastrea el estado de tus muestras y resultados en tiempo real
-              </ThemedText>
-            </View>
-
-            {/* Información de entregas activas */}
-            <View style={[styles.activeDeliveries, {
-              backgroundColor: Colors.light.primary + '10',
-              borderColor: Colors.light.primary + '30'
-            }]}>
-              <View style={styles.deliveryRow}>
-                <Ionicons name="flask" size={20} color={Colors.light.primary} />
-                <View style={styles.deliveryInfo}>
-                  <ThemedText style={[styles.deliveryLabel, {
-                    color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                  }]}>Análisis de Sangre Completo</ThemedText>
-                  <ThemedText style={[styles.deliveryValue, {
-                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-                  }]}>En tránsito - Llegada estimada: 15 min</ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.deliveryRow}>
-                <Ionicons name="document-text" size={20} color={Colors.light.primary} />
-                <View style={styles.deliveryInfo}>
-                  <ThemedText style={[styles.deliveryLabel, {
-                    color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                  }]}>Resultados disponibles:</ThemedText>
-                  <ThemedText style={[styles.deliveryValue, {
-                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-                  }]}>Química Sanguínea - Listo para descarga</ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.deliveryRow}>
-                <Ionicons name="location" size={20} color={Colors.light.primary} />
-                <View style={styles.deliveryInfo}>
-                  <ThemedText style={[styles.deliveryLabel, {
-                    color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                  }]}>Última ubicación:</ThemedText>
-                  <ThemedText style={[styles.deliveryValue, {
-                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-                  }]}>Av. Insurgentes Sur 1234, CDMX</ThemedText>
-                </View>
-              </View>
-            </View>
-
-            {/* Botones de acción - Barra larga en la parte inferior */}
-            <View style={styles.deliveryActions}>
-              <TouchableOpacity 
-                style={[styles.deliveryActionButton, { backgroundColor: Colors.light.primary }]}
-                onPress={handleGoToTracking}
-              >
-                <Ionicons name="navigate" size={20} color="white" />
-                <ThemedText style={[styles.deliveryActionButtonText, { color: 'white' }]}>Ver Mapa en Vivo</ThemedText>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.deliveryActionButton, {
-                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-                  borderColor: Colors.light.primary,
-                  borderWidth: 1
-                }]}
-                onPress={handleViewOrders}
-              >
-                <Ionicons name="time-outline" size={20} color={Colors.light.primary} />
-                <ThemedText style={[styles.deliveryActionButtonText, { color: Colors.light.primary }]}>
-                  Ver Historial
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </ThemedView>
   );
 }
@@ -371,55 +264,88 @@ export default function LaboratorioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  backButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
   },
-  title: {
-    fontSize: 22,
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
     flex: 1,
-    textAlign: 'center',
-    marginLeft: -40, // Compensa el espacio del botón de notificaciones
-    color: '#fff',
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
   },
-  notificationButton: {
-    padding: 8,
-    position: 'relative',
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
   },
-  welcomeMessage: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-    marginTop: 20,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   healthTipCard: {
     borderRadius: 16,
@@ -451,34 +377,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  tipIndicator: {
+  indicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  seeAllLink: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  quickGrid: {
+  optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  quickCard: {
+  optionCard: {
     width: '48%',
     borderRadius: 16,
     padding: 16,
@@ -491,137 +401,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     minHeight: 130,
   },
-  quickIconContainer: {
+  optionIcon: {
     marginBottom: 12,
     alignItems: 'center',
   },
-  quickLabel: {
+  optionName: {
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 4,
   },
-  quickDescription: {
+  optionDescription: {
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 16,
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  deliveryModalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    borderWidth: 1,
-    maxHeight: '80%',
-  },
-  deliveryModalHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  deliveryIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  deliveryTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  deliveryDescription: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  activeDeliveries: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-  },
-  deliveryRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  deliveryInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  deliveryLabel: {
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  deliveryValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deliveryActions: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingTop: 8,
-  },
-  deliveryActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  deliveryActionButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  // Delivery Tracking Card Styles
-  deliveryTrackingCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  deliveryTrackingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deliveryTrackingIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  deliveryTrackingInfo: {
-    flex: 1,
-  },
-  deliveryTrackingTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  deliveryTrackingDescription: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  deliveryTrackingIndicator: {
-    marginLeft: 12,
   },
 }); 

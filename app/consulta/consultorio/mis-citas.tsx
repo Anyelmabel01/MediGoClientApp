@@ -1,7 +1,17 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
+import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Paleta de colores oficial MediGo
 const COLORS = {
@@ -73,6 +83,14 @@ const mockAppointments: Appointment[] = [
 
 export default function MisCitasScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   const getStatusColor = (status: AppointmentStatus) => {
     switch (status) {
@@ -228,153 +246,245 @@ export default function MisCitasScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
       
-      {/* Header */}
+      {/* Header igual al diseño principal */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Mis Citas
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="calendar" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
         </TouchableOpacity>
-        <Text style={styles.title}>Mis Citas</Text>
-        <View style={styles.headerSpacer} />
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
       </View>
 
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
       {/* Stats Header */}
       <View style={styles.statsHeader}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
+            <ThemedText style={styles.statNumber}>
             {mockAppointments.length}
-          </Text>
-          <Text style={styles.statLabel}>
+            </ThemedText>
+            <ThemedText style={styles.statLabel}>
             Total de citas
-          </Text>
+            </ThemedText>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
+            <ThemedText style={styles.statNumber}>
             {mockAppointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
-          </Text>
-          <Text style={styles.statLabel}>
+            </ThemedText>
+            <ThemedText style={styles.statLabel}>
             Próximas
-          </Text>
+            </ThemedText>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
+            <ThemedText style={styles.statNumber}>
             {mockAppointments.filter(apt => apt.status === 'COMPLETED').length}
-          </Text>
-          <Text style={styles.statLabel}>
+            </ThemedText>
+            <ThemedText style={styles.statLabel}>
             Completadas
-          </Text>
+            </ThemedText>
         </View>
       </View>
 
-      {/* Appointments List */}
-      <View style={styles.content}>
+        {/* Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+          <ThemedText style={styles.sectionTitle}>
             Historial de Citas
-          </Text>
+          </ThemedText>
           <TouchableOpacity 
             style={styles.newAppointmentButton}
             onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
           >
             <Ionicons name="add" size={16} color="white" />
-            <Text style={styles.newAppointmentButtonText}>
+            <ThemedText style={styles.newAppointmentButtonText}>
               Nueva cita
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
         </View>
 
+        {/* Appointments List */}
         <FlatList
           data={mockAppointments}
           renderItem={renderAppointment}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.appointmentsList}
-          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={styles.emptyTitle}>
+              <Ionicons name="calendar-outline" size={64} color={Colors.light.textSecondary} />
+              <ThemedText style={styles.emptyTitle}>
                 No tienes citas registradas
-              </Text>
-              <Text style={styles.emptyText}>
+              </ThemedText>
+              <ThemedText style={styles.emptyText}>
                 Agenda tu primera cita médica para comenzar
-              </Text>
+              </ThemedText>
               <TouchableOpacity 
                 style={styles.emptyButton}
                 onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
               >
                 <Ionicons name="add" size={20} color="white" />
-                <Text style={styles.emptyButtonText}>
+                <ThemedText style={styles.emptyButtonText}>
                   Agendar primera cita
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           }
         />
-      </View>
-    </View>
+      </ScrollView>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    marginBottom: 16,
   },
-  backButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
   },
-  title: {
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-    color: COLORS.textPrimary,
+    color: Colors.light.white,
   },
-  headerSpacer: {
-    width: 40,
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
   },
   statsHeader: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 16,
+    marginBottom: 24,
+    gap: 12,
   },
   statItem: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 0,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -385,12 +495,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
   },
   newAppointmentButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: Colors.light.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -401,8 +511,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  appointmentsList: {
-    gap: 12,
+  separator: {
+    height: 12,
   },
   appointmentCard: {
     backgroundColor: COLORS.white,
@@ -521,11 +631,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     textAlign: 'center',
-    color: COLORS.textPrimary,
+    color: Colors.light.textPrimary,
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 20,
@@ -533,7 +643,7 @@ const styles = StyleSheet.create({
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: Colors.light.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 25,

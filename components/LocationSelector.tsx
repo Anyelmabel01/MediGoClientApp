@@ -274,7 +274,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
               }
             </ThemedText>
             <TouchableOpacity onPress={isEditing ? resetEditState : onClose} style={styles.closeButton}>
-              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color={isDarkMode ? Colors.dark.textSecondary : "#777"} />
+              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color="white" />
             </TouchableOpacity>
           </View>
 
@@ -386,14 +386,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
+    backgroundColor: '#00A0B0',
+    borderBottomWidth: 0,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
   },
   closeButton: {
-    padding: 5,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
   },
   locationsList: {
     padding: 16,

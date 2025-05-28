@@ -1,18 +1,30 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '../components/ThemedText';
-import { ThemedView } from '../components/ThemedView';
+import { useState } from 'react';
+import { Dimensions, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
 export default function ConsultaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   const handleConsultorioSelect = () => {
     router.push('/consulta/consultorio');
@@ -24,52 +36,66 @@ export default function ConsultaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
-      {/* Header compacto con gradiente */}
-      <LinearGradient
-        colors={isDarkMode ? [Colors.dark.primary, Colors.dark.accent] : [Colors.light.primary, Colors.light.primaryLight]}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={20} color="white" />
-          </TouchableOpacity>
-          <ThemedText style={styles.title}>Consulta Médica</ThemedText>
-        </View>
-      </LinearGradient>
+      {/* Header igual al diseño principal */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              Consulta Médica
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
+          </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>Elige el tipo de consulta que necesitas</ThemedText>
+      </View>
       
       <ScrollView 
-        style={styles.optionsContainer}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.optionsContent}
+        contentContainerStyle={styles.scrollContent}
       >
-        {/* Breve descripción */}
-        <View style={styles.briefDescription}>
-          <Ionicons name="medical-outline" size={32} color={Colors.light.primary} style={styles.descriptionIcon} />
-          <ThemedText style={styles.subtitle}>
-            Elige el tipo de consulta que mejor se adapte a tus necesidades
-          </ThemedText>
-        </View>
-        
         {/* Consultorio Option */}
         <TouchableOpacity 
           style={[styles.optionCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
           }]}
           onPress={handleConsultorioSelect}
           activeOpacity={0.8}
         >
-          <LinearGradient
-            colors={[Colors.light.success, '#059669']}
-            style={styles.optionIconContainer}
-          >
-            <Ionicons name="business" size={32} color="white" />
-          </LinearGradient>
+          <View style={[styles.optionIconContainer, { backgroundColor: 'rgba(5, 150, 105, 0.1)' }]}>
+            <Ionicons name="business" size={32} color="#059669" />
+          </View>
           
           <View style={styles.optionContent}>
             <ThemedText style={styles.optionTitle}>Consulta en Consultorio</ThemedText>
@@ -81,40 +107,36 @@ export default function ConsultaScreen() {
             
             <View style={styles.optionFeatures}>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <Ionicons name="checkmark-circle" size={16} color="#059669" />
                 <ThemedText style={styles.featureText}>Consulta presencial</ThemedText>
               </View>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <Ionicons name="checkmark-circle" size={16} color="#059669" />
                 <ThemedText style={styles.featureText}>Múltiples especialidades</ThemedText>
               </View>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.success} />
+                <Ionicons name="checkmark-circle" size={16} color="#059669" />
                 <ThemedText style={styles.featureText}>Evaluación completa</ThemedText>
               </View>
             </View>
           </View>
           
           <View style={styles.optionAction}>
-            <Ionicons name="chevron-forward" size={24} color={Colors.light.success} />
+            <Ionicons name="chevron-forward" size={24} color="#059669" />
           </View>
         </TouchableOpacity>
         
         {/* Telemedicina Option */}
         <TouchableOpacity 
           style={[styles.optionCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
           }]}
           onPress={handleTelemedicineSelect}
           activeOpacity={0.8}
         >
-          <LinearGradient
-            colors={[Colors.light.primary, Colors.light.primaryDark]}
-            style={styles.optionIconContainer}
-          >
-            <Ionicons name="videocam" size={32} color="white" />
-          </LinearGradient>
+          <View style={[styles.optionIconContainer, { backgroundColor: 'rgba(0, 160, 176, 0.1)' }]}>
+            <Ionicons name="videocam" size={32} color={Colors.light.primary} />
+          </View>
           
           <View style={styles.optionContent}>
             <ThemedText style={styles.optionTitle}>Telemedicina</ThemedText>
@@ -147,8 +169,7 @@ export default function ConsultaScreen() {
 
         {/* Quick Info Section */}
         <View style={[styles.infoSection, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
         }]}>
           <View style={styles.infoHeader}>
             <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
@@ -167,6 +188,19 @@ export default function ConsultaScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </ThemedView>
   );
 }
@@ -174,78 +208,108 @@ export default function ConsultaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerGradient: {
-    paddingTop: 40, // Reducido de 50
-    paddingBottom: 16, // Reducido de 30
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20, // Reducido de 24
-    fontWeight: 'bold',
-    marginLeft: 12,
-    color: 'white',
-  },
-  briefDescription: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 8,
-  },
-  descriptionIcon: {
+  avatarContainer: {
     marginRight: 12,
   },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
   subtitle: {
-    fontSize: 15,
-    flex: 1,
-    color: '#212529',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
   },
-  optionsContainer: {
+  content: {
     flex: 1,
   },
-  optionsContent: {
-    padding: 16,
-    paddingTop: 0,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   optionCard: {
     flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
     borderRadius: 16,
-    padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
       height: 4,
     },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
+    elevation: 4,
   },
   optionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -256,7 +320,8 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 8,
+    color: Colors.light.primary,
   },
   optionDescription: {
     fontSize: 14,
@@ -269,20 +334,27 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   featureText: {
     fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   optionAction: {
-    justifyContent: 'center',
-    paddingLeft: 8,
+    marginLeft: 12,
   },
   infoSection: {
+    padding: 20,
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 16,
+    marginTop: 8,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   infoHeader: {
     flexDirection: 'row',
@@ -293,6 +365,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+    color: Colors.light.primary,
   },
   infoText: {
     fontSize: 14,
@@ -302,17 +375,10 @@ const styles = StyleSheet.create({
   helpButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.primary,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
     gap: 8,
   },
   helpButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 }); 
