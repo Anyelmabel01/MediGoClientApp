@@ -138,16 +138,17 @@ export default function CalificarCitaScreen() {
   if (!provider) {
     return (
       <View style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Calificar Consulta</Text>
-          <View style={styles.headerSpacer} />
+          <View style={styles.headerTopRow}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
+            <ThemedText style={styles.headerTitle}>Calificar Consulta</ThemedText>
+          </View>
         </View>
         <View style={styles.emptyState}>
           <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
@@ -247,42 +248,37 @@ export default function CalificarCitaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       
-      {/* Unified Header */}
+      {/* Header simplificado */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => router.back()}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {provider.display_name.charAt(0)}{provider.display_name.charAt(1)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <View style={styles.titleContainer}>
-              <Ionicons name="star" size={20} color={Colors.light.white} />
-              <ThemedText style={styles.pageTitle}>Calificar Consulta</ThemedText>
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => router.back()}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.white} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {provider.organization_name}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.white} />
-        </TouchableOpacity>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Calificar Consulta</ThemedText>
+          <TouchableOpacity 
+            style={styles.skipButton}
+            onPress={() => {
+              Alert.alert(
+                'Omitir calificación',
+                '¿Estás seguro de que quieres ir al inicio sin calificar la consulta?',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Sí, omitir', 
+                    onPress: () => router.replace('/')
+                  }
+                ]
+              );
+            }}
+          >
+            <ThemedText style={styles.skipButtonText}>Omitir</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView 
@@ -497,67 +493,24 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flex: 1,
-  },
-  titleContainer: {
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  pageTitle: {
-    fontSize: 18,
+  backButton: {
+    padding: 6,
+  },
+  headerTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: Colors.light.white,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
   },
   keyboardContainer: {
     flex: 1,
@@ -746,16 +699,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-    color: Colors.light.text,
-  },
   headerSpacer: {
     width: 40,
   },
@@ -770,5 +713,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 16,
     textAlign: 'center',
+  },
+  skipButton: {
+    padding: 6,
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.white,
   },
 }); 

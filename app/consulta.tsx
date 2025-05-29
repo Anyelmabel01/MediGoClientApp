@@ -1,16 +1,11 @@
 import { BottomNavbar } from '@/components/BottomNavbar';
-import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
 import { Dimensions, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -18,13 +13,6 @@ const { width } = Dimensions.get('window');
 export default function ConsultaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { user, currentLocation, setCurrentLocation } = useUser();
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
-
-  const handleLocationSelect = (location: UserLocation) => {
-    setCurrentLocation(location);
-  };
 
   const handleConsultorioSelect = () => {
     router.push('/consulta/consultorio');
@@ -38,42 +26,20 @@ export default function ConsultaScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header igual al diseño principal */}
+      {/* Header simplificado */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              Consulta Médica
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.titleContainer}>
+          <ThemedText style={styles.headerTitle}>Consulta Médica</ThemedText>
+        </View>
       </View>
       
       <View style={styles.servicesHeaderContainer}>
@@ -184,17 +150,6 @@ export default function ConsultaScreen() {
       </ScrollView>
       
       <BottomNavbar />
-      
-      <UserProfile 
-        isVisible={showUserProfile} 
-        onClose={() => setShowUserProfile(false)}
-      />
-      
-      <LocationSelector 
-        isVisible={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </ThemedView>
   );
 }
@@ -207,66 +162,31 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  userInfoContainer: {
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.white,
-  },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  backButton: {
+    padding: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderRadius: 20,
   },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
+  titleContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,

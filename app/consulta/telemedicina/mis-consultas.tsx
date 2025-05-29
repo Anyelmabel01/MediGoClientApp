@@ -1,11 +1,6 @@
-import { BottomNavbar } from '@/components/BottomNavbar';
-import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { UserLocation } from '@/constants/UserModel';
-import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,7 +9,6 @@ import {
     Alert,
     FlatList,
     Image,
-    Platform,
     RefreshControl,
     StyleSheet,
     TouchableOpacity,
@@ -99,11 +93,8 @@ const mockConsultations: VirtualConsultation[] = [
 
 export default function MisConsultasTelemedicina() {
   const router = useRouter();
-  const { user, currentLocation, setCurrentLocation } = useUser();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
 
   const upcomingConsultations = mockConsultations.filter(
     c => c.status === 'PENDING' || c.status === 'CONFIRMED' || c.status === 'IN_PROGRESS'
@@ -112,10 +103,6 @@ export default function MisConsultasTelemedicina() {
   const pastConsultations = mockConsultations.filter(
     c => c.status === 'COMPLETED' || c.status === 'CANCELLED'
   );
-
-  const handleLocationSelect = (location: UserLocation) => {
-    setCurrentLocation(location);
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -336,44 +323,19 @@ export default function MisConsultasTelemedicina() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       
-      {/* Header */}
+      {/* Header simplificado */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              ¡Hola, {user.nombre} {user.apellido}!
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Mis Consultas</ThemedText>
+        </View>
       </View>
       
       <View style={styles.contentContainer}>
@@ -441,19 +403,6 @@ export default function MisConsultasTelemedicina() {
           }
         />
       </View>
-      
-      <BottomNavbar />
-      
-      <UserProfile 
-        isVisible={showUserProfile} 
-        onClose={() => setShowUserProfile(false)}
-      />
-      
-      <LocationSelector 
-        isVisible={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </ThemedView>
   );
 }
@@ -462,70 +411,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
-    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
-  },
-  header: {
-    backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.white,
-  },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
+    paddingBottom: 80,
   },
   contentContainer: {
     flex: 1,
@@ -698,5 +584,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  },
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 45,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 6,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    marginLeft: 16,
   },
 }); 

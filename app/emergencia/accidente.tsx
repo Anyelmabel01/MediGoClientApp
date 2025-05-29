@@ -219,7 +219,7 @@ export default function EmergenciaAccidenteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 45,
   },
   header: {
     flexDirection: 'row',

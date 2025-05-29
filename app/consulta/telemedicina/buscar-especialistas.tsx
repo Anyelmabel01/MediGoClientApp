@@ -1,11 +1,6 @@
-import { BottomNavbar } from '@/components/BottomNavbar';
-import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { UserLocation } from '@/constants/UserModel';
-import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -13,7 +8,6 @@ import { useState } from 'react';
 import {
   FlatList,
   Image,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -137,17 +131,10 @@ const mockSpecialists: VirtualSpecialist[] = [
 
 export default function BuscarEspecialistasScreen() {
   const router = useRouter();
-  const { user, currentLocation, setCurrentLocation } = useUser();
   const [searchText, setSearchText] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyType | 'ALL'>('ALL');
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageType | null>(null);
   const [availableToday, setAvailableToday] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
-
-  const handleLocationSelect = (location: UserLocation) => {
-    setCurrentLocation(location);
-  };
 
   const filteredSpecialists = mockSpecialists.filter(specialist => {
     // Aplicar filtro de búsqueda por texto
@@ -304,50 +291,23 @@ export default function BuscarEspecialistasScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       
-      {/* Header con diseño igual al index.tsx */}
+      {/* Header simplificado con botón de atrás */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              ¡Hola, {user.nombre} {user.apellido}!
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Buscar Especialistas</ThemedText>
+        </View>
       </View>
       
-      {/* Título y barra de búsqueda */}
+      {/* Barra de búsqueda */}
       <View style={styles.searchContainer}>
-        <ThemedText style={styles.screenTitle}>Buscar Especialistas en Telemedicina</ThemedText>
-        
         <View style={styles.searchBarContainer}>
           <Ionicons name="search" size={20} color={Colors.light.textSecondary} />
           <TextInput
@@ -385,19 +345,6 @@ export default function BuscarEspecialistasScreen() {
         contentContainerStyle={styles.specialistsList}
         showsVerticalScrollIndicator={false}
       />
-
-      <BottomNavbar />
-      
-      <UserProfile 
-        isVisible={showUserProfile} 
-        onClose={() => setShowUserProfile(false)}
-      />
-      
-      <LocationSelector 
-        isVisible={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </ThemedView>
   );
 }
@@ -406,81 +353,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
-    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  userInfoContainer: {
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  avatarContainer: {
-    marginRight: 12,
+  backButton: {
+    padding: 6,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
+  headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
     color: Colors.light.white,
-  },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
+    marginLeft: 16,
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
-  },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    marginBottom: 12,
   },
   searchBarContainer: {
     flexDirection: 'row',

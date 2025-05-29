@@ -115,20 +115,29 @@ export default function VideollamadaScreen() {
   };
 
   const handleEndCall = () => {
+    console.log('End call button pressed');
     Alert.alert(
       'Finalizar Consulta',
-      '¿Estás seguro de que quieres finalizar la consulta?',
+      '¿Qué te gustaría hacer ahora?',
       [
-        { text: 'Continuar', style: 'cancel' },
+        { text: 'Continuar llamada', style: 'cancel' },
         { 
-          text: 'Finalizar', 
-          style: 'destructive',
+          text: 'Calificar consulta', 
           onPress: () => {
+            console.log('Going to rate consultation');
             setCallStatus('ended');
             router.push({
               pathname: '/consulta/telemedicina/calificar-consulta',
               params: { specialistId }
             });
+          }
+        },
+        { 
+          text: 'Ir al inicio', 
+          onPress: () => {
+            console.log('Going directly to home');
+            setCallStatus('ended');
+            router.replace('/');
           }
         }
       ]
@@ -136,14 +145,17 @@ export default function VideollamadaScreen() {
   };
 
   const toggleCamera = () => {
+    console.log('Toggle camera pressed');
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
   const toggleVideo = () => {
+    console.log('Toggle video pressed, current state:', isVideoOff);
     setIsVideoOff(!isVideoOff);
   };
 
   const toggleMute = () => {
+    console.log('Toggle mute pressed, current state:', isMuted);
     setIsMuted(!isMuted);
   };
 
@@ -661,6 +673,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    zIndex: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   controlButton: {
     width: 50,
@@ -669,6 +683,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   controlButtonActive: {
     backgroundColor: 'white',
@@ -680,6 +699,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ef4444',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   doctorInfo: {
     position: 'absolute',

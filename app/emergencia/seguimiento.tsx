@@ -481,7 +481,7 @@ export default function EmergenciaSeguimientoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 45,
   },
   header: {
     flexDirection: 'row',

@@ -1110,8 +1110,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -1119,15 +1119,15 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   avatarContainer: {
-    marginRight: 12,
+    marginRight: 8,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   greetingContainer: {
@@ -1144,7 +1144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
@@ -1159,12 +1159,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
     right: 16,
-    top: 70,
+    top: 58,
   },
   headerButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
-    padding: 8,
+    padding: 6,
     marginLeft: 8,
   },
   cartBadge: {

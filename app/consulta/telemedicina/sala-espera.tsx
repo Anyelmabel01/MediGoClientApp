@@ -99,13 +99,12 @@ export default function SalaEsperaScreen() {
   const [canJoinCall, setCanJoinCall] = useState(false);
 
   useEffect(() => {
-    // Simulate technical checks
+    // Simulate technical checks - always successful
     const checkInterval = setInterval(() => {
       setTechnicalChecks(prev => prev.map(check => {
         if (check.status === 'checking') {
-          // Simulate random success/failure
-          const success = Math.random() > 0.1; // 90% success rate
-          return { ...check, status: success ? 'success' : 'error' };
+          // Always set to success - everything works properly
+          return { ...check, status: 'success' };
         }
         return check;
       }));
@@ -197,18 +196,19 @@ export default function SalaEsperaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={PRIMARY_COLOR} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Sala de Espera</ThemedText>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Sala de Espera</ThemedText>
+        </View>
       </View>
 
       <ScrollView 
@@ -375,6 +375,24 @@ export default function SalaEsperaScreen() {
             </View>
           </View>
         </View>
+
+        {/* Botón de entrada inmediata */}
+        {technicalChecks.every(check => check.status === 'success') && waitingTime > 0 && (
+          <View style={styles.quickJoinContainer}>
+            <TouchableOpacity 
+              style={styles.quickJoinButton}
+              onPress={() => {
+                setWaitingTime(0);
+                setCanJoinCall(true);
+              }}
+            >
+              <Ionicons name="flash" size={20} color="white" />
+              <ThemedText style={styles.quickJoinText}>
+                Entrar ahora (verificación completa)
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* Join Call Button */}
@@ -386,16 +404,16 @@ export default function SalaEsperaScreen() {
           style={[
             styles.joinButton,
             { 
-              backgroundColor: readyToJoin ? PRIMARY_COLOR : Colors.light.textSecondary,
-              opacity: readyToJoin ? 1 : 0.6
+              backgroundColor: canJoinCall ? Colors.light.primary : Colors.light.textSecondary,
+              opacity: canJoinCall ? 1 : 0.6
             }
           ]}
           onPress={handleJoinCall}
-          disabled={!readyToJoin}
+          disabled={!canJoinCall}
         >
           <Ionicons name="videocam" size={20} color="white" />
           <ThemedText style={styles.joinButtonText}>
-            {readyToJoin ? 'Ingresar a la Consulta' : 'Completar preparación'}
+            {canJoinCall ? 'Ingresar a la Consulta' : 'Completar preparación'}
           </ThemedText>
         </TouchableOpacity>
         
@@ -419,21 +437,25 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 45,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
   },
-  title: {
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    width: 40,
+    color: Colors.light.white,
+    marginLeft: 16,
   },
   content: {
     flex: 1,
@@ -617,5 +639,23 @@ const styles = StyleSheet.create({
     fontSize: width < 400 ? 12 : 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  quickJoinContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  quickJoinButton: {
+    backgroundColor: PRIMARY_COLOR,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  quickJoinText: {
+    color: 'white',
+    fontSize: width < 400 ? 14 : 16,
+    fontWeight: 'bold',
   },
 }); 

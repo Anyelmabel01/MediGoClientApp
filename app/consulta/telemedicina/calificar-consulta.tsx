@@ -153,18 +153,37 @@ export default function CalificarConsultaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={PRIMARY_COLOR} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Calificar Consulta</ThemedText>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Calificar Consulta</ThemedText>
+          <TouchableOpacity 
+            style={styles.skipButton}
+            onPress={() => {
+              Alert.alert(
+                'Omitir calificación',
+                '¿Estás seguro de que quieres ir al inicio sin calificar la consulta?',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { 
+                    text: 'Sí, omitir', 
+                    onPress: () => router.replace('/')
+                  }
+                ]
+              );
+            }}
+          >
+            <ThemedText style={styles.skipButtonText}>Omitir</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -413,21 +432,25 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 45,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
   },
-  title: {
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    width: 40,
+    color: Colors.light.white,
+    marginLeft: 16,
   },
   content: {
     flex: 1,
@@ -607,6 +630,14 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  skipButton: {
+    padding: 6,
+  },
+  skipButtonText: {
+    color: Colors.light.white,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 }); 

@@ -1,10 +1,7 @@
 import { BottomNavbar } from '@/components/BottomNavbar';
-import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,31 +111,32 @@ export default function DetallesCitaScreen() {
   const router = useRouter();
   const { appointmentId } = useLocalSearchParams();
   const { isDarkMode } = useTheme();
-  const { user, currentLocation, setCurrentLocation } = useUser();
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
 
   const appointment = mockAppointmentDetails[appointmentId as string];
 
-  const handleLocationSelect = (location: UserLocation) => {
-    setCurrentLocation(location);
-  };
-
   if (!appointment) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <ThemedView style={styles.container}>
+        <StatusBar style="auto" />
+        
+        {/* Simplified Header */}
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <Text style={styles.title}>Detalles de Cita</Text>
+          
+          <View style={styles.headerTitleContainer}>
+            <ThemedText style={styles.headerTitle}>Detalles de Cita</ThemedText>
+          </View>
+          
           <View style={styles.headerSpacer} />
         </View>
+        
         <View style={styles.emptyState}>
           <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
           <Text style={[styles.emptyTitle, { color: COLORS.error }]}>
@@ -148,7 +146,7 @@ export default function DetallesCitaScreen() {
             La cita que buscas no existe o ha sido eliminada
           </Text>
         </View>
-      </View>
+      </ThemedView>
     );
   }
 
@@ -287,40 +285,20 @@ export default function DetallesCitaScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Unified Header */}
+      {/* Simplified Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <View style={styles.titleContainer}>
-              <Ionicons name="calendar" size={20} color={Colors.light.white} />
-              <ThemedText style={styles.pageTitle}>Detalles de Cita</ThemedText>
-            </View>
-          </View>
+          <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.white} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.white} />
-        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <ThemedText style={styles.headerTitle}>Detalles de Cita</ThemedText>
+        </View>
+        
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView 
@@ -328,13 +306,13 @@ export default function DetallesCitaScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
+        {/* Status and Date Card */}
+        <View style={styles.mainCard}>
+          <View style={styles.statusRow}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) }]}>
               <Ionicons 
                 name={getStatusIcon(appointment.status) as any} 
-                size={16} 
+                size={14} 
                 color="white" 
               />
               <Text style={styles.statusText}>
@@ -343,7 +321,7 @@ export default function DetallesCitaScreen() {
             </View>
           </View>
           
-          <View style={styles.appointmentInfo}>
+          <View style={styles.dateTimeContainer}>
             <Text style={styles.appointmentDate}>
               {formatDate(appointment.date)}
             </Text>
@@ -353,11 +331,13 @@ export default function DetallesCitaScreen() {
           </View>
         </View>
 
-        {/* Provider Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información del Proveedor</Text>
+        {/* Provider Card */}
+        <View style={styles.providerCard}>
+          <View style={styles.providerHeader}>
+            <Text style={styles.sectionTitle}>Información del Proveedor</Text>
+          </View>
           
-          <View style={styles.providerCard}>
+          <View style={styles.providerContent}>
             <Image 
               source={{ uri: appointment.avatar_url || 'https://via.placeholder.com/80' }}
               style={styles.providerAvatar}
@@ -381,13 +361,15 @@ export default function DetallesCitaScreen() {
           </View>
         </View>
 
-        {/* Appointment Details */}
-        <View style={styles.section}>
+        {/* Details Card */}
+        <View style={styles.detailsCard}>
           <Text style={styles.sectionTitle}>Detalles de la Consulta</Text>
           
-          <View style={styles.detailsContainer}>
+          <View style={styles.detailsList}>
             <View style={styles.detailRow}>
-              <Ionicons name="calendar-outline" size={20} color={Colors.light.primary} />
+              <View style={styles.iconContainer}>
+                <Ionicons name="calendar-outline" size={18} color={Colors.light.primary} />
+              </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Fecha y hora</Text>
                 <Text style={styles.detailValue}>
@@ -397,7 +379,9 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color={Colors.light.primary} />
+              <View style={styles.iconContainer}>
+                <Ionicons name="location-outline" size={18} color={Colors.light.primary} />
+              </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Dirección</Text>
                 <Text style={styles.detailValue}>
@@ -407,7 +391,9 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="medical-outline" size={20} color={Colors.light.primary} />
+              <View style={styles.iconContainer}>
+                <Ionicons name="medical-outline" size={18} color={Colors.light.primary} />
+              </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Motivo de consulta</Text>
                 <Text style={styles.detailValue}>
@@ -417,7 +403,9 @@ export default function DetallesCitaScreen() {
             </View>
             
             <View style={styles.detailRow}>
-              <Ionicons name="cash-outline" size={20} color={Colors.light.primary} />
+              <View style={styles.iconContainer}>
+                <Ionicons name="cash-outline" size={18} color={Colors.light.primary} />
+              </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Costo de consulta</Text>
                 <Text style={styles.detailValue}>
@@ -429,7 +417,7 @@ export default function DetallesCitaScreen() {
         </View>
 
         {/* Payment Information */}
-        <View style={styles.section}>
+        <View style={styles.paymentCard}>
           <Text style={styles.sectionTitle}>Información de Pago</Text>
           
           <View style={styles.paymentContainer}>
@@ -455,7 +443,7 @@ export default function DetallesCitaScreen() {
 
         {/* Instructions */}
         {appointment.instructions && (
-          <View style={styles.section}>
+          <View style={styles.instructionsCard}>
             <Text style={styles.sectionTitle}>Instrucciones</Text>
             <View style={styles.instructionsContainer}>
               <Ionicons name="information-circle-outline" size={20} color={Colors.light.primary} />
@@ -468,21 +456,23 @@ export default function DetallesCitaScreen() {
 
         {/* Documents */}
         {appointment.documents.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.documentsCard}>
             <Text style={styles.sectionTitle}>Documentos</Text>
-            {appointment.documents.map((document, index) => (
-              <View key={index} style={styles.documentItem}>
-                <Ionicons name="document-outline" size={20} color={Colors.light.primary} />
-                <Text style={styles.documentText}>
-                  {document}
-                </Text>
-              </View>
-            ))}
+            <View style={styles.documentsContainer}>
+              {appointment.documents.map((document, index) => (
+                <View key={index} style={styles.documentItem}>
+                  <Ionicons name="document-outline" size={20} color={Colors.light.primary} />
+                  <Text style={styles.documentText}>
+                    {document}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
         {/* Contact Actions */}
-        <View style={styles.section}>
+        <View style={styles.contactCard}>
           <Text style={styles.sectionTitle}>Contacto</Text>
           
           <View style={styles.contactActions}>
@@ -490,7 +480,7 @@ export default function DetallesCitaScreen() {
               style={styles.contactButton}
               onPress={handleCallProvider}
             >
-              <Ionicons name="call" size={20} color={Colors.light.primary} />
+              <Ionicons name="call" size={20} color={Colors.light.white} />
               <Text style={styles.contactButtonText}>Llamar</Text>
             </TouchableOpacity>
             
@@ -498,7 +488,7 @@ export default function DetallesCitaScreen() {
               style={styles.contactButton}
               onPress={handleGetDirections}
             >
-              <Ionicons name="navigate" size={20} color={Colors.light.primary} />
+              <Ionicons name="navigate" size={20} color={Colors.light.white} />
               <Text style={styles.contactButtonText}>Cómo llegar</Text>
             </TouchableOpacity>
           </View>
@@ -545,17 +535,6 @@ export default function DetallesCitaScreen() {
       </View>
 
       <BottomNavbar />
-      
-      <UserProfile 
-        isVisible={showUserProfile} 
-        onClose={() => setShowUserProfile(false)}
-      />
-      
-      <LocationSelector 
-        isVisible={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </ThemedView>
   );
 }
@@ -568,8 +547,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -578,39 +557,43 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  headerTitleContainer: {
     flex: 1,
-    textAlign: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: Colors.light.white,
   },
   headerSpacer: {
-    width: 40,
+    width: 32,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 120,
+    padding: 12,
+    paddingBottom: 100,
   },
-  statusCard: {
+  mainCard: {
     backgroundColor: Colors.light.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.light.border,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  statusHeader: {
+  statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -619,103 +602,139 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    alignSelf: 'flex-start',
   },
   statusText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  appointmentInfo: {
+  dateTimeContainer: {
     alignItems: 'center',
   },
   appointmentDate: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
     color: Colors.light.text,
     textAlign: 'center',
     textTransform: 'capitalize',
   },
   appointmentTime: {
-    fontSize: 18,
+    fontSize: 14,
     color: Colors.light.primary,
     fontWeight: '600',
   },
-  section: {
+  providerCard: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  providerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: Colors.light.text,
+    marginBottom: 12,
   },
-  providerCard: {
+  providerContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   providerAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
   },
   providerInfo: {
     flex: 1,
   },
   providerName: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
     color: Colors.light.text,
   },
   providerType: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: 14,
+    marginBottom: 2,
     color: Colors.light.textSecondary,
   },
   organizationName: {
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 12,
+    marginBottom: 2,
     color: Colors.light.textSecondary,
   },
   licenseNumber: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.light.textSecondary,
   },
-  detailsContainer: {
-    gap: 16,
+  detailsCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  detailsList: {
+    gap: 12,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
+  },
+  iconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.light.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   detailContent: {
     flex: 1,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
     color: Colors.light.text,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.light.textSecondary,
-    lineHeight: 20,
+    lineHeight: 16,
+  },
+  paymentCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   paymentContainer: {
-    gap: 12,
+    gap: 8,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -723,93 +742,126 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paymentLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.light.text,
   },
   paymentValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.light.textSecondary,
   },
   paymentStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   paymentStatusText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
+  },
+  instructionsCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   instructionsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    padding: 12,
+    gap: 10,
+    padding: 10,
     backgroundColor: Colors.light.primary + '10',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   instructionsText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 16,
     color: Colors.light.textSecondary,
+  },
+  documentsCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  documentsContainer: {
+    gap: 8,
   },
   documentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.background,
+    borderRadius: 6,
+    marginBottom: 4,
   },
   documentText: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.light.textSecondary,
+    fontSize: 12,
+    color: Colors.light.text,
+    fontWeight: '500',
+  },
+  contactCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   contactActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   contactButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.primary,
     borderRadius: 8,
-    backgroundColor: Colors.light.white,
+    backgroundColor: Colors.light.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   contactButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    color: Colors.light.primary,
+    color: Colors.light.white,
   },
   actionButtonsContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 12,
     backgroundColor: Colors.light.white,
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
   },
   appointmentActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 6,
     flex: 1,
   },
   rateButton: {
@@ -823,7 +875,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   emptyState: {
@@ -843,58 +895,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flex: 1,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.light.white,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
   },
 }); 

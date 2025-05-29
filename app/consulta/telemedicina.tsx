@@ -1,18 +1,18 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View
+    Alert,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -233,9 +233,13 @@ const howItWorks = [
 export default function TelemedicinaSelectorScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const [showBenefitsModal, setShowBenefitsModal] = useState(false);
-  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
-  const [selectedTab, setSelectedTab] = useState('inicio');
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  const handleLocationSelect = (location: any) => {
+    setCurrentLocation(location);
+  };
 
   const features: Feature[] = [
     {
@@ -503,194 +507,33 @@ export default function TelemedicinaSelectorScreen() {
     </TouchableOpacity>
   );
 
-  // Renderizado de diferentes tabs
-  const renderTabContent = () => {
-    switch (selectedTab) {
-      case 'beneficios':
-        return (
-          <View style={styles.tabContent}>
-            <View style={styles.benefitsGrid}>
-              {telemedicineBenefits.map((benefit, index) => (
-                <View key={benefit.id} style={styles.benefitCard}>
-                  <View style={[styles.benefitIconContainer, { backgroundColor: Colors.light.primary }]}>
-                    <Ionicons name={benefit.icon as any} size={24} color="white" />
-                  </View>
-                  <ThemedText style={styles.benefitCardTitle}>{benefit.title}</ThemedText>
-                  <ThemedText style={styles.benefitCardDescription}>{benefit.description}</ThemedText>
-                </View>
-              ))}
-            </View>
-          </View>
-        );
-      case 'funcionamiento':
-        return (
-          <View style={styles.tabContent}>
-            <View style={styles.howItWorksContainer}>
-              {howItWorks.map((step) => (
-                <View key={`step-${step.step}`} style={styles.stepCard}>
-                  <View style={styles.stepNumberContainer}>
-                    <ThemedText style={styles.stepNumber}>{step.step}</ThemedText>
-                  </View>
-                  <View style={[styles.stepIconContainer, { backgroundColor: Colors.light.primary }]}>
-                    <Ionicons name={step.icon as any} size={24} color="white" />
-                  </View>
-                  <View style={styles.stepCardContent}>
-                    <ThemedText style={styles.stepCardTitle}>{step.title}</ThemedText>
-                    <ThemedText style={styles.stepCardDescription}>{step.description}</ThemedText>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        );
-      default:
-        return (
-          <View style={styles.tabContent}>
-            {/* Sección de acciones principales */}
-            <View style={styles.actionsSection}>
-              
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => router.push('/consulta/telemedicina/buscar-especialistas' as any)}
-                >
-                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.light.primary }]}>
-                    <Ionicons name="search" size={24} color="white" />
-                  </View>
-                  <ThemedText style={styles.actionButtonText}>Buscar especialista</ThemedText>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => router.push('/consulta/telemedicina/mis-consultas' as any)}
-                >
-                  <View style={[styles.actionIconContainer, { backgroundColor: Colors.light.success }]}>
-                    <Ionicons name="calendar" size={24} color="white" />
-                  </View>
-                  <ThemedText style={styles.actionButtonText}>Mis consultas</ThemedText>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => router.push('/consulta/telemedicina/sala-espera' as any)}
-                >
-                  <View style={[styles.actionIconContainer, { backgroundColor: '#6366F1' }]}>
-                    <Ionicons name="hourglass" size={24} color="white" />
-                  </View>
-                  <ThemedText style={styles.actionButtonText}>Sala de espera</ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            {/* Sección de próximas consultas */}
-            {upcomingConsultations.length > 0 && (
-              <View style={styles.upcomingSection}>
-                <ThemedText style={styles.sectionTitle}>Próximas consultas</ThemedText>
-                
-                {upcomingConsultations.map((consultation) => renderConsultation(consultation))}
-              </View>
-            )}
-            
-            {/* Especialistas destacados */}
-            <View style={styles.specialistsSection}>
-              <View style={styles.sectionHeader}>
-                <ThemedText style={styles.sectionTitle}>Especialistas destacados</ThemedText>
-                <TouchableOpacity onPress={() => router.push('/consulta/telemedicina/buscar-especialistas' as any)}>
-                  <ThemedText style={styles.seeAllLink}>Ver todos</ThemedText>
-                </TouchableOpacity>
-              </View>
-              
-              <ScrollView 
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.specialistsContainer}
-              >
-                {featuredSpecialists.map((specialist) => renderSpecialist(specialist))}
-              </ScrollView>
-            </View>
-          </View>
-        );
-    }
-  };
-
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
-      {/* Header con gradiente mejorado */}
-      <LinearGradient
-        colors={['#00A0B0', '#70D0E0']}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <View style={styles.headerContent}>
+      {/* Header simplificado */}
+      <View style={styles.header}>
+        <View style={styles.headerTopRow}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={22} color="white" />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Telemedicina</ThemedText>
         </View>
-      </LinearGradient>
-      
 
-      
-      {/* Navegación con botones */}
-      <View style={styles.navigationContainer}>
         <TouchableOpacity 
-          style={[
-            styles.navButton, 
-            selectedTab === 'inicio' && styles.navButtonActive
-          ]}
-          onPress={() => setSelectedTab('inicio')}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons 
-            name="home" 
-            size={18} 
-            color={selectedTab === 'inicio' ? 'white' : '#00A0B0'} 
-          />
-          <ThemedText style={[
-            styles.navButtonText,
-            selectedTab === 'inicio' && styles.navButtonTextActive
-          ]}>Inicio</ThemedText>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.navButton, 
-            selectedTab === 'beneficios' && styles.navButtonActive
-          ]}
-          onPress={() => setSelectedTab('beneficios')}
-        >
-          <Ionicons 
-            name="checkmark-circle" 
-            size={18} 
-            color={selectedTab === 'beneficios' ? 'white' : '#00A0B0'} 
-          />
-          <ThemedText style={[
-            styles.navButtonText,
-            selectedTab === 'beneficios' && styles.navButtonTextActive
-          ]}>Beneficios</ThemedText>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.navButton, 
-            selectedTab === 'funcionamiento' && styles.navButtonActive
-          ]}
-          onPress={() => setSelectedTab('funcionamiento')}
-        >
-          <Ionicons 
-            name="information-circle" 
-            size={18} 
-            color={selectedTab === 'funcionamiento' ? 'white' : '#00A0B0'} 
-          />
-                      <ThemedText style={[
-              styles.navButtonText,
-              selectedTab === 'funcionamiento' && styles.navButtonTextActive
-            ]}>Funciona</ThemedText>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={20} color={Colors.light.primary} />
+            </View>
+          </View>
+          <View style={styles.userDetails}>
+            <ThemedText style={styles.greeting}>Telemedicina</ThemedText>
+          </View>
         </TouchableOpacity>
       </View>
       
@@ -699,7 +542,109 @@ export default function TelemedicinaSelectorScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
-        {renderTabContent()}
+        {/* Sección de acciones principales */}
+        <View style={styles.actionsSection}>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => router.push('/consulta/telemedicina/buscar-especialistas' as any)}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="search" size={32} color={Colors.light.primary} />
+              </View>
+              <ThemedText style={styles.actionButtonText}>Buscar especialista</ThemedText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => router.push('/consulta/telemedicina/mis-consultas' as any)}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="calendar" size={32} color={Colors.light.primary} />
+              </View>
+              <ThemedText style={styles.actionButtonText}>Mis consultas</ThemedText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => router.push('/consulta/telemedicina/sala-espera' as any)}
+            >
+              <View style={styles.actionIconContainer}>
+                <Ionicons name="hourglass" size={32} color={Colors.light.primary} />
+              </View>
+              <ThemedText style={styles.actionButtonText}>Sala de espera</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* Sección de próximas consultas */}
+        {upcomingConsultations.length > 0 && (
+          <View style={styles.upcomingSection}>
+            <View style={styles.sectionHeader}>
+              <ThemedText style={styles.sectionTitle}>Próximas consultas</ThemedText>
+              <TouchableOpacity onPress={() => router.push('/consulta/telemedicina/mis-consultas' as any)}>
+                <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
+              </TouchableOpacity>
+            </View>
+            
+            {renderConsultation(upcomingConsultations[0])}
+          </View>
+        )}
+        
+        {/* Especialistas destacados */}
+        <View style={styles.specialistsSection}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>Especialistas destacados</ThemedText>
+            <TouchableOpacity onPress={() => router.push('/consulta/telemedicina/buscar-especialistas' as any)}>
+              <ThemedText style={styles.seeAllLink}>Ver todos</ThemedText>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.specialistsContainer}
+          >
+            {featuredSpecialists.map((specialist) => renderSpecialist(specialist))}
+          </ScrollView>
+        </View>
+
+        {/* Botones de Beneficios y Cómo funciona al final */}
+        <View style={styles.bottomActionsSection}>
+          <TouchableOpacity 
+            style={styles.bottomActionButton}
+            onPress={() => {
+              // Navegar a una pantalla de beneficios o mostrar modal
+              Alert.alert('Beneficios', 'Acceso desde cualquier lugar, ahorro de tiempo, prescripciones digitales...');
+            }}
+          >
+            <View style={[styles.bottomActionIcon, { backgroundColor: '#10B981' }]}>
+              <Ionicons name="checkmark-circle" size={20} color="white" />
+            </View>
+            <View style={styles.bottomActionContent}>
+              <ThemedText style={styles.bottomActionTitle}>Beneficios de Telemedicina</ThemedText>
+              <ThemedText style={styles.bottomActionSubtitle}>Conoce todas las ventajas</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.light.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.bottomActionButton}
+            onPress={() => {
+              // Navegar a una pantalla de cómo funciona o mostrar modal
+              Alert.alert('Cómo funciona', 'Elige especialista → Agenda → Pago → Consulta virtual');
+            }}
+          >
+            <View style={[styles.bottomActionIcon, { backgroundColor: '#8B5CF6' }]}>
+              <Ionicons name="information-circle" size={20} color="white" />
+            </View>
+            <View style={styles.bottomActionContent}>
+              <ThemedText style={styles.bottomActionTitle}>¿Cómo funciona?</ThemedText>
+              <ThemedText style={styles.bottomActionSubtitle}>Proceso paso a paso</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.light.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -708,67 +653,100 @@ export default function TelemedicinaSelectorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.light.background,
   },
   header: {
-    height: 70,
-    paddingTop: 30,
+    backgroundColor: Colors.light.primary,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerContent: {
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  backButton: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  backButton: {
+  avatarContainer: {
+    marginRight: 8,
+  },
+  avatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
+    backgroundColor: Colors.light.white,
     justifyContent: 'center',
-    marginRight: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  title: {
+  avatarText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  userDetails: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  greeting: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: Colors.light.primary,
   },
-
   navigationContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 6,
-    backgroundColor: '#F7F9FA',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    gap: 8,
   },
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#00A0B0',
+    borderColor: Colors.light.primary,
     backgroundColor: 'white',
     gap: 4,
     flex: 1,
-    minHeight: 36,
+    minHeight: 32,
   },
   navButtonActive: {
-    backgroundColor: '#00A0B0',
-    borderColor: '#00A0B0',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   navButtonText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    color: '#00A0B0',
+    color: Colors.light.primary,
     textAlign: 'center',
-    flexShrink: 1,
   },
   navButtonTextActive: {
     color: 'white',
@@ -778,101 +756,135 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F9FA',
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: 12,
+    paddingBottom: 24,
   },
   tabContent: {
     flex: 1,
   },
   actionsSection: {
-    marginBottom: 24,
+    marginBottom: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
-    paddingTop: 12,
+    padding: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#00303B',
+    marginBottom: 12,
+    color: Colors.light.text,
   },
   actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 8,
   },
   actionButton: {
     alignItems: 'center',
-    width: width / 3.5,
+    flex: 1,
   },
   actionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginBottom: 12,
   },
   actionButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
     textAlign: 'center',
-    color: '#333333',
+    marginTop: 4,
+    color: Colors.light.text,
   },
-  upcomingSection: {
-    marginBottom: 24,
+  actionsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  consultationCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    padding: 16,
+  quickStatsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  consultationsSection: {
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  consultationCard: {
+    backgroundColor: '#F8FBFC',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.primary,
   },
   consultationHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  consultationStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+    minWidth: 60,
   },
   consultationDoctorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   doctorAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-    borderWidth: 2,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 8,
+    borderWidth: 1,
     borderColor: 'rgba(0, 160, 176, 0.2)',
   },
   doctorAvatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A0B0',
+    backgroundColor: Colors.light.primary,
   },
   doctorAvatarText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
     color: 'white',
   },
@@ -880,257 +892,289 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   doctorName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 3,
-    color: '#00303B',
+    marginBottom: 2,
+    color: Colors.light.text,
   },
   doctorSpecialty: {
-    fontSize: 14,
-    color: '#506066',
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
-
   consultationDetails: {
     flexDirection: 'row',
-    marginBottom: 18,
-    gap: 16,
+    marginBottom: 12,
+    gap: 12,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   detailText: {
-    fontSize: 14,
-    color: '#506066',
+    fontSize: 12,
+    color: Colors.light.textSecondary,
     fontWeight: '500',
   },
   joinButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 14,
-    borderRadius: 10,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    padding: 10,
+    borderRadius: 8,
+    gap: 6,
+    backgroundColor: Colors.light.primary,
   },
   joinButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: 'white',
   },
   specialistsSection: {
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   seeAllLink: {
-    fontSize: 14,
-    color: '#00A0B0',
-    fontWeight: '700',
+    fontSize: 12,
+    color: Colors.light.primary,
+    fontWeight: '600',
   },
   specialistsContainer: {
-    paddingBottom: 16,
-    gap: 16,
+    paddingBottom: 8,
+    gap: 12,
   },
   specialistCard: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    padding: 16,
-    width: 200,
+    borderColor: '#F0F0F0',
+    padding: 12,
+    width: 160,
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   specialistAvatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 12,
-    borderWidth: 3,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+    borderWidth: 2,
     borderColor: 'rgba(0, 160, 176, 0.15)',
   },
   specialistAvatarPlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-    backgroundColor: '#00A0B0',
+    marginBottom: 8,
+    backgroundColor: Colors.light.primary,
   },
   specialistAvatarText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
   },
   specialistName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 2,
-    color: '#00303B',
+    color: Colors.light.text,
   },
   specialistSpecialty: {
-    fontSize: 14,
-    color: '#506066',
+    fontSize: 12,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   specialistRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
     color: '#FFB800',
   },
   nextAvailability: {
-    fontSize: 13,
+    fontSize: 11,
     textAlign: 'center',
-    marginBottom: 10,
-    color: '#506066',
+    marginBottom: 8,
+    color: Colors.light.textSecondary,
   },
   nextAvailabilityTime: {
-    fontWeight: '700',
-    color: '#00303B',
+    fontWeight: '600',
+    color: Colors.light.text,
   },
   consultationFee: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#00A0B0',
+    color: Colors.light.primary,
   },
   // Estilos para sección de beneficios
   benefitsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 8,
   },
   benefitCard: {
     width: '47%',
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
     alignItems: 'center',
   },
   benefitIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    marginBottom: 8,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
   },
   benefitCardTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 6,
-    color: '#00303B',
+    marginBottom: 4,
+    color: Colors.light.text,
   },
   benefitCardDescription: {
-    fontSize: 13,
+    fontSize: 11,
     textAlign: 'center',
-    color: '#506066',
+    color: Colors.light.textSecondary,
+    lineHeight: 16,
   },
   // Estilos para sección de funcionamiento
   howItWorksContainer: {
-    gap: 20,
+    gap: 12,
   },
-  stepCard: {
+  stepCardCompact: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    position: 'relative',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   stepNumberContainer: {
-    position: 'absolute',
-    top: -10,
-    left: -10,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFB800',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
+    marginRight: 12,
   },
-  stepNumber: {
+  stepNumberText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: 'white',
   },
   stepIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    marginRight: 12,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
   },
   stepCardContent: {
     flex: 1,
   },
   stepCardTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
-    color: '#00303B',
+    color: Colors.light.text,
   },
   stepCardDescription: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    lineHeight: 16,
+  },
+  upcomingSection: {
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  bottomActionsSection: {
+    marginTop: 16,
+    gap: 12,
+  },
+  bottomActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    marginBottom: 8,
+  },
+  bottomActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  bottomActionContent: {
+    flex: 1,
+  },
+  bottomActionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+    marginBottom: 2,
+  },
+  bottomActionSubtitle: {
     fontSize: 14,
-    color: '#506066',
+    color: Colors.light.textSecondary,
   },
 });
+
+
