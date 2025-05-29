@@ -102,7 +102,7 @@ export default function ConsultaScreen() {
             <ThemedText style={[styles.optionDescription, { 
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
             }]}>
-              Agenda una cita presencial con médicos especialistas en sus consultorios
+              Agenda una cita presencial con médicos especialistas
             </ThemedText>
             
             <View style={styles.optionFeatures}>
@@ -113,10 +113,6 @@ export default function ConsultaScreen() {
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#059669" />
                 <ThemedText style={styles.featureText}>Múltiples especialidades</ThemedText>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#059669" />
-                <ThemedText style={styles.featureText}>Evaluación completa</ThemedText>
               </View>
             </View>
           </View>
@@ -134,7 +130,7 @@ export default function ConsultaScreen() {
           onPress={handleTelemedicineSelect}
           activeOpacity={0.8}
         >
-          <View style={[styles.optionIconContainer, { backgroundColor: 'rgba(0, 160, 176, 0.1)' }]}>
+          <View style={[styles.optionIconContainer, { backgroundColor: Colors.light.primary + '20' }]}>
             <Ionicons name="videocam" size={32} color={Colors.light.primary} />
           </View>
           
@@ -143,17 +139,13 @@ export default function ConsultaScreen() {
             <ThemedText style={[styles.optionDescription, { 
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
             }]}>
-              Consulta con especialistas por videollamada desde la comodidad de tu hogar
+              Consulta con especialistas por videollamada desde casa
             </ThemedText>
             
             <View style={styles.optionFeatures}>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
                 <ThemedText style={styles.featureText}>Desde casa</ThemedText>
-              </View>
-              <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
-                <ThemedText style={styles.featureText}>Horarios flexibles</ThemedText>
               </View>
               <View style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
@@ -172,16 +164,18 @@ export default function ConsultaScreen() {
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
         }]}>
           <View style={styles.infoHeader}>
-            <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
+            </View>
             <ThemedText style={styles.infoTitle}>¿Necesitas ayuda?</ThemedText>
           </View>
           <ThemedText style={[styles.infoText, {
             color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
           }]}>
-            Si no estás seguro del tipo de consulta que necesitas, contáctanos y te ayudaremos a elegir la opción más adecuada.
+            ¿No estás seguro? Contáctanos y te ayudaremos a elegir la mejor opción.
           </ThemedText>
           <TouchableOpacity style={styles.helpButton}>
-            <Ionicons name="call" size={16} color={Colors.light.primary} />
+            <Ionicons name="call" size={18} color={Colors.light.primary} />
             <ThemedText style={[styles.helpButtonText, { color: Colors.light.primary }]}>
               Contactar soporte
             </ThemedText>
@@ -294,39 +288,41 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+    elevation: 2,
   },
   optionIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   optionContent: {
     flex: 1,
   },
   optionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 8,
     color: Colors.light.primary,
   },
   optionDescription: {
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 19,
+    marginBottom: 10,
   },
   optionFeatures: {
     gap: 6,
@@ -341,12 +337,14 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   optionAction: {
-    marginLeft: 12,
+    marginLeft: 10,
   },
   infoSection: {
-    padding: 20,
-    borderRadius: 16,
-    marginTop: 8,
+    padding: 18,
+    borderRadius: 12,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
@@ -359,18 +357,20 @@ const styles = StyleSheet.create({
   infoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  infoIconContainer: {
+    marginRight: 10,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 8,
     color: Colors.light.primary,
   },
   infoText: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   helpButton: {
     flexDirection: 'row',

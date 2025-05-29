@@ -13,23 +13,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { FlatList, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// Paleta de colores oficial MediGo
-const COLORS = {
-  primary: '#00A0B0',
-  primaryLight: '#33b5c2',
-  primaryDark: '#006070',
-  accent: '#70D0E0',
-  background: '#FFFFFF',
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  white: '#FFFFFF',
-  success: '#28a745',
-  error: '#dc3545',
-  warning: '#ffc107',
-  border: '#E9ECEF',
-  cardBg: '#f8f9fa',
-};
-
 type AppointmentStatus = 'CONFIRMED' | 'PENDING' | 'COMPLETED' | 'CANCELLED';
 
 type Appointment = {
@@ -54,8 +37,8 @@ const mockAppointments: Appointment[] = [
     provider_type: 'Cardióloga',
     organization_name: 'Centro Médico Integral',
     status: 'CONFIRMED',
-    location: 'Col. Roma Norte, CDMX',
-    consultation_fee: 800,
+    location: 'Altamira, Caracas',
+    consultation_fee: 120,
   },
   {
     id: '2',
@@ -65,8 +48,8 @@ const mockAppointments: Appointment[] = [
     provider_type: 'Médico General',
     organization_name: 'Clínica San Miguel',
     status: 'PENDING',
-    location: 'Col. Condesa, CDMX',
-    consultation_fee: 600,
+    location: 'Las Mercedes, Caracas',
+    consultation_fee: 80,
   },
   {
     id: '3',
@@ -76,8 +59,8 @@ const mockAppointments: Appointment[] = [
     provider_type: 'Dermatóloga',
     organization_name: 'Instituto Dermatológico',
     status: 'COMPLETED',
-    location: 'Col. Polanco, CDMX',
-    consultation_fee: 750,
+    location: 'Chacao, Caracas',
+    consultation_fee: 100,
   },
 ];
 
@@ -95,15 +78,15 @@ export default function MisCitasScreen() {
   const getStatusColor = (status: AppointmentStatus) => {
     switch (status) {
       case 'CONFIRMED':
-        return COLORS.success;
+        return '#4CAF50';
       case 'PENDING':
-        return COLORS.warning;
+        return '#FF9800';
       case 'COMPLETED':
-        return COLORS.primary;
+        return Colors.light.primary;
       case 'CANCELLED':
-        return COLORS.error;
+        return '#F44336';
       default:
-        return COLORS.textSecondary;
+        return Colors.light.textSecondary;
     }
   };
 
@@ -173,7 +156,7 @@ export default function MisCitasScreen() {
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           <Ionicons 
             name={getStatusIcon(item.status) as any} 
-            size={14} 
+            size={12} 
             color="white" 
           />
           <Text style={styles.statusText}>
@@ -198,49 +181,30 @@ export default function MisCitasScreen() {
 
       <View style={styles.appointmentDetails}>
         <View style={styles.detailItem}>
-          <Ionicons name="location-outline" size={16} color={COLORS.primary} />
+          <Ionicons name="location-outline" size={14} color={Colors.light.primary} />
           <Text style={styles.detailText}>
             {item.location}
           </Text>
         </View>
         <View style={styles.detailItem}>
-          <Ionicons name="cash-outline" size={16} color={COLORS.primary} />
+          <Ionicons name="cash-outline" size={14} color={Colors.light.primary} />
           <Text style={styles.detailText}>
-            ${item.consultation_fee}
+            Bs. {item.consultation_fee}
           </Text>
         </View>
       </View>
       
       <View style={styles.appointmentFooter}>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleViewAppointment(item)}
-          >
-            <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.actionButtonText}>
-              Ver detalles
-            </Text>
-          </TouchableOpacity>
-          {item.status === 'COMPLETED' && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.rateButton]}
-              onPress={() => router.push({
-                pathname: '/consulta/consultorio/calificar-cita',
-                params: { 
-                  appointmentId: item.id,
-                  providerId: item.id
-                }
-              })}
-            >
-              <Ionicons name="star-outline" size={16} color={COLORS.warning} />
-              <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
-                Calificar
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => handleViewAppointment(item)}
+        >
+          <Ionicons name="eye-outline" size={14} color={Colors.light.primary} />
+          <Text style={styles.actionButtonText}>
+            Ver detalles
+          </Text>
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={18} color={Colors.light.textSecondary} />
       </View>
     </TouchableOpacity>
   );
@@ -249,42 +213,15 @@ export default function MisCitasScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header igual al diseño principal */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              Mis Citas
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="calendar" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        <Text style={styles.title}>Mis Citas</Text>
       </View>
 
       <ScrollView 
@@ -292,33 +229,42 @@ export default function MisCitasScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-      {/* Stats Header */}
-      <View style={styles.statsHeader}>
-        <View style={styles.statItem}>
+        {/* Stats Header */}
+        <View style={styles.statsHeader}>
+          <View style={styles.statItem}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="calendar" size={18} color={Colors.light.primary} />
+            </View>
             <ThemedText style={styles.statNumber}>
-            {mockAppointments.length}
+              {mockAppointments.length}
             </ThemedText>
             <ThemedText style={styles.statLabel}>
-            Total de citas
+              Total
             </ThemedText>
-        </View>
-        <View style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="time" size={18} color={Colors.light.primary} />
+            </View>
             <ThemedText style={styles.statNumber}>
-            {mockAppointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
+              {mockAppointments.filter(apt => apt.status === 'PENDING' || apt.status === 'CONFIRMED').length}
             </ThemedText>
             <ThemedText style={styles.statLabel}>
-            Próximas
+              Próximas
             </ThemedText>
-        </View>
-        <View style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
+            <View style={styles.statIconContainer}>
+              <Ionicons name="checkmark-done" size={18} color={Colors.light.primary} />
+            </View>
             <ThemedText style={styles.statNumber}>
-            {mockAppointments.filter(apt => apt.status === 'COMPLETED').length}
+              {mockAppointments.filter(apt => apt.status === 'COMPLETED').length}
             </ThemedText>
             <ThemedText style={styles.statLabel}>
-            Completadas
+              Completadas
             </ThemedText>
+          </View>
         </View>
-      </View>
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>
@@ -329,7 +275,7 @@ export default function MisCitasScreen() {
             style={styles.newAppointmentButton}
             onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
           >
-            <Ionicons name="add" size={16} color="white" />
+            <Ionicons name="add" size={14} color="white" />
             <ThemedText style={styles.newAppointmentButtonText}>
               Nueva cita
             </ThemedText>
@@ -345,7 +291,9 @@ export default function MisCitasScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={64} color={Colors.light.textSecondary} />
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="calendar-outline" size={48} color={Colors.light.textSecondary} />
+              </View>
               <ThemedText style={styles.emptyTitle}>
                 No tienes citas registradas
               </ThemedText>
@@ -356,7 +304,7 @@ export default function MisCitasScreen() {
                 style={styles.emptyButton}
                 onPress={() => router.push('/consulta/consultorio/buscar-proveedores')}
               >
-                <Ionicons name="add" size={20} color="white" />
+                <Ionicons name="add" size={18} color="white" />
                 <ThemedText style={styles.emptyButtonText}>
                   Agendar primera cita
                 </ThemedText>
@@ -395,94 +343,64 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
+  backButton: {
+    position: 'absolute',
+    top: 58,
+    left: 24,
+    padding: 8,
   },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 20,
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.light.white,
-  },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   statsHeader: {
     flexDirection: 'row',
-    marginBottom: 24,
-    gap: 12,
+    marginBottom: 16,
+    gap: 10,
   },
   statItem: {
     flex: 1,
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
     shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
+  statIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   statNumber: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
     color: Colors.light.primary,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.light.textSecondary,
     textAlign: 'center',
   },
@@ -490,10 +408,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
@@ -501,9 +419,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
     gap: 4,
   },
   newAppointmentButtonText: {
@@ -512,146 +430,144 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   separator: {
-    height: 12,
+    height: 10,
   },
   appointmentCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   appointmentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   dateTimeContainer: {
     flex: 1,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     marginBottom: 2,
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
     textTransform: 'capitalize',
   },
   timeText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 4,
   },
   statusText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   appointmentInfo: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   providerName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
-    color: COLORS.textPrimary,
+    marginBottom: 3,
+    color: Colors.light.textPrimary,
   },
   providerType: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 2,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   organizationName: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   appointmentDetails: {
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
+    marginBottom: 10,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   detailText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   appointmentFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 16,
+    borderTopColor: Colors.light.primary + '20',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  rateButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: COLORS.warning + '20',
-    borderRadius: 8,
-  },
   actionButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
     paddingHorizontal: 32,
   },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
     color: Colors.light.textPrimary,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    gap: 6,
   },
   emptyButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 }); 

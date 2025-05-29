@@ -236,8 +236,8 @@ export default function EmergenciaCompletadoScreen() {
             style={[styles.actionButton, styles.newRequestButton]}
             onPress={handleNewRequest}
           >
-            <Ionicons name="add-circle" size={20} color="white" />
-            <ThemedText style={styles.actionButtonText}>Solicitar Servicio Similar</ThemedText>
+            <Ionicons name="add" size={20} color="white" />
+            <ThemedText style={styles.actionButtonText}>Nueva Emergencia</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -251,6 +251,14 @@ export default function EmergenciaCompletadoScreen() {
             <ThemedText style={[styles.historyButtonText, { color: Colors.light.primary }]}>
               Ver Historial
             </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.homeButton]}
+            onPress={() => router.replace('/')}
+          >
+            <Ionicons name="home" size={20} color="white" />
+            <ThemedText style={styles.actionButtonText}>Ir al Inicio</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -437,5 +445,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  homeButton: {
+    backgroundColor: '#2196F3',
   },
 }); 

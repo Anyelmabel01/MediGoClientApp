@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { useCart } from '@/context/CartContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -66,19 +67,49 @@ const prescriptions: Prescription[] = [
 
 export default function RecetasScreen() {
   const router = useRouter();
+  const { addToCart } = useCart();
   const [activeRecetas] = useState<Prescription[]>(prescriptions);
   const [expandedPrescription, setExpandedPrescription] = useState<string | null>(null);
   
   const togglePrescriptionDetails = (id: string) => {
     setExpandedPrescription(expandedPrescription === id ? null : id);
   };
+
+  const handleBuyMedication = (medication: Medication, prescriptionId: string) => {
+    console.log('🔥 handleBuyMedication called with:', { medication, prescriptionId });
+    
+    // Convert medication from prescription to cart item format
+    const cartItem = {
+      id: medication.id,
+      name: medication.name,
+      presentation: medication.dosage,
+      price: 100, // Price could be fetched from a database or set default
+      description: `${medication.frequency} por ${medication.duration}`,
+      category: '1', // Default category, could be determined based on medication type
+      prescription: true,
+      available: true,
+      pharmacy: 'Farmacia Central', // Default pharmacy
+      quantity: 1,
+    };
+
+    console.log('🛒 Cart item to add:', cartItem);
+    
+    try {
+      addToCart(cartItem);
+      console.log('✅ addToCart called successfully');
+      alert(`${medication.name} agregado al carrito!`); // Simple alert for debugging
+    } catch (error) {
+      console.error('❌ Error adding to cart:', error);
+    }
+  };
   
   const renderPrescriptionItem = ({ item }: { item: Prescription }) => (
-    <TouchableOpacity 
-      style={styles.prescriptionCard}
-      onPress={() => togglePrescriptionDetails(item.id)}
-    >
-      <View style={styles.prescriptionHeader}>
+    <View style={styles.prescriptionCard}>
+      <TouchableOpacity 
+        style={styles.prescriptionHeader}
+        onPress={() => togglePrescriptionDetails(item.id)}
+        activeOpacity={0.7}
+      >
         <View style={styles.prescriptionIcon}>
           <Ionicons name="document-text" size={24} color="#fff" />
         </View>
@@ -95,7 +126,7 @@ export default function RecetasScreen() {
           size={24} 
           color={Colors.light.primary} 
         />
-      </View>
+      </TouchableOpacity>
       
       {expandedPrescription === item.id && (
         <View style={styles.medicationsContainer}>
@@ -127,7 +158,14 @@ export default function RecetasScreen() {
                 </ThemedText>
               </View>
               
-              <TouchableOpacity style={styles.buyButton}>
+              <TouchableOpacity 
+                style={styles.buyButton}
+                onPress={() => {
+                  console.log('🛒 Buy button pressed for medication:', med.name);
+                  handleBuyMedication(med, item.id);
+                }}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="cart" size={16} color="#fff" />
                 <ThemedText style={styles.buyButtonText}>Comprar</ThemedText>
               </TouchableOpacity>
@@ -135,7 +173,7 @@ export default function RecetasScreen() {
           ))}
         </View>
       )}
-    </TouchableOpacity>
+    </View>
   );
   
   return (
@@ -149,6 +187,39 @@ export default function RecetasScreen() {
         </TouchableOpacity>
         <ThemedText style={styles.title}>Recetas activas</ThemedText>
       </View>
+      
+      {/* Test button for debugging */}
+      <TouchableOpacity 
+        style={{
+          backgroundColor: 'red',
+          padding: 10,
+          margin: 10,
+          borderRadius: 5,
+          alignItems: 'center'
+        }}
+        onPress={() => {
+          console.log('🔴 TEST BUTTON PRESSED');
+          const testItem = {
+            id: 'test-123',
+            name: 'Test Medicine',
+            presentation: '500mg',
+            price: 50,
+            description: 'Test description',
+            category: '1',
+            prescription: true,
+            available: true,
+            pharmacy: 'Test Pharmacy',
+            quantity: 1,
+          };
+          console.log('🔴 Adding test item:', testItem);
+          addToCart(testItem);
+          alert('Test item added to cart!');
+        }}
+      >
+        <ThemedText style={{ color: 'white', fontWeight: 'bold' }}>
+          TEST ADD TO CART
+        </ThemedText>
+      </TouchableOpacity>
       
       <FlatList
         data={activeRecetas}

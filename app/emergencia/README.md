@@ -219,6 +219,126 @@ const MAPBOX_API_KEY = "pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xob
 5. **Chat en vivo**: Comunicación directa con paramédico
 6. **Historial de ubicaciones**: Guardar direcciones frecuentes
 
+# Sistema de Emergencias MediGo
+
+## Funcionalidades Principales
+
+### 🚀 Emergencia Rápida (Nueva Funcionalidad)
+
+Cuando un usuario selecciona "Para mí" en una emergencia médica, el sistema activa un **proceso rápido** que:
+
+- **Utiliza automáticamente** la información del perfil del usuario logueado
+- **Salta las pantallas** de ubicación, paciente y contacto  
+- **Va directo** a la confirmación y pago
+- **Agiliza el proceso** en situaciones críticas donde cada segundo cuenta
+
+#### Flujo Rápido vs Flujo Normal
+
+**Flujo Rápido (Para mí):**
+1. Emergencia → Descripción + Urgencia → Confirmación → Pago → Seguimiento
+
+**Flujo Normal (Para otra persona):**
+1. Emergencia → Ubicación → Paciente → Contacto → Confirmación → Pago → Seguimiento
+
+#### Información Utilizada Automáticamente
+
+Cuando se activa el proceso rápido, el sistema utiliza:
+
+- **Datos del Usuario:** Nombre, apellido, teléfono, tipo de sangre
+- **Ubicación:** Dirección actual seleccionada en el perfil
+- **Contacto:** El mismo usuario como persona de contacto
+- **Información Médica:** Tipo de sangre, peso, altura del expediente
+
+### Tipos de Emergencia
+
+1. **Emergencia Médica** 🏥
+   - Para situaciones que requieren atención médica inmediata
+   - Soporte para proceso rápido cuando es "para mí"
+
+2. **Accidente** 🚗
+   - Para situaciones donde ha ocurrido un accidente
+   - Requiere información adicional del incidente
+
+3. **Traslado** 🚑
+   - Para traslados médicos programados o de emergencia
+   - Incluye información de origen y destino
+
+### Pantallas del Sistema
+
+#### `/emergencia/medica.tsx`
+- Pantalla principal de emergencia médica
+- Detecta parámetro `fastTrack=true` para activar proceso rápido
+- Muestra vista previa de la información del usuario cuando "Para mí" está seleccionado
+
+#### `/emergencia/ubicacion.tsx`
+- Selección de ubicación de emergencia
+- Se omite en el proceso rápido
+
+#### `/emergencia/paciente.tsx`
+- Información del paciente
+- Se omite en el proceso rápido (usa datos del perfil)
+
+#### `/emergencia/contacto.tsx`
+- Información de contacto de emergencia
+- Se omite en el proceso rápido (usa datos del usuario)
+
+#### `/emergencia/confirmacion.tsx`
+- Confirmación final y selección de método de pago
+- Adaptada para mostrar información del usuario automáticamente
+- Incluye todos los detalles relevantes para la emergencia
+
+#### `/emergencia/seguimiento.tsx`
+- Seguimiento en tiempo real del servicio de emergencia
+
+### Beneficios del Proceso Rápido
+
+✅ **Velocidad:** Reduce el tiempo de solicitud de ~2-3 minutos a ~30 segundos
+✅ **Facilidad:** Menos campos que llenar en situaciones de estrés  
+✅ **Precisión:** Utiliza información verificada del perfil
+✅ **Ubicación Automática:** Usa la ubicación guardada del usuario
+✅ **Información Médica:** Incluye tipo de sangre y datos relevantes automáticamente
+
+### Integración con Perfil de Usuario
+
+El sistema se integra con:
+
+- **useUser Hook:** Para acceder a datos del usuario logueado
+- **UserModel:** Para tipo de sangre, peso, altura, etc.
+- **Ubicaciones Guardadas:** Para dirección de emergencia
+- **Expediente Médico:** Para historial relevante
+
+### Flujo de Pantallas Actualizado
+
+```
+Emergencia Principal
+       ↓
+Emergencia Médica
+       ↓
+   ¿Para quién?
+    ↙        ↘
+Para mí    Para otro
+   ↓         ↓
+Confirmación  Ubicación
+   ↓         ↓
+ Pago      Paciente
+   ↓         ↓
+Seguimiento  Contacto
+            ↓
+         Confirmación
+            ↓
+          Pago
+            ↓
+        Seguimiento
+```
+
+### Próximas Mejoras
+
+- [ ] Integración con GPS en tiempo real
+- [ ] Notificaciones push para actualizaciones
+- [ ] Historial de emergencias
+- [ ] Contactos de emergencia múltiples
+- [ ] Integración con servicios médicos locales
+
 ---
 
 *Desarrollado para MediGo App - Servicios Médicos de Emergencia* 

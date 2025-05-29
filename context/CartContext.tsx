@@ -27,14 +27,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const addToCart = (item: CartItem) => {
+    console.log('🛒 CartContext addToCart called with:', item);
     setCartItems(prev => {
+      console.log('📦 Current cartItems:', prev);
       const existing = prev.find(ci => ci.id === item.id);
       if (existing) {
-        return prev.map(ci =>
+        console.log('🔄 Item exists, updating quantity');
+        const updated = prev.map(ci =>
           ci.id === item.id ? { ...ci, quantity: (ci.quantity || 1) + (item.quantity || 1) } : ci
         );
+        console.log('📦 Updated cartItems:', updated);
+        return updated;
       } else {
-        return [...prev, { ...item, quantity: item.quantity || 1 }];
+        console.log('🆕 New item, adding to cart');
+        const newCart = [...prev, { ...item, quantity: item.quantity || 1 }];
+        console.log('📦 New cartItems:', newCart);
+        return newCart;
       }
     });
   };

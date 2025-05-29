@@ -14,18 +14,18 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import MapView from 'react-native-maps';
 import { MapboxMap } from '../components/MapboxMap';
@@ -209,11 +209,10 @@ export default function FarmaciaScreen() {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [cartItems, setCartItems] = useState<Medicine[]>([]);
+  const { cartItems, addToCart, removeFromCart, setCartItems } = useCart();
   const [showCart, setShowCart] = useState(false);
   const [availability, setAvailability] = useState<'all' | 'available'>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const { addToCart, removeFromCart, setCartItems: cartContextSetCartItems } = useCart();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
@@ -343,6 +342,7 @@ export default function FarmaciaScreen() {
   };
   
   const handleAddToCart = (medicine: Medicine) => {
+    console.log('Adding to cart:', medicine);
     addToCart({ ...medicine, quantity: 1 });
   };
   
@@ -721,7 +721,7 @@ export default function FarmaciaScreen() {
                         style={{ marginLeft: 10 }}
                         onPress={() => {
                           // Eliminar el producto completamente del carrito
-                          setCartItems(cartItems.filter(ci => ci.id !== item.id));
+                          removeFromCart(item.id);
                         }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >

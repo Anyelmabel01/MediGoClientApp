@@ -26,7 +26,6 @@ const COMMON_CONDITIONS = [
 export default function EmergenciaPacienteScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const [forSelf, setForSelf] = useState(true);
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
   const [selectedBloodType, setSelectedBloodType] = useState<BloodType | null>(null);
@@ -46,7 +45,7 @@ export default function EmergenciaPacienteScreen() {
     }
   };
 
-  const canContinue = forSelf || (patientName.trim() !== '' && patientAge.trim() !== '');
+  const canContinue = patientName.trim() !== '' && patientAge.trim() !== '';
 
   return (
     <ThemedView style={styles.container}>
@@ -57,15 +56,15 @@ export default function EmergenciaPacienteScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Información del Paciente</ThemedText>
       </View>
       
       <ScrollView style={styles.content}>
         <View style={[styles.infoBox, { 
-          backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
-          borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
+          backgroundColor: Colors.light.primary + '10',
+          borderColor: Colors.light.primary + '30'
         }]}>
           <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
           <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
@@ -74,80 +73,37 @@ export default function EmergenciaPacienteScreen() {
         </View>
         
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>¿Para quién solicitas la atención?</ThemedText>
-          <View style={styles.optionsContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.optionButton, 
-                forSelf && styles.selectedOption
-              ]}
-              onPress={() => setForSelf(true)}
-            >
-              <Ionicons 
-                name="person" 
-                size={20} 
-                color={forSelf ? 'white' : '#777'} 
-              />
-              <ThemedText style={[
-                styles.optionText,
-                forSelf && styles.selectedOptionText
-              ]}>Para mí</ThemedText>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[
-                styles.optionButton, 
-                !forSelf && styles.selectedOption
-              ]}
-              onPress={() => setForSelf(false)}
-            >
-              <Ionicons 
-                name="people" 
-                size={20} 
-                color={!forSelf ? 'white' : '#777'} 
-              />
-              <ThemedText style={[
-                styles.optionText,
-                !forSelf && styles.selectedOptionText
-              ]}>Para otra persona</ThemedText>
-            </TouchableOpacity>
+          <ThemedText style={styles.sectionTitle}>Datos del paciente *</ThemedText>
+          
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Nombre completo *</ThemedText>
+            <TextInput
+              style={[styles.textInput, { 
+                backgroundColor: Colors.light.white,
+                color: isDarkMode ? Colors.dark.text : Colors.light.text
+              }]}
+              placeholder="Nombre y apellidos del paciente"
+              placeholderTextColor={Colors.light.textSecondary}
+              value={patientName}
+              onChangeText={setPatientName}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Edad *</ThemedText>
+            <TextInput
+              style={[styles.textInput, { 
+                backgroundColor: Colors.light.white,
+                color: isDarkMode ? Colors.dark.text : Colors.light.text
+              }]}
+              placeholder="Edad en años"
+              placeholderTextColor={Colors.light.textSecondary}
+              value={patientAge}
+              onChangeText={setPatientAge}
+              keyboardType="numeric"
+            />
           </View>
         </View>
-
-        {!forSelf && (
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Datos del paciente *</ThemedText>
-            
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Nombre completo *</ThemedText>
-              <TextInput
-                style={[styles.textInput, { 
-                  backgroundColor: isDarkMode ? Colors.dark.background : '#f5f5f5',
-                  color: isDarkMode ? Colors.dark.text : Colors.light.text
-                }]}
-                placeholder="Nombre y apellidos del paciente"
-                placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
-                value={patientName}
-                onChangeText={setPatientName}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Edad *</ThemedText>
-              <TextInput
-                style={[styles.textInput, { 
-                  backgroundColor: isDarkMode ? Colors.dark.background : '#f5f5f5',
-                  color: isDarkMode ? Colors.dark.text : Colors.light.text
-                }]}
-                placeholder="Edad en años"
-                placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
-                value={patientAge}
-                onChangeText={setPatientAge}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-        )}
 
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Tipo de sangre (opcional)</ThemedText>
@@ -198,11 +154,11 @@ export default function EmergenciaPacienteScreen() {
           <ThemedText style={styles.sectionTitle}>Alergias conocidas</ThemedText>
           <TextInput
             style={[styles.textAreaInput, { 
-              backgroundColor: isDarkMode ? Colors.dark.background : '#f5f5f5',
+              backgroundColor: Colors.light.white,
               color: isDarkMode ? Colors.dark.text : Colors.light.text
             }]}
-            placeholder="Ej: Penicilina, mariscos, polen..."
-            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
+            placeholder="Describe alergias alimentarias, medicamentos, etc."
+            placeholderTextColor={Colors.light.textSecondary}
             value={allergies}
             onChangeText={setAllergies}
             multiline={true}
@@ -214,18 +170,18 @@ export default function EmergenciaPacienteScreen() {
           <ThemedText style={styles.sectionTitle}>Medicamentos actuales</ThemedText>
           <TextInput
             style={[styles.textAreaInput, { 
-              backgroundColor: isDarkMode ? Colors.dark.background : '#f5f5f5',
+              backgroundColor: Colors.light.white,
               color: isDarkMode ? Colors.dark.text : Colors.light.text
             }]}
-            placeholder="Ej: Aspirina 100mg diario, Omeprazol 20mg..."
-            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
+            placeholder="Lista los medicamentos que toma regularmente"
+            placeholderTextColor={Colors.light.textSecondary}
             value={medications}
             onChangeText={setMedications}
             multiline={true}
             numberOfLines={3}
           />
         </View>
-        
+
         <TouchableOpacity 
           style={[
             styles.continueButton,
@@ -244,90 +200,94 @@ export default function EmergenciaPacienteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     marginBottom: 20,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    marginRight: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: Colors.light.white,
+    flex: 1,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   infoBox: {
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
+    alignItems: 'flex-start',
+    marginBottom: 20,
     borderWidth: 1,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   infoText: {
     marginLeft: 12,
     flex: 1,
     fontSize: 14,
+    lineHeight: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
-    flex: 0.48,
-  },
-  selectedOption: {
-    backgroundColor: '#F44336',
-  },
-  optionText: {
-    marginLeft: 8,
-    color: '#777',
-  },
-  selectedOptionText: {
-    color: 'white',
-    fontWeight: 'bold',
+    marginBottom: 12,
+    color: Colors.light.primary,
   },
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: 8,
+    color: Colors.light.primary,
   },
   textInput: {
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '30',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   textAreaInput: {
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '30',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
-    height: 80,
     textAlignVertical: 'top',
+    minHeight: 80,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   bloodTypeContainer: {
     flexDirection: 'row',
@@ -335,21 +295,26 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bloodTypeButton: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 16,
     paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: Colors.light.primary + '30',
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedBloodType: {
-    backgroundColor: '#F44336',
-    borderColor: '#F44336',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   bloodTypeText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#777',
+    fontWeight: '600',
+    color: Colors.light.primary,
   },
   selectedBloodTypeText: {
     color: 'white',
@@ -360,38 +325,50 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   conditionChip: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.light.primary + '30',
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedCondition: {
-    backgroundColor: '#F44336',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   conditionText: {
     fontSize: 14,
-    color: '#777',
+    fontWeight: '500',
+    color: Colors.light.primary,
   },
   selectedConditionText: {
     color: 'white',
-    fontWeight: 'bold',
   },
   conditionCheck: {
-    marginLeft: 4,
+    marginLeft: 6,
   },
   continueButton: {
-    backgroundColor: '#F44336',
-    borderRadius: 10,
-    height: 50,
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: 24,
+    marginBottom: 32,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   disabledButton: {
-    backgroundColor: '#FFCDD2',
+    backgroundColor: Colors.light.textSecondary,
   },
   continueButtonText: {
     color: 'white',

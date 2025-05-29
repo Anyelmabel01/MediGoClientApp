@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,23 +16,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-
-// Paleta de colores oficial MediGo
-const COLORS = {
-  primary: '#00A0B0',
-  primaryLight: '#33b5c2',
-  primaryDark: '#006070',
-  accent: '#70D0E0',
-  background: '#FFFFFF',
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  white: '#FFFFFF',
-  success: '#28a745',
-  error: '#dc3545',
-  warning: '#ffc107',
-  border: '#E9ECEF',
-  cardBg: '#f8f9fa',
-};
 
 type Provider = {
   id: string;
@@ -66,8 +50,8 @@ const mockProviders: Record<string, Provider> = {
     provider_type: 'Cardióloga',
     organization_name: 'Centro Médico Integral',
     avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    consultation_fee: 800,
-    location: 'Col. Roma Norte, CDMX'
+    consultation_fee: 120,
+    location: 'Altamira, Caracas'
   },
   '2': {
     id: '2',
@@ -75,8 +59,8 @@ const mockProviders: Record<string, Provider> = {
     provider_type: 'Médico General',
     organization_name: 'Clínica San Miguel',
     avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    consultation_fee: 600,
-    location: 'Col. Condesa, CDMX'
+    consultation_fee: 80,
+    location: 'Las Mercedes, Caracas'
   }
 };
 
@@ -85,25 +69,7 @@ const paymentMethods: PaymentMethod[] = [
     id: 'efectivo',
     name: 'Efectivo',
     icon: 'cash-outline',
-    description: 'Paga en el consultorio'
-  },
-  {
-    id: 'tarjeta',
-    name: 'Tarjeta de crédito/débito',
-    icon: 'card-outline',
-    description: 'Visa, MasterCard, American Express'
-  },
-  {
-    id: 'transferencia',
-    name: 'Transferencia bancaria',
-    icon: 'swap-horizontal-outline',
-    description: 'SPEI, transferencia electrónica'
-  },
-  {
-    id: 'digital',
-    name: 'Pago digital',
-    icon: 'phone-portrait-outline',
-    description: 'PayPal, Mercado Pago, OXXO Pay'
+    description: 'Paga en el consultorio al momento de la cita'
   }
 ];
 
@@ -123,20 +89,19 @@ export default function AgendarCitaScreen() {
   if (!provider) {
     return (
       <View style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="auto" />
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+            <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.title}>Agendar Cita</Text>
-          <View style={styles.headerSpacer} />
         </View>
         <View style={styles.emptyState}>
-          <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-          <Text style={[styles.emptyTitle, { color: COLORS.error }]}>
+          <Ionicons name="alert-circle-outline" size={48} color={Colors.light.error} />
+          <Text style={[styles.emptyTitle, { color: Colors.light.error }]}>
             Proveedor no encontrado
           </Text>
         </View>
@@ -222,7 +187,7 @@ export default function AgendarCitaScreen() {
       style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -230,10 +195,9 @@ export default function AgendarCitaScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.title}>Agendar Cita</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView 
@@ -264,19 +228,19 @@ export default function AgendarCitaScreen() {
 
             <View style={styles.appointmentDetails}>
               <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+                <Ionicons name="calendar-outline" size={14} color={Colors.light.primary} />
                 <Text style={styles.detailText}>
                   {selectedDate === 'today' ? 'Hoy' : 'Mañana'} • {selectedTime}
                 </Text>
               </View>
               <View style={styles.detailRow}>
-                <Ionicons name="location-outline" size={16} color={COLORS.primary} />
+                <Ionicons name="location-outline" size={14} color={Colors.light.primary} />
                 <Text style={styles.detailText}>{provider.location}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Ionicons name="cash-outline" size={16} color={COLORS.primary} />
+                <Ionicons name="cash-outline" size={14} color={Colors.light.primary} />
                 <Text style={styles.detailText}>
-                  Costo: ${provider.consultation_fee}
+                  Costo: Bs. {provider.consultation_fee}
                 </Text>
               </View>
             </View>
@@ -291,11 +255,11 @@ export default function AgendarCitaScreen() {
           <TextInput
             style={styles.reasonInput}
             placeholder="Describe brevemente el motivo de tu consulta..."
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={Colors.light.textSecondary}
             value={reason}
             onChangeText={setReason}
             multiline
-            numberOfLines={4}
+            numberOfLines={3}
             textAlignVertical="top"
           />
         </View>
@@ -308,11 +272,11 @@ export default function AgendarCitaScreen() {
           <TextInput
             style={styles.notesInput}
             placeholder="Información adicional que consideres relevante..."
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={Colors.light.textSecondary}
             value={notes}
             onChangeText={setNotes}
             multiline
-            numberOfLines={3}
+            numberOfLines={2}
             textAlignVertical="top"
           />
         </View>
@@ -323,14 +287,14 @@ export default function AgendarCitaScreen() {
             Documentos relevantes (opcional)
           </Text>
           <Text style={styles.sectionSubtitle}>
-            Sube estudios, recetas o documentos médicos relevantes
+            Sube estudios, recetas o documentos médicos
           </Text>
 
           <TouchableOpacity 
             style={styles.uploadButton}
             onPress={handleDocumentUpload}
           >
-            <Ionicons name="cloud-upload-outline" size={24} color={COLORS.primary} />
+            <Ionicons name="cloud-upload-outline" size={20} color={Colors.light.primary} />
             <Text style={styles.uploadButtonText}>
               Subir documento
             </Text>
@@ -343,8 +307,8 @@ export default function AgendarCitaScreen() {
                   <View style={styles.documentInfo}>
                     <Ionicons 
                       name={document.type.includes('pdf') ? 'document-outline' : 'image-outline'} 
-                      size={20} 
-                      color={COLORS.primary} 
+                      size={18} 
+                      color={Colors.light.primary} 
                     />
                     <View style={styles.documentText}>
                       <Text style={styles.documentName} numberOfLines={1}>
@@ -359,7 +323,7 @@ export default function AgendarCitaScreen() {
                     style={styles.removeButton}
                     onPress={() => handleRemoveDocument(document.id)}
                   >
-                    <Ionicons name="close-circle" size={20} color={COLORS.error} />
+                    <Ionicons name="close-circle" size={18} color={Colors.light.error} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -394,13 +358,13 @@ export default function AgendarCitaScreen() {
                   </View>
                   <Ionicons 
                     name={method.icon as any} 
-                    size={24} 
-                    color={selectedPayment === method.id ? COLORS.primary : COLORS.textSecondary} 
+                    size={20} 
+                    color={selectedPayment === method.id ? Colors.light.primary : Colors.light.textSecondary} 
                   />
                   <View style={styles.paymentInfo}>
                     <Text style={[
                       styles.paymentName,
-                      { color: selectedPayment === method.id ? COLORS.primary : COLORS.textPrimary }
+                      { color: selectedPayment === method.id ? Colors.light.primary : Colors.light.textPrimary }
                     ]}>
                       {method.name}
                     </Text>
@@ -425,7 +389,7 @@ export default function AgendarCitaScreen() {
               acceptedTerms && styles.checkedCheckbox
             ]}>
               {acceptedTerms && (
-                <Ionicons name="checkmark" size={16} color="white" />
+                <Ionicons name="checkmark" size={14} color="white" />
               )}
             </View>
             <Text style={styles.termsText}>
@@ -445,8 +409,8 @@ export default function AgendarCitaScreen() {
             styles.confirmButton,
             { 
               backgroundColor: (reason && selectedPayment && acceptedTerms && !isSubmitting) 
-                ? COLORS.primary 
-                : COLORS.textSecondary,
+                ? Colors.light.primary 
+                : Colors.light.textSecondary,
               opacity: (reason && selectedPayment && acceptedTerms && !isSubmitting) ? 1 : 0.6
             }
           ]}
@@ -457,9 +421,9 @@ export default function AgendarCitaScreen() {
             <Text style={styles.confirmButtonText}>Procesando...</Text>
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={20} color="white" />
+              <Ionicons name="checkmark-circle" size={18} color="white" />
               <Text style={styles.confirmButtonText}>
-                Confirmar cita • ${provider.consultation_fee}
+                Confirmar cita • Bs. {provider.consultation_fee}
               </Text>
             </>
           )}
@@ -472,27 +436,28 @@ export default function AgendarCitaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: Colors.light.background,
     paddingTop: 50,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
   },
   backButton: {
     padding: 8,
+    marginRight: 12,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: Colors.light.white,
     flex: 1,
-    textAlign: 'center',
-    color: COLORS.textPrimary,
-  },
-  headerSpacer: {
-    width: 40,
   },
   content: {
     flex: 1,
@@ -502,153 +467,160 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   section: {
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
   },
   sectionSubtitle: {
-    fontSize: 14,
-    marginBottom: 12,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginBottom: 8,
+    color: Colors.light.textSecondary,
   },
   appointmentSummary: {
-    gap: 16,
+    gap: 12,
   },
   providerSummary: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   providerAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
   providerDetails: {
     flex: 1,
   },
   providerName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
   },
   providerType: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 2,
-    color: COLORS.textSecondary,
+    color: Colors.light.textSecondary,
   },
   organizationName: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   appointmentDetails: {
-    gap: 8,
-    paddingTop: 12,
+    gap: 6,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: Colors.light.primary + '20',
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   detailText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   reasonInput: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '30',
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     fontSize: 14,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.white,
+    color: Colors.light.textPrimary,
+    backgroundColor: Colors.light.white,
     textAlignVertical: 'top',
-    height: 100,
+    height: 80,
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '30',
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     fontSize: 14,
-    color: COLORS.textPrimary,
-    backgroundColor: COLORS.white,
+    color: Colors.light.textPrimary,
+    backgroundColor: Colors.light.white,
     textAlignVertical: 'top',
-    height: 80,
+    height: 60,
   },
   uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    padding: 16,
+    gap: 6,
+    padding: 12,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: Colors.light.primary,
     borderStyle: 'dashed',
     borderRadius: 8,
-    backgroundColor: COLORS.primary + '10',
+    backgroundColor: Colors.light.primary + '10',
   },
   uploadButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
   documentsContainer: {
-    marginTop: 12,
-    gap: 8,
+    marginTop: 8,
+    gap: 6,
   },
   documentItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: COLORS.cardBg,
+    padding: 10,
+    backgroundColor: Colors.light.background,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
   },
   documentInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 8,
+    gap: 6,
   },
   documentText: {
     flex: 1,
   },
   documentName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    color: COLORS.textPrimary,
+    color: Colors.light.textPrimary,
   },
   documentSize: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: Colors.light.textSecondary,
   },
   removeButton: {
     padding: 4,
   },
   paymentOption: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '30',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
-    backgroundColor: COLORS.white,
+    padding: 12,
+    marginBottom: 6,
+    backgroundColor: Colors.light.white,
   },
   selectedPaymentOption: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '10',
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.primary + '10',
   },
   paymentContent: {
     flexDirection: 'row',
@@ -658,65 +630,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 12,
+    gap: 10,
   },
   radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '50',
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedRadioButton: {
-    borderColor: COLORS.primary,
+    borderColor: Colors.light.primary,
   },
   radioButtonInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.primary,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.light.primary,
   },
   paymentInfo: {
     flex: 1,
   },
   paymentName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 2,
   },
   paymentDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '50',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   checkedCheckbox: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   termsText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.light.textSecondary,
     flex: 1,
   },
   termsLink: {
-    color: COLORS.primary,
+    color: Colors.light.primary,
     fontWeight: '600',
   },
   confirmContainer: {
@@ -725,21 +697,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: Colors.light.primary + '20',
   },
   confirmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
-    gap: 8,
+    gap: 6,
   },
   confirmButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   emptyState: {
@@ -749,7 +721,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 16,
     textAlign: 'center',

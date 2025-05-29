@@ -1,24 +1,8 @@
+import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-// Paleta de colores oficial MediGo
-const COLORS = {
-  primary: '#00A0B0',
-  primaryLight: '#33b5c2',
-  primaryDark: '#006070',
-  accent: '#70D0E0',
-  background: '#FFFFFF',
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  white: '#FFFFFF',
-  success: '#28a745',
-  error: '#dc3545',
-  warning: '#ffc107',
-  border: '#E9ECEF',
-  cardBg: '#f8f9fa',
-};
 
 type Appointment = {
   id: string;
@@ -73,15 +57,15 @@ export default function ConsultorioScreen() {
   const getColorEstado = (estado: Appointment['estado']) => {
     switch (estado) {
       case 'confirmada':
-        return COLORS.success;
+        return '#4CAF50';
       case 'pendiente':
-        return COLORS.warning;
+        return '#FF9800';
       case 'cancelada':
-        return COLORS.error;
+        return '#F44336';
       case 'completada':
-        return COLORS.primary;
+        return Colors.light.primary;
       default:
-        return COLORS.textSecondary;
+        return Colors.light.textSecondary;
     }
   };
 
@@ -128,7 +112,7 @@ export default function ConsultorioScreen() {
         <View style={[styles.badgeEstado, { backgroundColor: getColorEstado(item.estado) }]}>
           <Ionicons 
             name={getIconEstado(item.estado) as any} 
-            size={14} 
+            size={12} 
             color="white" 
           />
           <Text style={styles.textoEstado}>{getTextoEstado(item.estado)}</Text>
@@ -141,131 +125,96 @@ export default function ConsultorioScreen() {
       </View>
       
       <View style={styles.citaFooter}>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleDetallesCita(item)}
-          >
-            <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.actionButtonText}>Ver detalles</Text>
-          </TouchableOpacity>
-          {item.estado === 'completada' && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.rateButton]}
-              onPress={() => router.push({
-                pathname: '/consulta/consultorio/calificar-cita',
-                params: { 
-                  appointmentId: item.id,
-                  providerId: item.id
-                }
-              })}
-            >
-              <Ionicons name="star-outline" size={16} color={COLORS.warning} />
-              <Text style={[styles.actionButtonText, { color: COLORS.warning }]}>
-                Calificar
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => handleDetallesCita(item)}
+        >
+          <Ionicons name="eye-outline" size={16} color={Colors.light.primary} />
+          <Text style={styles.actionButtonText}>Ver detalles</Text>
+        </TouchableOpacity>
+        <Ionicons name="chevron-forward" size={18} color={Colors.light.textSecondary} />
       </View>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.contenedor}>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
       
       {/* Header */}
-      <View style={styles.cabecera}>
+      <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.botonRegresar}
+          style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.titulo}>Consultorio</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-      
-      {/* Welcome Card */}
-      <View style={styles.welcomeCard}>
-        <View style={styles.welcomeContent}>
-          <View style={styles.welcomeInfo}>
-            <Text style={styles.welcomeTitle}>¡Bienvenido al Consultorio!</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Agenda citas con los mejores médicos cerca de ti
-            </Text>
-          </View>
-          <View style={styles.welcomeIcon}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="medical" size={32} color={COLORS.primary} />
-            </View>
-          </View>
-        </View>
+        <Text style={styles.title}>Consultorio</Text>
       </View>
       
       {/* Action Buttons */}
-      <View style={styles.contenedorBotones}>
+      <View style={styles.actionButtonsContainer}>
         <TouchableOpacity 
-          style={[styles.botonAccion, styles.botonPrimario]}
+          style={styles.primaryActionButton}
           onPress={handleNuevaCita}
         >
-          <View style={styles.botonContent}>
-            <View style={styles.botonIconContainer}>
-              <Ionicons name="add-circle" size={24} color="white" />
-            </View>
-            <View style={styles.botonTextContainer}>
-              <Text style={styles.botonTitulo}>Nueva Cita</Text>
-              <Text style={styles.botonSubtitulo}>Buscar proveedores</Text>
-            </View>
+          <View style={styles.actionIconContainer}>
+            <Ionicons name="add-circle" size={28} color={Colors.light.primary} />
           </View>
-          <Ionicons name="chevron-forward" size={20} color="white" />
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>Nueva Cita</Text>
+            <Text style={styles.actionSubtitle}>Buscar proveedores</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.botonAccion, styles.botonSecundario]}
+          style={styles.secondaryActionButton}
           onPress={handleMisCitas}
         >
-          <View style={styles.botonContent}>
-            <View style={styles.botonIconContainer}>
-              <Ionicons name="calendar" size={24} color="white" />
-            </View>
-            <View style={styles.botonTextContainer}>
-              <Text style={styles.botonTitulo}>Mis Citas</Text>
-              <Text style={styles.botonSubtitulo}>Ver programadas</Text>
-            </View>
+          <View style={styles.actionIconContainer}>
+            <Ionicons name="calendar" size={28} color={Colors.light.primary} />
           </View>
-          <Ionicons name="chevron-forward" size={20} color="white" />
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>Mis Citas</Text>
+            <Text style={styles.actionSubtitle}>Ver programadas</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
         </TouchableOpacity>
       </View>
       
       {/* Quick Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Ionicons name="calendar-outline" size={24} color={COLORS.primary} />
+          <View style={styles.statIconContainer}>
+            <Ionicons name="calendar-outline" size={20} color={Colors.light.primary} />
+          </View>
           <Text style={styles.statNumber}>{proximasCitas.length}</Text>
-          <Text style={styles.statLabel}>Próximas citas</Text>
+          <Text style={styles.statLabel}>Próximas</Text>
         </View>
         <View style={styles.statCard}>
-          <Ionicons name="people-outline" size={24} color={COLORS.success} />
+          <View style={styles.statIconContainer}>
+            <Ionicons name="people-outline" size={20} color={Colors.light.primary} />
+          </View>
           <Text style={styles.statNumber}>12</Text>
-          <Text style={styles.statLabel}>Doctores favoritos</Text>
+          <Text style={styles.statLabel}>Favoritos</Text>
         </View>
         <View style={styles.statCard}>
-          <Ionicons name="star-outline" size={24} color={COLORS.warning} />
+          <View style={styles.statIconContainer}>
+            <Ionicons name="star-outline" size={20} color={Colors.light.primary} />
+          </View>
           <Text style={styles.statNumber}>4.8</Text>
-          <Text style={styles.statLabel}>Calificación promedio</Text>
+          <Text style={styles.statLabel}>Rating</Text>
         </View>
       </View>
       
       {/* Upcoming Appointments */}
-      <View style={styles.seccionProximas}>
-        <View style={styles.seccionHeader}>
-          <Text style={styles.tituloSeccion}>Próximas Citas</Text>
+      <View style={styles.appointmentsSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Próximas Citas</Text>
           {proximasCitas.length > 0 && (
             <TouchableOpacity onPress={handleMisCitas}>
-              <Text style={styles.verTodas}>Ver todas</Text>
+              <Text style={styles.viewAllText}>Ver todas</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -275,24 +224,24 @@ export default function ConsultorioScreen() {
             data={proximasCitas}
             renderItem={renderItemCita}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.listaCitas}
+            contentContainerStyle={styles.appointmentsList}
             showsVerticalScrollIndicator={false}
           />
         ) : (
-          <View style={styles.estadoVacio}>
+          <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="calendar-outline" size={64} color={COLORS.textSecondary} />
+              <Ionicons name="calendar-outline" size={48} color={Colors.light.textSecondary} />
             </View>
-            <Text style={styles.textoVacio}>No tienes citas programadas</Text>
-            <Text style={styles.subtextoVacio}>
+            <Text style={styles.emptyTitle}>No tienes citas programadas</Text>
+            <Text style={styles.emptySubtitle}>
               Agenda tu primera cita médica hoy mismo
             </Text>
             <TouchableOpacity 
-              style={styles.botonAgendar}
+              style={styles.scheduleButton}
               onPress={handleNuevaCita}
             >
-              <Ionicons name="add" size={20} color="white" />
-              <Text style={styles.botonAgendarText}>Agendar ahora</Text>
+              <Ionicons name="add" size={18} color="white" />
+              <Text style={styles.scheduleButtonText}>Agendar ahora</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -304,251 +253,223 @@ export default function ConsultorioScreen() {
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: Colors.light.background,
     paddingTop: 50,
   },
-  cabecera: {
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingBottom: 8,
   },
-  botonRegresar: {
+  backButton: {
     padding: 8,
+    marginRight: 12,
   },
-  titulo: {
-    fontSize: 24,
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 10,
-    color: COLORS.textPrimary,
+    color: Colors.light.white,
     flex: 1,
   },
-  headerSpacer: {
-    width: 40,
-  },
-  welcomeCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  welcomeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  welcomeInfo: {
-    flex: 1,
-  },
-  welcomeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: COLORS.textPrimary,
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
-  welcomeIcon: {
-    marginLeft: 16,
-  },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contenedorBotones: {
+  actionButtonsContainer: {
     padding: 16,
-    gap: 12,
+    gap: 10,
   },
-  botonAccion: {
+  primaryActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  botonPrimario: {
-    backgroundColor: COLORS.primary,
-  },
-  botonSecundario: {
-    backgroundColor: COLORS.primaryDark,
-  },
-  botonContent: {
+  secondaryActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  actionContent: {
     flex: 1,
   },
-  botonIconContainer: {
-    marginRight: 16,
-  },
-  botonTextContainer: {
-    flex: 1,
-  },
-  botonTitulo: {
-    color: 'white',
-    fontSize: 18,
+  actionTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
+    color: Colors.light.primary,
     marginBottom: 2,
   },
-  botonSubtitulo: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
+  actionSubtitle: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 10,
     marginBottom: 8,
   },
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
-    color: COLORS.textPrimary,
+    marginBottom: 2,
+    color: Colors.light.primary,
   },
   statLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+    fontSize: 11,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
   },
-  seccionProximas: {
+  appointmentsSection: {
     flex: 1,
     padding: 16,
     paddingTop: 8,
   },
-  seccionHeader: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  tituloSeccion: {
-    fontSize: 20,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
   },
-  verTodas: {
+  viewAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
-  listaCitas: {
-    gap: 12,
+  appointmentsList: {
+    gap: 10,
   },
   itemCita: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   citaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   fechaCita: {
     flex: 1,
   },
   diaFecha: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 2,
-    color: COLORS.textPrimary,
+    color: Colors.light.primary,
   },
   horaCita: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   badgeEstado: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 4,
   },
   textoEstado: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   infoCita: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   nombreDoctor: {
     fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-    color: COLORS.textPrimary,
+    fontSize: 15,
+    marginBottom: 3,
+    color: Colors.light.textPrimary,
   },
   especialidadDoctor: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   citaFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 16,
+    borderTopColor: Colors.light.primary + '20',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  rateButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: COLORS.warning + '20',
-    borderRadius: 8,
+    gap: 6,
   },
   actionButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: Colors.light.primary,
   },
-  estadoVacio: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -556,40 +477,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.cardBg,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.light.primary + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  textoVacio: {
-    fontSize: 18,
+  emptyTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
+    color: Colors.light.textPrimary,
+    marginBottom: 6,
     textAlign: 'center',
   },
-  subtextoVacio: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+  emptySubtitle: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: 20,
+    lineHeight: 18,
   },
-  botonAgendar: {
+  scheduleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    gap: 8,
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    gap: 6,
   },
-  botonAgendarText: {
+  scheduleButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 }); 

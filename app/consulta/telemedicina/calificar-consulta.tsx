@@ -129,7 +129,13 @@ export default function CalificarConsultaScreen() {
         'Tu opinión nos ayuda a mejorar la calidad de nuestros servicios.',
         [
           {
-            text: 'Finalizar',
+            text: 'Ir al Inicio',
+            onPress: () => {
+              router.replace('/');
+            }
+          },
+          {
+            text: 'Ver Consultas',
             onPress: () => {
               router.replace('/consulta');
             }

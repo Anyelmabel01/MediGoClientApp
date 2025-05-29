@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,26 +11,28 @@ import { ThemedView } from '../../components/ThemedView';
 
 const PAYMENT_METHODS = [
   { id: 'card', name: 'Tarjeta de crédito', icon: 'card' as const, details: '**** 1234' },
-  { id: 'cash', name: 'Efectivo', icon: 'cash' as const, details: 'Pagar al recibir servicio' },
 ];
 
 export default function EmergenciaConfirmacionScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user, currentLocation } = useUser();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   
   const handleConfirm = () => {
     router.push('/emergencia/seguimiento' as any);
   };
 
-  // Datos simulados del resumen
+  // Datos simulados del resumen usando información del usuario
   const emergencyData = {
     type: 'Emergencia Médica',
-    description: 'Dolor en el pecho intenso',
-    severity: 'Alta',
-    patient: 'Para mí',
-    location: 'Ubicación actual (Calle 50 #15-20)',
-    contact: 'Juan Pérez - +507 6123-4567',
+    description: 'Solicitud de emergencia médica',
+    severity: 'Media',
+    patient: `${user.nombre} ${user.apellido}`,
+    bloodType: user.tipoSangre,
+    phone: user.telefono,
+    location: currentLocation.direccion,
+    contact: `${user.nombre} ${user.apellido} - ${user.telefono}`,
     provider: 'MediGo Emergency Services',
     estimatedTime: '8-12 minutos',
     rating: 4.8,
@@ -40,38 +43,36 @@ export default function EmergenciaConfirmacionScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <ThemedText style={styles.title}>Confirmar Solicitud</ThemedText>
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={[styles.alertBox, { 
-          backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.1)' : '#FFEBEE',
-          borderColor: isDarkMode ? 'rgba(244, 67, 54, 0.2)' : '#FFCDD2'
-        }]}>
-          <Ionicons name="time" size={24} color="#F44336" />
-          <ThemedText style={[styles.alertText, { color: '#D32F2F' }]}>
-            Revisa cuidadosamente toda la información antes de confirmar
+        <View style={styles.alertBox}>
+          <View style={styles.alertIcon}>
+            <Ionicons name="flash" size={20} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.alertText}>
+            Proceso rápido: Tu información ha sido cargada automáticamente
           </ThemedText>
         </View>
         
         {/* Resumen de la Emergencia */}
-        <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
+        <View style={styles.summaryCard}>
           <ThemedText style={styles.cardTitle}>Resumen de la Emergencia</ThemedText>
           
           <View style={styles.summaryRow}>
-            <Ionicons name="medkit" size={20} color="#F44336" />
+            <View style={[styles.iconContainer, { backgroundColor: '#F44336' + '20' }]}>
+              <Ionicons name="medkit" size={18} color="#F44336" />
+            </View>
             <View style={styles.summaryContent}>
               <ThemedText style={styles.summaryLabel}>Tipo de emergencia</ThemedText>
               <ThemedText style={styles.summaryValue}>{emergencyData.type}</ThemedText>
@@ -79,25 +80,9 @@ export default function EmergenciaConfirmacionScreen() {
           </View>
 
           <View style={styles.summaryRow}>
-            <Ionicons name="document-text" size={20} color={Colors.light.primary} />
-            <View style={styles.summaryContent}>
-              <ThemedText style={styles.summaryLabel}>Descripción</ThemedText>
-              <ThemedText style={styles.summaryValue}>{emergencyData.description}</ThemedText>
+            <View style={styles.iconContainer}>
+              <Ionicons name="person" size={18} color={Colors.light.primary} />
             </View>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Ionicons name="alert-circle" size={20} color="#FF9800" />
-            <View style={styles.summaryContent}>
-              <ThemedText style={styles.summaryLabel}>Nivel de urgencia</ThemedText>
-              <ThemedText style={[styles.summaryValue, { color: '#F44336', fontWeight: 'bold' }]}>
-                {emergencyData.severity}
-              </ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Ionicons name="person" size={20} color={Colors.light.primary} />
             <View style={styles.summaryContent}>
               <ThemedText style={styles.summaryLabel}>Paciente</ThemedText>
               <ThemedText style={styles.summaryValue}>{emergencyData.patient}</ThemedText>
@@ -105,40 +90,51 @@ export default function EmergenciaConfirmacionScreen() {
           </View>
 
           <View style={styles.summaryRow}>
-            <Ionicons name="location" size={20} color={Colors.light.primary} />
+            <View style={styles.iconContainer}>
+              <Ionicons name="water" size={18} color={Colors.light.primary} />
+            </View>
             <View style={styles.summaryContent}>
-              <ThemedText style={styles.summaryLabel}>Ubicación</ThemedText>
-              <ThemedText style={styles.summaryValue}>{emergencyData.location}</ThemedText>
+              <ThemedText style={styles.summaryLabel}>Tipo de sangre</ThemedText>
+              <ThemedText style={styles.summaryValue}>{emergencyData.bloodType}</ThemedText>
             </View>
           </View>
 
           <View style={styles.summaryRow}>
-            <Ionicons name="call" size={20} color={Colors.light.primary} />
+            <View style={styles.iconContainer}>
+              <Ionicons name="call" size={18} color={Colors.light.primary} />
+            </View>
             <View style={styles.summaryContent}>
-              <ThemedText style={styles.summaryLabel}>Contacto</ThemedText>
-              <ThemedText style={styles.summaryValue}>{emergencyData.contact}</ThemedText>
+              <ThemedText style={styles.summaryLabel}>Teléfono</ThemedText>
+              <ThemedText style={styles.summaryValue}>{emergencyData.phone}</ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="location" size={18} color={Colors.light.primary} />
+            </View>
+            <View style={styles.summaryContent}>
+              <ThemedText style={styles.summaryLabel}>Ubicación</ThemedText>
+              <ThemedText style={styles.summaryValue} numberOfLines={2}>{emergencyData.location}</ThemedText>
             </View>
           </View>
         </View>
 
         {/* Información del Proveedor */}
-        <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
+        <View style={styles.summaryCard}>
           <ThemedText style={styles.cardTitle}>Proveedor del Servicio</ThemedText>
           
           <View style={styles.providerInfo}>
             <View style={styles.providerIcon}>
-              <Ionicons name="medical" size={32} color={Colors.light.primary} />
+              <Ionicons name="medical" size={28} color={Colors.light.primary} />
             </View>
             <View style={styles.providerDetails}>
               <ThemedText style={styles.providerName}>{emergencyData.provider}</ThemedText>
               <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={16} color="#FFD700" />
+                <Ionicons name="star" size={14} color="#FFD700" />
                 <ThemedText style={styles.rating}>{emergencyData.rating}</ThemedText>
               </View>
-              <ThemedText style={[styles.estimatedTime, { color: Colors.light.primary }]}>
+              <ThemedText style={styles.estimatedTime}>
                 Tiempo estimado: {emergencyData.estimatedTime}
               </ThemedText>
             </View>
@@ -146,10 +142,7 @@ export default function EmergenciaConfirmacionScreen() {
         </View>
 
         {/* Cálculo de Precios */}
-        <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
+        <View style={styles.summaryCard}>
           <ThemedText style={styles.cardTitle}>Detalle de Costos</ThemedText>
           
           <View style={styles.priceRow}>
@@ -169,10 +162,7 @@ export default function EmergenciaConfirmacionScreen() {
         </View>
 
         {/* Método de Pago */}
-        <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
+        <View style={styles.summaryCard}>
           <ThemedText style={styles.cardTitle}>Método de Pago</ThemedText>
           
           {PAYMENT_METHODS.map((method) => (
@@ -184,12 +174,12 @@ export default function EmergenciaConfirmacionScreen() {
               ]}
               onPress={() => setSelectedPaymentMethod(method.id)}
             >
-              <Ionicons name={method.icon} size={24} color={Colors.light.primary} />
+              <View style={styles.paymentIconContainer}>
+                <Ionicons name={method.icon} size={20} color={Colors.light.primary} />
+              </View>
               <View style={styles.paymentDetails}>
                 <ThemedText style={styles.paymentName}>{method.name}</ThemedText>
-                <ThemedText style={[styles.paymentInfo, { 
-                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-                }]}>{method.details}</ThemedText>
+                <ThemedText style={styles.paymentInfo}>{method.details}</ThemedText>
               </View>
               {selectedPaymentMethod === method.id && (
                 <Ionicons name="checkmark-circle" size={20} color={Colors.light.primary} />
@@ -202,9 +192,18 @@ export default function EmergenciaConfirmacionScreen() {
           style={styles.confirmButton}
           onPress={handleConfirm}
         >
-          <ThemedText style={styles.confirmButtonText}>Confirmar y Solicitar</ThemedText>
-          <Ionicons name="checkmark" size={20} color="white" style={styles.confirmIcon} />
+          <Ionicons name="flash" size={20} color="white" style={styles.buttonIcon} />
+          <ThemedText style={styles.confirmButtonText}>Confirmar Emergencia</ThemedText>
         </TouchableOpacity>
+
+        <View style={styles.disclaimerBox}>
+          <View style={styles.disclaimerIcon}>
+            <Ionicons name="information-circle" size={18} color="#FF9800" />
+          </View>
+          <ThemedText style={styles.disclaimerText}>
+            Al confirmar, un equipo médico será despachado a tu ubicación. El pago se procesará según el método seleccionado.
+          </ThemedText>
+        </View>
       </ScrollView>
     </ThemedView>
   );
@@ -213,87 +212,130 @@ export default function EmergenciaConfirmacionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 50,
+    backgroundColor: Colors.light.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     marginBottom: 20,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    marginRight: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: Colors.light.white,
+    flex: 1,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   alertBox: {
+    backgroundColor: Colors.light.primary + '10',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
+    borderColor: Colors.light.primary + '30',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  alertIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   alertText: {
-    marginLeft: 12,
     flex: 1,
     fontSize: 14,
+    color: Colors.light.primary,
+    fontWeight: '600',
   },
   summaryCard: {
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
+    color: Colors.light.primary,
   },
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   summaryContent: {
-    marginLeft: 12,
     flex: 1,
   },
   summaryLabel: {
-    fontSize: 14,
-    opacity: 0.7,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    marginBottom: 2,
   },
   summaryValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
   },
   providerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   providerIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.light.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   providerDetails: {
     flex: 1,
   },
   providerName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: Colors.light.primary,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -302,12 +344,14 @@ const styles = StyleSheet.create({
   },
   rating: {
     marginLeft: 4,
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.text,
   },
   estimatedTime: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.primary,
   },
   priceRow: {
     flexDirection: 'row',
@@ -316,67 +360,116 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   priceLabel: {
-    fontSize: 16,
+    fontSize: 14,
+    color: Colors.light.text,
   },
   priceValue: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
   },
   totalRow: {
     marginTop: 8,
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: Colors.light.primary + '20',
   },
   totalLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    color: Colors.light.primary,
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#F44336',
+    color: Colors.light.primary,
   },
   paymentMethod: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: Colors.light.background,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
   },
   selectedPaymentMethod: {
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
-    borderWidth: 1,
+    backgroundColor: Colors.light.primary + '10',
     borderColor: Colors.light.primary,
   },
+  paymentIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   paymentDetails: {
-    marginLeft: 12,
     flex: 1,
   },
   paymentName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+    color: Colors.light.primary,
+    marginBottom: 2,
   },
   paymentInfo: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   confirmButton: {
-    backgroundColor: '#F44336',
-    borderRadius: 10,
-    height: 56,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 40,
+    marginTop: 20,
+    marginBottom: 20,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   confirmButtonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  confirmIcon: {
-    marginLeft: 8,
+  buttonIcon: {
+    marginRight: 8,
+  },
+  disclaimerBox: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: '#FFCC02' + '40',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  disclaimerIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFCC02' + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#E65100',
+    lineHeight: 16,
   },
 }); 

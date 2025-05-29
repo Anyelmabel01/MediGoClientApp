@@ -61,8 +61,8 @@ export default function EmergenciaScreen() {
   };
 
   const handleQuickEmergency = () => {
-    // Ir directamente a emergencia médica como acción rápida
-    router.push('/emergencia/medica' as any);
+    // Ir directamente a emergencia médica con el flujo rápido activado
+    router.push('/emergencia/medica?fastTrack=true' as any);
   };
 
   return (
@@ -130,16 +130,6 @@ export default function EmergenciaScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={[styles.alertBox, { 
-          backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.1)' : '#FFEBEE',
-          borderColor: isDarkMode ? 'rgba(244, 67, 54, 0.2)' : '#FFCDD2'
-        }]}>
-          <Ionicons name="alert-circle" size={24} color="#F44336" />
-          <ThemedText style={[styles.alertText, { color: '#D32F2F' }]}>
-            Si estás en una situación de riesgo vital, llama directamente al número de emergencias 911
-          </ThemedText>
-        </View>
-        
         <ThemedText style={styles.sectionTitle}>¿Qué tipo de emergencia necesitas?</ThemedText>
         
         {emergencyTypes.map((type) => (
@@ -151,9 +141,9 @@ export default function EmergenciaScreen() {
             onPress={() => handleEmergencySelect(type.route)}
           >
             <View style={[styles.emergencyIcon, { 
-              backgroundColor: isDarkMode ? 'rgba(244, 67, 54, 0.15)' : 'rgba(244, 67, 54, 0.1)'
+              backgroundColor: Colors.light.primary + '20'
             }]}>
-              <Ionicons name={type.icon} size={32} color="#F44336" />
+              <Ionicons name={type.icon} size={32} color={Colors.light.primary} />
             </View>
             <View style={styles.emergencyContent}>
               <ThemedText style={styles.emergencyName}>{type.name}</ThemedText>
@@ -161,13 +151,13 @@ export default function EmergenciaScreen() {
                 color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
               }]}>{type.description}</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={Colors.light.primary} />
           </TouchableOpacity>
         ))}
         
         <View style={[styles.infoBox, { 
-          backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
-          borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
+          backgroundColor: Colors.light.primary + '10',
+          borderColor: Colors.light.primary + '30'
         }]}>
           <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
           <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
@@ -311,19 +301,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
-  alertBox: {
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-  },
-  alertText: {
-    marginLeft: 12,
-    flex: 1,
-    fontSize: 14,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -333,8 +310,8 @@ const styles = StyleSheet.create({
   emergencyTypeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
     padding: 16,
+    borderRadius: 12,
     marginBottom: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
@@ -344,6 +321,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
   },
   emergencyIcon: {
     width: 60,
@@ -364,15 +343,23 @@ const styles = StyleSheet.create({
   },
   emergencyDescription: {
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   infoBox: {
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 16,
+    marginTop: 8,
     borderWidth: 1,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   infoText: {
     marginLeft: 12,

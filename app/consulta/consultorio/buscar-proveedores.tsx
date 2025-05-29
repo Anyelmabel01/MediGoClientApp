@@ -1,35 +1,17 @@
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { LocationSelector } from '@/components/LocationSelector';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { UserLocation } from '@/constants/UserModel';
-import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { FlatList, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// Paleta de colores oficial MediGo
-const COLORS = {
-  primary: '#00A0B0',
-  primaryLight: '#33b5c2',
-  primaryDark: '#006070',
-  accent: '#70D0E0',
-  background: '#FFFFFF',
-  textPrimary: '#212529',
-  textSecondary: '#6C757D',
-  white: '#FFFFFF',
-  success: '#28a745',
-  error: '#dc3545',
-  warning: '#ffc107',
-  border: '#E9ECEF',
-  cardBg: '#f8f9fa',
-};
-
+// Tipos para proveedores médicos
 type ProviderType = 'ALL' | 'GENERAL_DOCTOR' | 'CARDIOLOGIST' | 'DERMATOLOGIST' | 'PEDIATRICIAN' | 'NEUROLOGIST' | 'PSYCHIATRIST';
 
 type Provider = {
@@ -49,7 +31,7 @@ type Provider = {
 type FilterOption = {
   id: ProviderType;
   label: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
 };
 
 const providerTypeLabels: Record<ProviderType, string> = {
@@ -80,8 +62,8 @@ const mockProviders: Provider[] = [
     rating: 4.9,
     total_reviews: 127,
     next_availability: 'Hoy, 3:00 PM',
-    consultation_fee: 800,
-    location: 'Col. Roma Norte',
+    consultation_fee: 120,
+    location: 'Altamira, Caracas',
     distance: '1.2 km'
   },
   {
@@ -93,8 +75,8 @@ const mockProviders: Provider[] = [
     rating: 4.7,
     total_reviews: 89,
     next_availability: 'Mañana, 10:00 AM',
-    consultation_fee: 600,
-    location: 'Col. Condesa',
+    consultation_fee: 80,
+    location: 'Las Mercedes, Caracas',
     distance: '2.1 km'
   },
   {
@@ -106,8 +88,8 @@ const mockProviders: Provider[] = [
     rating: 4.8,
     total_reviews: 156,
     next_availability: 'Viernes, 2:30 PM',
-    consultation_fee: 750,
-    location: 'Col. Polanco',
+    consultation_fee: 100,
+    location: 'Chacao, Caracas',
     distance: '3.5 km'
   },
   {
@@ -119,15 +101,195 @@ const mockProviders: Provider[] = [
     rating: 4.6,
     total_reviews: 203,
     next_availability: 'Lunes, 9:00 AM',
-    consultation_fee: 550,
-    location: 'Col. Del Valle',
+    consultation_fee: 75,
+    location: 'El Valle, Caracas',
     distance: '4.2 km'
   }
 ];
 
+// Estilos para la pantalla
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
+  },
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    flex: 1,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  filtersContainer: {
+    paddingVertical: 8,
+  },
+  filtersList: {
+    paddingHorizontal: 16,
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.primary + '20',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  filterOptionSelected: {
+    backgroundColor: Colors.light.primary,
+  },
+  filterText: {
+    marginLeft: 6,
+    fontSize: 13,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  filterTextSelected: {
+    color: Colors.light.white,
+  },
+  providersList: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  providerCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.primary + '20',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  providerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 10,
+  },
+  providerInfo: {
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+    marginBottom: 2,
+  },
+  providerType: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    marginBottom: 3,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stars: {
+    flexDirection: 'row',
+    marginRight: 4,
+  },
+  ratingText: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+  },
+  priceColumn: {
+    alignItems: 'flex-end',
+  },
+  price: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  priceLabel: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+  },
+  cardDetails: {
+    marginTop: 8,
+    marginBottom: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.primary + '20',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  detailText: {
+    fontSize: 11,
+    color: Colors.light.textSecondary,
+    marginLeft: 4,
+  },
+  cardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.primary + '20',
+    paddingTop: 8,
+    alignItems: 'flex-end',
+  },
+  quickBookButton: {
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  quickBookText: {
+    color: Colors.light.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
+
 export default function BuscarProveedoresScreen() {
   const router = useRouter();
-  const { isDarkMode } = useTheme();
   const { user, currentLocation, setCurrentLocation } = useUser();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
@@ -152,7 +314,7 @@ export default function BuscarProveedoresScreen() {
     });
   };
 
-  const renderStarRating = (rating: number, size: number = 12) => {
+  const renderStarRating = (rating: number, size: number = 11) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
@@ -169,10 +331,10 @@ export default function BuscarProveedoresScreen() {
       );
     }
 
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
+    const remainingStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    for (let i = 0; i < remainingStars; i++) {
       stars.push(
-        <Ionicons key={`empty-${i}`} name="star-outline" size={size} color="#fbbf24" />
+        <Ionicons key={`empty-${i}`} name="star-outline" size={size} color="#d1d5db" />
       );
     }
 
@@ -185,7 +347,6 @@ export default function BuscarProveedoresScreen() {
       onPress={() => handleProviderSelect(item)}
       activeOpacity={0.7}
     >
-      {/* Header compacto */}
       <View style={styles.cardHeader}>
         <Image 
           source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
@@ -209,7 +370,7 @@ export default function BuscarProveedoresScreen() {
         </View>
         <View style={styles.priceColumn}>
           <Text style={styles.price}>
-            ${item.consultation_fee}
+            Bs. {item.consultation_fee}
           </Text>
           <Text style={styles.priceLabel}>
             consulta
@@ -217,23 +378,21 @@ export default function BuscarProveedoresScreen() {
         </View>
       </View>
 
-      {/* Detalles compactos */}
       <View style={styles.cardDetails}>
         <View style={styles.detailRow}>
-          <Ionicons name="time-outline" size={14} color={COLORS.success} />
+          <Ionicons name="time-outline" size={12} color="#4CAF50" />
           <Text style={styles.detailText} numberOfLines={1}>
             {item.next_availability}
           </Text>
         </View>
         <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={14} color={COLORS.primary} />
+          <Ionicons name="location-outline" size={12} color={Colors.light.primary} />
           <Text style={styles.detailText} numberOfLines={1}>
             {item.location} • {item.distance}
           </Text>
         </View>
       </View>
 
-      {/* Footer compacto */}
       <View style={styles.cardFooter}>
         <TouchableOpacity 
           style={styles.quickBookButton}
@@ -249,19 +408,7 @@ export default function BuscarProveedoresScreen() {
             });
           }}
         >
-          <Ionicons name="calendar" size={14} color="white" />
-          <Text style={styles.quickBookText}>
-            Agendar
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.profileButton}
-          onPress={() => handleProviderSelect(item)}
-        >
-          <Text style={styles.profileButtonText}>
-            Ver perfil
-          </Text>
-          <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />
+          <Text style={styles.quickBookText}>Agendar</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -270,21 +417,22 @@ export default function BuscarProveedoresScreen() {
   const renderFilter = ({ item }: { item: FilterOption }) => (
     <TouchableOpacity
       style={[
-        styles.filterChip,
-        selectedFilter === item.id && styles.selectedFilterChip
+        styles.filterOption,
+        selectedFilter === item.id ? styles.filterOptionSelected : null,
       ]}
       onPress={() => setSelectedFilter(item.id)}
-      activeOpacity={0.7}
     >
-      <Ionicons 
-        name={item.icon as any} 
-        size={16} 
-        color={selectedFilter === item.id ? COLORS.white : COLORS.primary} 
+      <Ionicons
+        name={item.icon}
+        size={16}
+        color={selectedFilter === item.id ? Colors.light.white : Colors.light.primary}
       />
-      <Text style={[
-        styles.filterText,
-        { color: selectedFilter === item.id ? COLORS.white : COLORS.primary }
-      ]}>
+      <Text
+        style={[
+          styles.filterText,
+          selectedFilter === item.id ? styles.filterTextSelected : null,
+        ]}
+      >
         {item.label}
       </Text>
     </TouchableOpacity>
@@ -294,119 +442,57 @@ export default function BuscarProveedoresScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header igual al diseño principal */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              Buscar Proveedores
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="search" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.servicesHeaderContainer}>
-        <ThemedText style={styles.subtitle}>Encuentra el especialista que necesitas</ThemedText>
+        <Text style={styles.title}>Buscar Proveedores</Text>
       </View>
       
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Barra de búsqueda */}
-        <View style={[styles.searchContainer, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
-          borderColor: isDarkMode ? Colors.dark.border : 'transparent',
-          borderWidth: 1
-        }]}>
-          <Ionicons name="search" size={18} color={isDarkMode ? Colors.dark.textSecondary : '#777'} />
-        <TextInput
-            style={[styles.searchInput, { 
-              color: isDarkMode ? Colors.dark.text : Colors.light.text 
-            }]}
-          placeholder="Buscar médico o especialidad..."
-            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={isDarkMode ? Colors.dark.textSecondary : '#777'} />
-          </TouchableOpacity>
-        )}
+      {/* Barra de búsqueda */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBarContainer}>
+          <Ionicons name="search" size={18} color={Colors.light.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nombre o especialidad"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor={Colors.light.textSecondary}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={Colors.light.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-        {/* Filtros horizontales */}
-        <ThemedText style={styles.sectionTitle}>Especialidades</ThemedText>
+      {/* Filtros horizontales */}
+      <View style={styles.filtersContainer}>
         <FlatList
           data={filterOptions}
           renderItem={renderFilter}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContainer}
+          contentContainerStyle={styles.filtersList}
         />
-
-      {/* Resultados */}
-      <View style={styles.resultsHeader}>
-          <ThemedText style={styles.resultsCount}>
-          {filteredProviders.length} proveedores encontrados
-          </ThemedText>
-        <TouchableOpacity style={styles.sortButton}>
-            <Ionicons name="swap-vertical" size={16} color={Colors.light.primary} />
-            <ThemedText style={styles.sortText}>Ordenar</ThemedText>
-        </TouchableOpacity>
       </View>
 
       {/* Lista de proveedores */}
       <FlatList
         data={filteredProviders}
         renderItem={renderProvider}
-        keyExtractor={item => item.id}
-          scrollEnabled={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={48} color={isDarkMode ? Colors.dark.textSecondary : '#ccc'} />
-              <ThemedText style={styles.emptyTitle}>
-              No se encontraron proveedores
-              </ThemedText>
-              <ThemedText style={styles.emptyText}>
-              Intenta cambiar los filtros o términos de búsqueda
-              </ThemedText>
-          </View>
-        }
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.providersList}
+        showsVerticalScrollIndicator={false}
       />
-      </ScrollView>
-      
+
       <BottomNavbar />
       
       <UserProfile 
@@ -422,282 +508,3 @@ export default function BuscarProveedoresScreen() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
-  },
-  header: {
-    backgroundColor: Colors.light.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.white,
-  },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
-  },
-  servicesHeaderContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-    marginBottom: 8,
-  },
-  resultsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resultsCount: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  sortText: {
-    fontSize: 14,
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  separator: {
-    height: 12,
-  },
-  providerCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  providerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  providerInfo: {
-    flex: 1,
-  },
-  providerName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 2,
-    color: COLORS.textPrimary,
-  },
-  providerType: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  stars: {
-    flexDirection: 'row',
-    gap: 1,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  priceColumn: {
-    alignItems: 'flex-end',
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  priceLabel: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  cardDetails: {
-    gap: 4,
-    marginBottom: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  detailText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    flex: 1,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  quickBookButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  quickBookText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  profileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  profileButtonText: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
-    gap: 4,
-  },
-  selectedFilterChip: {
-    backgroundColor: COLORS.primary,
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  filtersContainer: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    color: Colors.light.textPrimary,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});

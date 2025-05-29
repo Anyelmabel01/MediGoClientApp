@@ -1,5 +1,11 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/context/ThemeContext';
+import { UserLocation } from '@/constants/UserModel';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,13 +14,12 @@ import {
     Alert,
     FlatList,
     Image,
+    Platform,
     RefreshControl,
     StyleSheet,
     TouchableOpacity,
     View
 } from 'react-native';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
 
 // Login color palette
 const PRIMARY_COLOR = '#00A0B0';
@@ -94,9 +99,11 @@ const mockConsultations: VirtualConsultation[] = [
 
 export default function MisConsultasTelemedicina() {
   const router = useRouter();
-  const { isDarkMode } = useTheme();
+  const { user, currentLocation, setCurrentLocation } = useUser();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
 
   const upcomingConsultations = mockConsultations.filter(
     c => c.status === 'PENDING' || c.status === 'CONFIRMED' || c.status === 'IN_PROGRESS'
@@ -105,6 +112,10 @@ export default function MisConsultasTelemedicina() {
   const pastConsultations = mockConsultations.filter(
     c => c.status === 'COMPLETED' || c.status === 'CANCELLED'
   );
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -197,22 +208,21 @@ export default function MisConsultasTelemedicina() {
 
   const renderConsultation = ({ item }: { item: VirtualConsultation }) => (
     <View style={[styles.consultationCard, {
-      backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-      borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+      backgroundColor: Colors.light.background,
     }]}>
       <View style={styles.consultationHeader}>
         <Image source={{ uri: item.avatar_url }} style={styles.specialistAvatar} />
         <View style={styles.consultationInfo}>
           <ThemedText style={styles.specialistName}>{item.specialist_name}</ThemedText>
           <ThemedText style={[styles.specialty, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+            color: Colors.light.textSecondary
           }]}>
             {item.specialty}
           </ThemedText>
           <View style={styles.dateTimeContainer}>
             <Ionicons name="calendar-outline" size={14} color={PRIMARY_COLOR} />
             <ThemedText style={[styles.dateTime, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              color: Colors.light.textSecondary
             }]}>
               {new Date(item.date).toLocaleDateString('es-ES')} - {item.time}
             </ThemedText>
@@ -232,7 +242,7 @@ export default function MisConsultasTelemedicina() {
         <View style={styles.notesContainer}>
           <Ionicons name="document-text-outline" size={16} color={PRIMARY_COLOR} />
           <ThemedText style={[styles.notes, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+            color: Colors.light.textSecondary
           }]}>
             {item.notes}
           </ThemedText>
@@ -262,7 +272,7 @@ export default function MisConsultasTelemedicina() {
             )}
             <TouchableOpacity 
               style={[styles.actionButton, { 
-                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+                borderColor: Colors.light.border 
               }]}
               onPress={() => handleReschedule(item.id)}
             >
@@ -285,7 +295,7 @@ export default function MisConsultasTelemedicina() {
           <>
             <TouchableOpacity 
               style={[styles.actionButton, { 
-                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+                borderColor: Colors.light.border 
               }]}
               onPress={() => Alert.alert('Ver detalles', 'Función en desarrollo')}
             >
@@ -297,7 +307,7 @@ export default function MisConsultasTelemedicina() {
             {item.prescription_count > 0 && (
               <TouchableOpacity 
                 style={[styles.actionButton, { 
-                  borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+                  borderColor: Colors.light.border 
                 }]}
                 onPress={() => Alert.alert('Descargar recetas', 'Función en desarrollo')}
               >
@@ -309,7 +319,7 @@ export default function MisConsultasTelemedicina() {
             )}
             <TouchableOpacity 
               style={[styles.actionButton, { 
-                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+                borderColor: Colors.light.border 
               }]}
               onPress={() => Alert.alert('Calificar', 'Función en desarrollo')}
             >
@@ -324,117 +334,125 @@ export default function MisConsultasTelemedicina() {
     </View>
   );
 
-  const currentData = activeTab === 'upcoming' ? upcomingConsultations : pastConsultations;
-
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+          style={styles.userInfoContainer}
+          onPress={() => setShowUserProfile(true)}
         >
-          <Ionicons name="arrow-back" size={24} color={PRIMARY_COLOR} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Mis Consultas Virtuales</ThemedText>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => router.push('/consulta/telemedicina/buscar-especialistas')}
-        >
-          <Ionicons name="add" size={24} color={PRIMARY_COLOR} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            {
-              backgroundColor: activeTab === 'upcoming' ? PRIMARY_COLOR : 'transparent',
-              borderColor: PRIMARY_COLOR
-            }
-          ]}
-          onPress={() => setActiveTab('upcoming')}
-        >
-          <ThemedText style={[
-            styles.tabText,
-            { color: activeTab === 'upcoming' ? 'white' : PRIMARY_COLOR }
-          ]}>
-            Próximas ({upcomingConsultations.length})
-          </ThemedText>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.greeting}>
+              ¡Hola, {user.nombre} {user.apellido}!
+            </ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            {
-              backgroundColor: activeTab === 'past' ? PRIMARY_COLOR : 'transparent',
-              borderColor: PRIMARY_COLOR
-            }
-          ]}
-          onPress={() => setActiveTab('past')}
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
         >
-          <ThemedText style={[
-            styles.tabText,
-            { color: activeTab === 'past' ? 'white' : PRIMARY_COLOR }
-          ]}>
-            Pasadas ({pastConsultations.length})
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={18} color={Colors.light.primary} />
+          </View>
+          <ThemedText style={styles.locationText} numberOfLines={1}>
+            {currentLocation.direccion}
           </ThemedText>
+          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
         </TouchableOpacity>
       </View>
-
-      {/* Content */}
-      <FlatList
-        data={currentData}
-        renderItem={renderConsultation}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.consultationsList}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={PRIMARY_COLOR}
-            colors={[PRIMARY_COLOR]}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons 
-              name={activeTab === 'upcoming' ? "calendar-outline" : "checkmark-circle-outline"} 
-              size={64} 
-              color={Colors.light.textSecondary} 
+      
+      <View style={styles.contentContainer}>
+        <ThemedText style={styles.screenTitle}>Mis Consultas de Telemedicina</ThemedText>
+        
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === 'upcoming' && styles.activeTab
+            ]}
+            onPress={() => setActiveTab('upcoming')}
+          >
+            <ThemedText style={[
+              styles.tabText,
+              activeTab === 'upcoming' && styles.activeTabText
+            ]}>
+              Próximas
+            </ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === 'past' && styles.activeTab
+            ]}
+            onPress={() => setActiveTab('past')}
+          >
+            <ThemedText style={[
+              styles.tabText,
+              activeTab === 'past' && styles.activeTabText
+            ]}>
+              Historial
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+        
+        <FlatList
+          data={activeTab === 'upcoming' ? upcomingConsultations : pastConsultations}
+          renderItem={renderConsultation}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.consultationsList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.light.primary]}
+              tintColor={Colors.light.primary}
             />
-            <ThemedText style={[styles.emptyTitle, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {activeTab === 'upcoming' 
-                ? 'No tienes consultas próximas' 
-                : 'No tienes consultas pasadas'
-              }
-            </ThemedText>
-            <ThemedText style={[styles.emptyText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {activeTab === 'upcoming' 
-                ? 'Agenda una nueva consulta virtual con un especialista'
-                : 'Tus consultas completadas aparecerán aquí'
-              }
-            </ThemedText>
-            {activeTab === 'upcoming' && (
-              <TouchableOpacity 
-                style={[styles.emptyActionButton, { backgroundColor: PRIMARY_COLOR }]}
-                onPress={() => router.push('/consulta/telemedicina/buscar-especialistas')}
-              >
-                <Ionicons name="add" size={20} color="white" />
-                <ThemedText style={styles.emptyActionText}>Nueva Consulta</ThemedText>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="calendar" size={64} color={Colors.light.textSecondary} />
+              <ThemedText style={styles.emptyStateTitle}>
+                No hay consultas {activeTab === 'upcoming' ? 'programadas' : 'pasadas'}
+              </ThemedText>
+              <ThemedText style={styles.emptyStateText}>
+                {activeTab === 'upcoming' 
+                  ? 'Programa una consulta con un especialista'
+                  : 'Tu historial de consultas aparecerá aquí'
+                }
+              </ThemedText>
+            </View>
+          }
+        />
+      </View>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
       />
     </ThemedView>
   );
@@ -443,57 +461,122 @@ export default function MisConsultasTelemedicina() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    marginBottom: 16,
   },
-  backButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
   },
-  title: {
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    color: Colors.light.white,
   },
-  addButton: {
-    padding: 8,
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationIcon: {
+    marginRight: 6,
+  },
+  locationText: {
+    flex: 1,
+    color: Colors.light.white,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  screenTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+    marginBottom: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
     marginBottom: 16,
-    gap: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+    padding: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 8,
     alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: Colors.light.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
+    color: Colors.light.primary,
+  },
+  activeTabText: {
+    color: Colors.light.white,
   },
   consultationsList: {
-    padding: 16,
-    paddingTop: 0,
+    paddingBottom: 20,
   },
   consultationCard: {
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    padding: 16,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   consultationHeader: {
     flexDirection: 'row',
@@ -600,33 +683,20 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 40,
+    justifyContent: 'center',
+    padding: 32,
   },
-  emptyTitle: {
+  emptyStateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: Colors.light.textPrimary,
     marginTop: 16,
     marginBottom: 8,
     textAlign: 'center',
   },
-  emptyText: {
+  emptyStateText: {
     fontSize: 14,
+    color: Colors.light.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  emptyActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  emptyActionText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
 }); 

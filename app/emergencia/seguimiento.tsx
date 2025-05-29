@@ -1,10 +1,11 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Linking, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import MapboxMap from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -49,12 +50,15 @@ const STATUS_CONFIG = {
 export default function EmergenciaSeguimientoScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user, currentLocation } = useUser();
   const [currentStatus, setCurrentStatus] = useState<EmergencyStatus>('PAID');
   const [estimatedTime, setEstimatedTime] = useState(8);
   const [requestId] = useState('EMG-' + Date.now().toString().slice(-6));
   const [paramedicLocation, setParamedicLocation] = useState({ lat: 8.9800, lng: -79.5150 });
   const [patientLocation] = useState({ lat: 8.9824, lng: -79.5199 }); // Ubicación fija del paciente
   const [showMap, setShowMap] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [mapCenter, setMapCenter] = useState({ lat: 8.9812, lng: -79.5175 }); // Centro inicial
   
   // Simular progreso de estados y movimiento del paramédico
   useEffect(() => {
@@ -70,11 +74,21 @@ export default function EmergenciaSeguimientoScreen() {
         if (statusProgression[currentIndex] === 'ACCEPTED') {
           setEstimatedTime(6);
           setShowMap(true);
+          // Calcular centro inicial del mapa
+          const centerLat = (patientLocation.lat + 8.9800) / 2;
+          const centerLng = (patientLocation.lng + -79.5150) / 2;
+          setMapCenter({ lat: centerLat, lng: centerLng });
         } else if (statusProgression[currentIndex] === 'IN_PROGRESS') {
           setEstimatedTime(3);
         } else if (statusProgression[currentIndex] === 'ARRIVING') {
           setEstimatedTime(1);
         }
+      } else if (currentIndex === statusProgression.length - 1) {
+        // Después de ARRIVING, esperar un poco y completar
+        setTimeout(() => {
+          setCurrentStatus('COMPLETED');
+          setEstimatedTime(0);
+        }, 8000); // 8 segundos después de llegar
       }
     }, 5000); // Cambiar estado cada 5 segundos para demo
     
@@ -90,30 +104,73 @@ export default function EmergenciaSeguimientoScreen() {
         const latDiff = patientLocation.lat - prevLocation.lat;
         const lngDiff = patientLocation.lng - prevLocation.lng;
         
-        // Mover 10% más cerca en cada actualización
-        const moveSpeed = 0.1;
+        // Mover de forma más suave y gradual - 2% más cerca en cada actualización
+        const moveSpeed = 0.02;
         
-        return {
+        // Verificar si ya está muy cerca para evitar oscilaciones
+        const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+        if (distance < 0.0001) { // Si está muy cerca, no mover más
+          return prevLocation;
+        }
+        
+        const newLocation = {
           lat: prevLocation.lat + (latDiff * moveSpeed),
           lng: prevLocation.lng + (lngDiff * moveSpeed)
         };
+
+        // Actualizar centro del mapa de forma suave cada cierto tiempo
+        if (Math.random() < 0.1) { // Solo actualizar el centro ocasionalmente
+          const newCenter = {
+            lat: (newLocation.lat + patientLocation.lat) / 2,
+            lng: (newLocation.lng + patientLocation.lng) / 2
+          };
+          setMapCenter(newCenter);
+        }
+        
+        return newLocation;
       });
     };
 
-    const interval = setInterval(moveTowardsPatient, 3000); // Actualizar cada 3 segundos
+    const interval = setInterval(moveTowardsPatient, 500); // Actualizar cada 500ms para movimiento más fluido
     return () => clearInterval(interval);
   }, [showMap, patientLocation]);
 
   const handleCallEmergency = () => {
-    console.log('Llamando a línea de emergencia...');
+    Alert.alert(
+      '🚨 Llamada de Emergencia',
+      '¿Deseas llamar a la línea de emergencias 911?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Llamar 911', 
+          style: 'destructive',
+          onPress: () => {
+            Linking.openURL('tel:911').catch(() => {
+              Alert.alert('Error', 'No se pudo realizar la llamada');
+            });
+          }
+        }
+      ]
+    );
   };
 
   const handleCallParamedic = () => {
-    console.log('Llamando al paramédico...');
-  };
-
-  const handleCompleteService = () => {
-    router.push('/emergencia/completado' as any);
+    const paramedicPhone = emergencyData.paramedicPhone;
+    Alert.alert(
+      '📞 Llamar Paramédico',
+      `¿Deseas llamar a ${emergencyData.paramedicName}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Llamar', 
+          onPress: () => {
+            Linking.openURL(`tel:${paramedicPhone}`).catch(() => {
+              Alert.alert('Error', 'No se pudo realizar la llamada');
+            });
+          }
+        }
+      ]
+    );
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -131,8 +188,8 @@ export default function EmergenciaSeguimientoScreen() {
 
   const emergencyData = {
     type: 'Emergencia Médica',
-    patient: 'Juan Pérez',
-    location: 'Calle 50 #15-20, San Francisco',
+    patient: `${user.nombre} ${user.apellido}`,
+    location: currentLocation.direccion,
     requestTime: new Date().toLocaleTimeString(),
     paramedicName: 'Dr. María González',
     paramedicPhone: '+507 6987-6543',
@@ -163,22 +220,46 @@ export default function EmergenciaSeguimientoScreen() {
     }
   ];
 
+  const handleGoHome = () => {
+    Alert.alert(
+      '🏠 Regresar al Inicio',
+      '¿Deseas regresar a la pantalla principal?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Ir al Inicio', 
+          onPress: () => router.replace('/')
+        }
+      ]
+    );
+  };
+
+  const handleMapPress = () => {
+    setIsMapFullscreen(true);
+  };
+
+  const handleCloseFullscreenMap = () => {
+    setIsMapFullscreen(false);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
         <ThemedText style={styles.title}>Seguimiento de Emergencia</ThemedText>
-        <ThemedText style={[styles.requestId, { 
-          color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-        }]}>ID: {requestId}</ThemedText>
       </View>
       
       <ScrollView style={styles.content}>
         {/* Estado Actual */}
         <View style={[styles.statusCard, { 
           backgroundColor: statusConfig.color + '20',
-          borderColor: statusConfig.color
         }]}>
           <View style={styles.statusHeader}>
             <View style={[styles.statusIcon, { backgroundColor: statusConfig.color }]}>
@@ -207,21 +288,25 @@ export default function EmergenciaSeguimientoScreen() {
         {/* Mapa de Tracking en Tiempo Real */}
         {showMap && (
           <View style={[styles.infoCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
           }]}>
             <ThemedText style={styles.cardTitle}>Ubicación en Tiempo Real</ThemedText>
-            <View style={styles.mapContainer}>
+            <TouchableOpacity style={styles.mapContainer} onPress={handleMapPress}>
               <MapboxMap
-                latitude={(patientLocation.lat + paramedicLocation.lat) / 2}
-                longitude={(patientLocation.lng + paramedicLocation.lng) / 2}
+                latitude={mapCenter.lat}
+                longitude={mapCenter.lng}
                 zoom={14}
                 markers={mapMarkers}
                 showCurrentLocation={false}
                 interactive={true}
                 style={styles.map}
               />
-            </View>
+              <View style={styles.mapClickOverlay}>
+                <Ionicons name="expand" size={24} color="white" />
+                <ThemedText style={styles.mapClickText}>Toca para ampliar</ThemedText>
+              </View>
+            </TouchableOpacity>
             <View style={styles.mapLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
@@ -237,13 +322,13 @@ export default function EmergenciaSeguimientoScreen() {
 
         {/* Información de la Solicitud */}
         <View style={[styles.infoCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
         }]}>
           <ThemedText style={styles.cardTitle}>Detalles de la Solicitud</ThemedText>
           
           <View style={styles.infoRow}>
-            <Ionicons name="medkit" size={20} color="#F44336" />
+            <Ionicons name="medkit" size={20} color={Colors.light.primary} />
             <ThemedText style={styles.infoLabel}>Tipo:</ThemedText>
             <ThemedText style={styles.infoValue}>{emergencyData.type}</ThemedText>
           </View>
@@ -270,8 +355,8 @@ export default function EmergenciaSeguimientoScreen() {
         {/* Información del Paramédico */}
         {(currentStatus === 'ACCEPTED' || currentStatus === 'IN_PROGRESS' || currentStatus === 'ARRIVING') && (
           <View style={[styles.infoCard, { 
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
           }]}>
             <ThemedText style={styles.cardTitle}>Información del Paramédico</ThemedText>
             
@@ -297,32 +382,98 @@ export default function EmergenciaSeguimientoScreen() {
           </View>
         )}
 
-        {/* Contacto de Emergencia */}
-        <View style={[styles.infoCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={styles.cardTitle}>Contacto de Emergencia</ThemedText>
-          
-          <TouchableOpacity 
-            style={styles.emergencyCallButton}
-            onPress={handleCallEmergency}
-          >
-            <Ionicons name="call" size={24} color="white" />
-            <ThemedText style={styles.emergencyCallText}>Llamar línea de emergencia</ThemedText>
-          </TouchableOpacity>
-        </View>
+        {/* Botón para regresar al inicio cuando se complete la emergencia */}
+        {currentStatus === 'COMPLETED' && (
+          <View style={[styles.completionSection, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          }]}>
+            <View style={styles.completionHeader}>
+              <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
+              <ThemedText style={styles.completionTitle}>¡Emergencia Completada!</ThemedText>
+              <ThemedText style={[styles.completionDescription, { 
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+              }]}>
+                El servicio de emergencia ha finalizado exitosamente. Esperamos que te encuentres bien.
+              </ThemedText>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.homeButton}
+              onPress={handleGoHome}
+            >
+              <Ionicons name="home" size={24} color="white" />
+              <ThemedText style={styles.homeButtonText}>Regresar al Inicio</ThemedText>
+            </TouchableOpacity>
 
-        {/* Botón de Completar Servicio (solo para demo) */}
-        {currentStatus === 'ARRIVING' && (
           <TouchableOpacity 
-            style={styles.completeButton}
-            onPress={handleCompleteService}
-          >
-            <ThemedText style={styles.completeButtonText}>Completar Servicio (Demo)</ThemedText>
+              style={[styles.secondaryButton, { 
+                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                borderColor: Colors.light.primary
+              }]}
+              onPress={() => router.push('/emergencia/completado')}
+            >
+              <Ionicons name="document-text" size={20} color={Colors.light.primary} />
+              <ThemedText style={[styles.secondaryButtonText, { color: Colors.light.primary }]}>
+                Ver Resumen Completo
+              </ThemedText>
           </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
+
+      {/* Modal de Mapa en Pantalla Completa */}
+      <Modal
+        visible={isMapFullscreen}
+        animationType="slide"
+        statusBarTranslucent
+      >
+        <View style={styles.fullscreenMapContainer}>
+          <View style={styles.fullscreenMapHeader}>
+            <TouchableOpacity 
+              style={styles.closeMapButton}
+              onPress={handleCloseFullscreenMap}
+            >
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+            <ThemedText style={styles.fullscreenMapTitle}>Seguimiento en Tiempo Real</ThemedText>
+            <View style={styles.fullscreenMapStatus}>
+              <View style={[styles.statusDot, { backgroundColor: statusConfig.color }]} />
+              <ThemedText style={styles.fullscreenStatusText}>{statusConfig.title}</ThemedText>
+            </View>
+          </View>
+          
+          <MapboxMap
+            latitude={mapCenter.lat}
+            longitude={mapCenter.lng}
+            zoom={15}
+            markers={mapMarkers}
+            showCurrentLocation={false}
+            interactive={true}
+            style={styles.fullscreenMap}
+          />
+          
+          <View style={styles.fullscreenMapFooter}>
+            <View style={styles.fullscreenLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
+                <ThemedText style={[styles.legendText, { color: 'white' }]}>Tu ubicación</ThemedText>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#00FF00' }]} />
+                <ThemedText style={[styles.legendText, { color: 'white' }]}>Paramédico</ThemedText>
+              </View>
+            </View>
+            {estimatedTime > 0 && (
+              <View style={styles.fullscreenTimeInfo}>
+                <Ionicons name="time" size={18} color="white" />
+                <ThemedText style={styles.fullscreenTimeText}>
+                  Tiempo estimado: {estimatedTime} min
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -330,30 +481,41 @@ export default function EmergenciaSeguimientoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 50,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     marginBottom: 20,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  backButton: {
+    padding: 8,
+    marginRight: 12,
   },
-  requestId: {
-    fontSize: 14,
-    marginTop: 4,
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    flex: 1,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   statusCard: {
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    borderWidth: 2,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -396,21 +558,43 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: Colors.light.primary,
   },
   mapContainer: {
-    height: height * 0.3,
+    height: 350,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 12,
   },
   map: {
     flex: 1,
+  },
+  mapClickOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mapClickText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+    marginLeft: 4,
   },
   mapLegend: {
     flexDirection: 'row',
@@ -440,6 +624,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 12,
     flex: 1,
+    color: Colors.light.primary,
   },
   infoValue: {
     fontSize: 14,
@@ -465,6 +650,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: Colors.light.primary,
   },
   paramedicDistance: {
     fontSize: 14,
@@ -477,31 +663,132 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emergencyCallButton: {
-    backgroundColor: '#F44336',
+  completionSection: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  completionHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  completionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#4CAF50',
+  },
+  completionDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  homeButton: {
+    backgroundColor: '#4CAF50',
     borderRadius: 8,
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  emergencyCallText: {
+  homeButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  completeButton: {
-    backgroundColor: '#4CAF50',
+  secondaryButton: {
     borderRadius: 8,
     padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  completeButtonText: {
-    color: 'white',
+  secondaryButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  fullscreenMapContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  fullscreenMapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    paddingTop: 60,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  closeMapButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  fullscreenMapTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    flex: 1,
+  },
+  fullscreenMapStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+    backgroundColor: 'white',
+  },
+  fullscreenStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.white,
+  },
+  fullscreenMap: {
+    flex: 1,
+  },
+  fullscreenMapFooter: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  fullscreenLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+  },
+  fullscreenTimeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fullscreenTimeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    marginLeft: 8,
   },
 }); 

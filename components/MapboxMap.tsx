@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { ThemedText } from './ThemedText';
@@ -40,57 +40,100 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const webViewRef = useRef<WebView>(null);
 
-  const generateMapHTML = () => {
-    const markersJS = markers.map(marker => `
-      new mapboxgl.Marker({ color: '${marker.color || '#3887BE'}' })
-        .setLngLat([${marker.longitude}, ${marker.latitude}])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<h3>${marker.title || ''}</h3>'))
-        .addTo(map);
-    `).join('');
+  // Función para actualizar los marcadores sin recargar el WebView
+  useEffect(() => {
+    if (mapReady && webViewRef.current) {
+      const updateScript = `
+        try {
+          // Eliminar marcadores existentes
+          document.querySelectorAll('.mapboxgl-marker').forEach(m => m.remove());
+          
+          // Añadir nuevos marcadores
+          ${markers.map(marker => `
+            new mapboxgl.Marker({ color: '${marker.color || '#3887BE'}' })
+              .setLngLat([${marker.longitude}, ${marker.latitude}])
+              .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('<h3>${marker.title || ''}</h3>'))
+              .addTo(map);
+          `).join('')}
+          
+          true;
+        } catch(e) {
+          false;
+        }
+      `;
+      
+      webViewRef.current.injectJavaScript(updateScript);
+    }
+  }, [markers, mapReady]);
 
-    const routeJS = route ? `
-      map.on('load', () => {
-        map.addSource('route', {
-          'type': 'geojson',
-          'data': {
-            'type': 'Feature',
-            'properties': {},
-            'geometry': {
-              'type': 'LineString',
-              'coordinates': ${JSON.stringify(route)}
-            }
+  // Función para actualizar la ruta sin recargar el WebView
+  useEffect(() => {
+    if (mapReady && webViewRef.current && route) {
+      const updateRouteScript = `
+        try {
+          if (map.getSource('route')) {
+            map.getSource('route').setData({
+              'type': 'Feature',
+              'properties': {},
+              'geometry': {
+                'type': 'LineString',
+                'coordinates': ${JSON.stringify(route)}
+              }
+            });
+          } else {
+            map.addSource('route', {
+              'type': 'geojson',
+              'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                  'type': 'LineString',
+                  'coordinates': ${JSON.stringify(route)}
+                }
+              }
+            });
+            
+            map.addLayer({
+              'id': 'route',
+              'type': 'line',
+              'source': 'route',
+              'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              'paint': {
+                'line-color': '#3887be',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
           }
-        });
-        
-        map.addLayer({
-          'id': 'route',
-          'type': 'line',
-          'source': 'route',
-          'layout': {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          'paint': {
-            'line-color': '#3887be',
-            'line-width': 5,
-            'line-opacity': 0.75
-          }
-        });
-      });
-    ` : '';
+          true;
+        } catch(e) {
+          console.error(e);
+          false;
+        }
+      `;
+      
+      webViewRef.current.injectJavaScript(updateRouteScript);
+    }
+  }, [route, mapReady]);
 
-    const clickHandlerJS = onLocationSelect ? `
-      map.on('click', (e) => {
-        const coords = e.lngLat;
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'locationSelect',
-          latitude: coords.lat,
-          longitude: coords.lng
-        }));
-      });
-    ` : '';
+  // Memorizar el HTML para evitar regeneraciones innecesarias
+  const mapHTML = useMemo(() => generateMapHTML(), [
+    // Solo incluir dependencias que afecten la creación inicial del mapa
+    latitude, 
+    longitude, 
+    zoom, 
+    interactive, 
+    showCurrentLocation,
+    // Excluir markers y route porque se actualizan por injectJavaScript
+  ]);
 
+  function generateMapHTML() {
     return `
       <!DOCTYPE html>
       <html>
@@ -125,8 +168,10 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
             });
 
             map.on('load', () => {
-              // Agregar marcadores
-              ${markersJS}
+              // Notificar que el mapa está listo
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'mapReady'
+              }));
 
               // Agregar ubicación actual si está habilitada
               ${showCurrentLocation ? `
@@ -139,18 +184,19 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
                   });
                 }
               ` : ''}
-
-              // Notificar que el mapa está listo
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'mapReady'
-              }));
             });
 
-            // Agregar ruta si existe
-            ${routeJS}
-
             // Manejar clics en el mapa
-            ${clickHandlerJS}
+            ${onLocationSelect ? `
+              map.on('click', (e) => {
+                const coords = e.lngLat;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'locationSelect',
+                  latitude: coords.lat,
+                  longitude: coords.lng
+                }));
+              });
+            ` : ''}
 
             map.on('error', (e) => {
               window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -178,6 +224,7 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
       if (data.type === 'mapReady') {
         setLoading(false);
         setError(null);
+        setMapReady(true);
       } else if (data.type === 'error') {
         setError(data.message);
         setLoading(false);
@@ -222,13 +269,14 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
         </View>
       )}
       <WebView
-        source={{ html: generateMapHTML() }}
+        ref={webViewRef}
+        source={{ html: mapHTML }}
         style={styles.webview}
         onMessage={handleMessage}
         onError={handleError}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        startInLoadingState={false}
+        startInLoadingState={true}
       />
     </View>
   );
