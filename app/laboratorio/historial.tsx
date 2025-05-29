@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -23,6 +23,7 @@ const groupedHistory = [
 export default function HistorialScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'Junio 2024': true, 
@@ -84,36 +85,37 @@ export default function HistorialScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBackPress}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
           >
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#fff" 
-            />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Historial de Pruebas</ThemedText>
-          <TouchableOpacity 
-            style={styles.exportButton}
-            onPress={handleExportHistory}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-          >
-            <Ionicons name="download-outline" size={22} color="#fff" />
-          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Historial de Pruebas
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="time" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
         </View>
-      </LinearGradient>
+      </View>
 
-      <ScrollView style={{marginTop:10}}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {groupedHistory.map(group => (
           <View key={group.date} style={styles.groupBlock}>
             <ThemedText style={styles.groupDate}>{group.date}</ThemedText>
@@ -137,35 +139,63 @@ export default function HistorialScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1, padding:20 },
-  headerGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.light.background 
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    marginRight: 12,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
   },
-  exportButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   groupBlock: { marginBottom:18 },
   groupDate: { fontWeight:'bold', color:'#6C757D', marginBottom:6 },
@@ -174,4 +204,10 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal:8, paddingVertical:2, borderRadius:10, color:'#fff', fontWeight:'bold', marginLeft:8, fontSize:12 },
   exportBtn: { flexDirection:'row', alignItems:'center', alignSelf:'flex-end', backgroundColor:'#E9ECEF', borderRadius:8, paddingHorizontal:12, paddingVertical:6 },
   exportLabel: { marginLeft:6, color:'#00A0B0', fontWeight:'600' },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
 }); 

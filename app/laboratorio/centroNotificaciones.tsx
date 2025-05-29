@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -12,6 +12,7 @@ import { ThemedView } from '../../components/ThemedView';
 export default function CentroNotificacionesScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([
     { id: '1', title: 'Resultados Listos', message: 'Tus resultados para la prueba de Glucosa ya están disponibles.', date: 'Hace 2 horas', read: false, type: 'resultado' },
@@ -83,36 +84,39 @@ export default function CentroNotificacionesScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBackPress}
-            hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
           >
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#fff" 
-            />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Centro de Notificaciones</ThemedText>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Centro de Notificaciones
+              </ThemedText>
+            </View>
+          </View>
+          
           <TouchableOpacity 
-            style={styles.markAllReadButton} 
+            style={styles.markAllButton}
             onPress={handleMarkAllRead}
-            hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
           >
-            <ThemedText style={styles.markAllRead}>
-              Marcar todas
-            </ThemedText>
+            <Ionicons name="checkmark-done" size={20} color={Colors.light.white} />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
       
       {notifications.length > 0 ? (
         <FlatList
@@ -182,40 +186,66 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1 
   },
-  headerGradient: {
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 16,
+    paddingBottom: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  header: { 
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    marginRight: 8,
   },
-  title: { 
-    fontSize: 20, 
-    fontWeight: 'bold',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
-    marginLeft: -36, // Compensate for the markAllRead button
-    color: '#fff'
+    maxWidth: '75%',
   },
-  markAllReadButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
   },
-  markAllRead: { 
-    fontWeight: '500',
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
     fontSize: 14,
-    color: '#fff'
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    flexWrap: 'wrap',
+    maxWidth: '100%',
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   list: {
     paddingVertical: 8,
@@ -277,5 +307,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 16,
     opacity: 0.7,
-  }
+  },
+  markAllButton: {
+    padding: 6,
+    marginLeft: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 }); 

@@ -226,7 +226,7 @@ export default function EnfermeriaScreen() {
       </View>
       
       <View style={styles.servicesHeaderContainer}>
-        <ThemedText style={styles.subtitle}>Servicios de enfermería a domicilio</ThemedText>
+        <ThemedText style={styles.subtitle}>Servicios a domicilio</ThemedText>
       </View>
       
       <ScrollView 
@@ -238,13 +238,13 @@ export default function EnfermeriaScreen() {
           backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
           borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
         }]}>
-          <Ionicons name="information-circle" size={24} color={Colors.light.primary} />
+          <Ionicons name="information-circle" size={22} color={Colors.light.primary} />
           <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
-            Servicios de enfermería profesional en la comodidad de tu hogar
+            Servicios profesionales en tu hogar
           </ThemedText>
         </View>
 
-        {/* Search Section */}
+        {/* Search and Quick Actions Combined */}
         <View style={[styles.searchContainer, {
           backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border,
         }]}>
@@ -253,7 +253,7 @@ export default function EnfermeriaScreen() {
             style={[styles.searchInput, {
               color: isDarkMode ? Colors.dark.text : Colors.light.text,
             }]}
-            placeholder="Buscar servicios de enfermería..."
+            placeholder="Buscar servicios..."
             placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 40,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -325,15 +325,15 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   avatarContainer: {
-    marginRight: 10,
+    marginRight: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   greetingContainer: {
@@ -350,40 +350,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
   editProfileIndicator: {
     backgroundColor: Colors.light.white,
-    borderRadius: 10,
-    padding: 3,
-    marginLeft: 6,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
   },
   locationIcon: {
-    marginRight: 5,
+    marginRight: 6,
   },
   locationText: {
     flex: 1,
     color: Colors.light.white,
-    fontSize: 13,
+    fontSize: 14,
     marginRight: 4,
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
@@ -395,49 +395,49 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   infoBox: {
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
   },
   infoText: {
     marginLeft: 10,
     flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.white,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchInput: {
     flex: 1,
     marginLeft: 10,
     fontSize: 15,
-    minHeight: 28,
+    minHeight: 32,
   },
   nurseSearchButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   nurseSearchText: {
     color: 'white',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   filtersContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 16,
@@ -456,8 +456,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     marginRight: 10,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
@@ -475,36 +475,36 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
     color: Colors.light.primary,
   },
   servicesList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 12,
   },
   serviceCard: {
     backgroundColor: Colors.light.white,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   serviceIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
     alignSelf: 'center',
   },
   serviceContent: {
@@ -513,14 +513,15 @@ const styles = StyleSheet.create({
   serviceName: {
     fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
     color: Colors.light.primary,
     textAlign: 'center',
+    lineHeight: 18,
   },
   serviceDescription: {
-    fontSize: 13,
+    fontSize: 12,
     marginBottom: 6,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   servicePrice: {
     fontSize: 14,
@@ -532,35 +533,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
-    gap: 10,
+    gap: 12,
   },
   quickActionCard: {
     flex: 1,
     alignItems: 'center',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   quickActionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   quickActionText: {
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
     color: Colors.light.primary,
+    lineHeight: 16,
   },
   servicesSection: {
     marginBottom: 16,

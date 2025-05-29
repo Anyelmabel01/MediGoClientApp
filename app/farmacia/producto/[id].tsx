@@ -1,11 +1,16 @@
+import { BottomNavbar } from '@/components/BottomNavbar';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { useCart } from '@/context/CartContext';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
+import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 // Tipos
 interface Pharmacy {
@@ -102,25 +107,56 @@ const medicinesData: Record<string, Medicine> = {
 
 export default function ProductoScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const { id } = useLocalSearchParams();
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   
   // Obtener datos del medicamento
   const medicine = medicinesData[id as string];
-  
+
   if (!medicine) {
     return (
       <ThemedView style={styles.container}>
+        <StatusBar style="auto" />
+        
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-          </TouchableOpacity>
-          <ThemedText style={styles.title}>Producto no encontrado</ThemedText>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <View style={styles.headerTitleContainer}>
+              <ThemedText style={styles.headerTitle}>Producto no encontrado</ThemedText>
+              <View style={styles.productIndicator}>
+                <Ionicons name="close-circle" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.userAvatarButton}
+              onPress={() => setShowUserProfile(true)}
+            >
+              <View style={styles.headerAvatar}>
+                <ThemedText style={styles.headerAvatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
+        
+        <BottomNavbar />
+        
+        <UserProfile 
+          isVisible={showUserProfile} 
+          onClose={() => setShowUserProfile(false)}
+        />
       </ThemedView>
     );
   }
@@ -148,17 +184,47 @@ export default function ProductoScreen() {
   
   return (
     <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
+      
+      {/* Header adaptado al diseño estándar pero para detalles */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Detalle del producto</ThemedText>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerTitleContainer}>
+            <ThemedText style={styles.headerTitle}>Producto</ThemedText>
+            <View style={styles.productIndicator}>
+              <Ionicons name="medical" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.userAvatarButton}
+            onPress={() => setShowUserProfile(true)}
+          >
+            <View style={styles.headerAvatar}>
+              <ThemedText style={styles.headerAvatarText}>
+                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
       
-      <ScrollView style={styles.scrollContainer}>
+      <View style={styles.servicesHeaderContainer}>
+        <ThemedText style={styles.subtitle}>{medicine.name}</ThemedText>
+      </View>
+      
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.productHeader}>
           <View style={styles.productImageContainer}>
             <Ionicons name="medical" size={80} color={Colors.light.primary} />
@@ -245,6 +311,13 @@ export default function ProductoScreen() {
           <ThemedText style={styles.addToCartText}>Agregar al carrito</ThemedText>
         </TouchableOpacity>
       </ScrollView>
+      
+      <BottomNavbar />
+      
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
     </ThemedView>
   );
 }
@@ -252,24 +325,81 @@ export default function ProductoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   backButton: {
-    padding: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 8,
   },
-  title: {
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: Colors.light.white,
   },
-  scrollContainer: {
+  productIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  userAvatarButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  headerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerAvatarText: {
+    color: Colors.light.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  servicesHeaderContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  content: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   productHeader: {
     alignItems: 'center',

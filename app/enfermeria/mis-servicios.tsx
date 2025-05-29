@@ -1,10 +1,12 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
@@ -93,6 +95,8 @@ const serviceHistory: NursingService[] = [
 export default function MisServiciosScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'scheduled' | 'history'>('scheduled');
 
   const getStatusColor = (status: ServiceStatus) => {
@@ -134,8 +138,7 @@ export default function MisServiciosScreen() {
 
   const renderServiceItem = ({ item }: { item: NursingService }) => (
     <TouchableOpacity 
-      style={[styles.serviceCard, { 
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+      style={[styles.serviceCard, {
         borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
       }]}
       onPress={() => handleServicePress(item)}
@@ -245,17 +248,37 @@ export default function MisServiciosScreen() {
   const currentData = activeTab === 'scheduled' ? scheduledServices : serviceHistory;
 
   return (
-    <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="auto" />
       
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Mis Servicios</ThemedText>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Mis Servicios
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="medical" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Tab Selector */}
@@ -328,27 +351,70 @@ export default function MisServiciosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: Colors.light.background,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
   },
   backButton: {
-    padding: 5,
+    padding: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 20,
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
     fontWeight: 'bold',
-    marginLeft: 10,
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   tabContainer: {
     flexDirection: 'row',
     borderRadius: 12,
     padding: 4,
+    marginHorizontal: 16,
+    marginTop: 20,
     marginBottom: 20,
+    backgroundColor: Colors.light.border,
   },
   tab: {
     flex: 1,
@@ -358,10 +424,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   servicesList: {
+    paddingHorizontal: 16,
     paddingBottom: 20,
   },
   serviceCard: {
@@ -371,19 +438,17 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
     shadowColor: Colors.light.shadowColor,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   nursePhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     marginRight: 16,
   },
   serviceContent: {
@@ -393,16 +458,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   serviceName: {
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
     marginRight: 8,
+    color: Colors.light.text,
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
@@ -412,9 +478,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   nurseName: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     marginBottom: 8,
+    color: Colors.light.primary,
   },
   serviceDetails: {
     marginBottom: 8,
@@ -428,17 +495,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
     flex: 1,
+    lineHeight: 20,
   },
   ratingContainer: {
     marginBottom: 8,
   },
   rating: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   reviewText: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: 'italic',
+    lineHeight: 18,
   },
   costContainer: {
     flexDirection: 'row',
@@ -449,7 +518,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   costValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   emptyState: {
@@ -466,13 +535,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 24,
+    lineHeight: 22,
   },
   ctaButton: {
+    backgroundColor: Colors.light.primary,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 24,
   },
   ctaButtonText: {

@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -230,6 +230,7 @@ const allTests: Test[] = [
 export default function CatalogoScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -316,32 +317,35 @@ export default function CatalogoScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={handleBackPress}
           >
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#fff" 
-            />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Catálogo de Pruebas</ThemedText>
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => setShowFilters(!showFilters)}
-          >
-            <Ionicons name={showFilters ? "options" : "options-outline"} size={24} color="#fff" />
-          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Catálogo de Pruebas
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Búsqueda */}
       <View style={styles.searchContainer}>
@@ -521,7 +525,7 @@ export default function CatalogoScreen() {
               </View>
               <View style={styles.testMeta}>
                 <ThemedText style={[styles.testPrice, { color: colors.primary }]}>
-                  ${item.price.toLocaleString()} MXN
+                  Bs {item.price.toLocaleString()} VED
                 </ThemedText>
                 {item.preparationRequired && (
                   <View style={styles.preparationIndicator}>
@@ -596,46 +600,71 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 0,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    marginRight: 12,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
   },
-  filterButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 6,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     borderWidth: 1,
   },
   searchInput: {
@@ -645,16 +674,16 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   filtersContainer: {
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
   },
   filterSection: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   filterLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   sortOption: {
     paddingHorizontal: 16,
@@ -697,8 +726,8 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     paddingHorizontal: 16,
-    marginTop: 4,
-    marginBottom: 4,
+    marginTop: 2,
+    marginBottom: 2,
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -708,22 +737,22 @@ const styles = StyleSheet.create({
   categoryCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
-    borderRadius: 10,
-    marginBottom: 8,
+    padding: 6,
+    borderRadius: 8,
+    marginBottom: 6,
     borderWidth: 1,
     width: '48%',
-    height: 70,
+    height: 60,
   },
   categoryLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 3,
     textAlign: 'center',
   },
   categoryCount: {
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 9,
+    marginTop: 1,
   },
   resultsHeader: {
     paddingHorizontal: 16,
@@ -738,9 +767,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   testCard: {
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 6,
     borderWidth: 1,
     elevation: 1,
     shadowColor: '#000',
@@ -751,26 +780,26 @@ const styles = StyleSheet.create({
   testCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   testInfo: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
   testName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   testDescription: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
   },
   testMeta: {
     alignItems: 'flex-end',
   },
   testPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     marginBottom: 2,
   },
@@ -779,15 +808,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   preparationText: {
-    fontSize: 11,
-    marginLeft: 4,
+    fontSize: 10,
+    marginLeft: 3,
     fontWeight: '500',
   },
   testCardDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   testAttributes: {
     flex: 1,
@@ -795,27 +824,27 @@ const styles = StyleSheet.create({
   testAttribute: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   attributeText: {
-    fontSize: 11,
-    marginLeft: 6,
+    fontSize: 10,
+    marginLeft: 4,
   },
   testActions: {
-    marginLeft: 12,
+    marginLeft: 8,
   },
   bookButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
   bookButtonText: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: 3,
   },
   emptyState: {
     alignItems: 'center',

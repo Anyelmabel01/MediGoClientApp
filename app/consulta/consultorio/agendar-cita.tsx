@@ -8,6 +8,7 @@ import {
     Alert,
     Image,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -83,6 +84,7 @@ export default function AgendarCitaScreen() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const provider = mockProviders[providerId as string];
 
@@ -169,18 +171,75 @@ export default function AgendarCitaScreen() {
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
-      Alert.alert(
-        'Cita agendada',
-        'Tu cita ha sido agendada exitosamente. Recibirás una confirmación por correo electrónico.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/consulta/consultorio/mis-citas')
-          }
-        ]
-      );
+      setShowSuccessModal(true);
     }, 2000);
   };
+
+  const SuccessModal = () => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={showSuccessModal}
+      onRequestClose={() => setShowSuccessModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.successIcon}>
+            <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
+          </View>
+          
+          <Text style={styles.successTitle}>¡Cita Agendada!</Text>
+          <Text style={styles.successSubtitle}>
+            Tu cita ha sido programada exitosamente
+          </Text>
+          
+          <View style={styles.appointmentSummaryModal}>
+            <View style={styles.summaryRow}>
+              <Ionicons name="person-outline" size={18} color={Colors.light.primary} />
+              <Text style={styles.summaryText}>{provider.display_name}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Ionicons name="calendar-outline" size={18} color={Colors.light.primary} />
+              <Text style={styles.summaryText}>
+                {selectedDate === 'today' ? 'Hoy' : 'Mañana'} a las {selectedTime}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Ionicons name="location-outline" size={18} color={Colors.light.primary} />
+              <Text style={styles.summaryText}>{provider.location}</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.confirmationText}>
+            Recibirás una confirmación por correo electrónico con todos los detalles de tu cita.
+          </Text>
+          
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={styles.viewAppointmentsButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.push('/consulta/consultorio/mis-citas');
+              }}
+            >
+              <Ionicons name="calendar" size={18} color="white" />
+              <Text style={styles.viewAppointmentsButtonText}>Ver mis citas</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.okButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.back();
+              }}
+            >
+              <Text style={styles.okButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <KeyboardAvoidingView 
@@ -429,6 +488,8 @@ export default function AgendarCitaScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <SuccessModal />
     </KeyboardAvoidingView>
   );
 }
@@ -725,5 +786,101 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 16,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: Colors.light.white,
+    padding: 24,
+    borderRadius: 20,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  successIcon: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 50,
+    padding: 16,
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#4CAF50',
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  appointmentSummaryModal: {
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 20,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: Colors.light.textPrimary,
+    flex: 1,
+  },
+  confirmationText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  viewAppointmentsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+    gap: 8,
+  },
+  viewAppointmentsButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  okButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#F1F3F4',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  okButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textPrimary,
   },
 }); 

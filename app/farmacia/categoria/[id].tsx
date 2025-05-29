@@ -1,8 +1,9 @@
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { FlatList, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../../../components/ThemedText';
 import { ThemedView } from '../../../components/ThemedView';
 
@@ -179,19 +180,21 @@ export default function CategoriaScreen() {
   
   return (
     <ThemedView style={styles.container}>
+      <StatusBar style="auto" />
+      
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <ThemedText style={styles.title}>{categoryName}</ThemedText>
         <TouchableOpacity 
           style={styles.cartButton}
           onPress={handleCartPress}
         >
-          <Ionicons name="cart" size={24} color={Colors.light.primary} />
+          <Ionicons name="cart" size={24} color="white" />
         </TouchableOpacity>
       </View>
       
@@ -270,26 +273,37 @@ export default function CategoriaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
   header: {
+    backgroundColor: Colors.light.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 8,
   },
   cartButton: {
-    padding: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 8,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: Colors.light.white,
     flex: 1,
-    marginLeft: 10,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -298,7 +312,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
   },
   searchIcon: {
     marginRight: 8,

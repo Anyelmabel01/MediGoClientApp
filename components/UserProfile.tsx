@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/Colors';
 import { User } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
@@ -270,11 +271,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    backgroundColor: '#00A0B0',
+    backgroundColor: Colors.light.primary,
   },
   modalHeaderDark: {
     borderBottomColor: '#333',
-    backgroundColor: '#00A0B0',
+    backgroundColor: Colors.light.primary,
   },
   modalTitle: {
     fontSize: 18,
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2D7FF9',
+    backgroundColor: Colors.light.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -373,8 +374,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   genderOptionSelected: {
-    backgroundColor: '#2D7FF9',
-    borderColor: '#2D7FF9',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   genderOptionText: {
     color: '#333',
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e1e1e',
   },
   primaryButton: {
-    backgroundColor: '#2D7FF9',
+    backgroundColor: Colors.light.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

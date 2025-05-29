@@ -147,46 +147,47 @@ export default function LaboratorioScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header igual al diseño principal */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+        <View style={styles.headerContent}>
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Laboratorio
               </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+              </View>
             </View>
           </View>
-          
-          <View style={styles.greetingContainer}>
-            <ThemedText style={styles.greeting}>
-              Laboratorio
-            </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="flask" size={14} color={Colors.light.primary} />
-            </View>
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-          </View>
-          <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
-          </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.servicesHeaderContainer}>
         <ThemedText style={styles.subtitle}>Servicios de laboratorio y análisis</ThemedText>
+        
+        <TouchableOpacity 
+          style={styles.locationCard}
+          onPress={() => setShowLocationSelector(true)}
+        >
+          <View style={styles.locationIcon}>
+            <Ionicons name="location" size={20} color={Colors.light.primary} />
+          </View>
+          <View style={styles.locationTextContainer}>
+            <ThemedText style={styles.locationLabel}>Tu ubicación</ThemedText>
+            <ThemedText style={styles.locationText} numberOfLines={1}>
+              {currentLocation.direccion}
+            </ThemedText>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={Colors.light.textSecondary} />
+        </TouchableOpacity>
       </View>
       
       <ScrollView 
@@ -226,20 +227,14 @@ export default function LaboratorioScreen() {
           {labOptions.map((option) => (
             <TouchableOpacity
               key={option.id}
-              style={[styles.optionCard, { 
-                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white 
-              }]}
+              style={styles.optionCard}
               onPress={() => handleOptionPress(option.route)}
             >
-              <View style={[styles.optionIcon, { 
-                backgroundColor: isDarkMode ? 'rgba(0, 160, 176, 0.15)' : 'rgba(0, 160, 176, 0.1)' 
-              }]}>
+              <View style={styles.optionIcon}>
                 <Ionicons name={option.icon} size={32} color={Colors.light.primary} />
               </View>
               <ThemedText style={styles.optionName}>{option.name}</ThemedText>
-              <ThemedText style={[styles.optionDescription, { 
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-              }]}>{option.description}</ThemedText>
+              <ThemedText style={styles.optionDescription}>{option.description}</ThemedText>
             </TouchableOpacity>
           ))}
         </View>
@@ -269,16 +264,20 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 45,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   avatarContainer: {
     marginRight: 12,
@@ -310,25 +309,8 @@ const styles = StyleSheet.create({
   editProfileIndicator: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  locationIcon: {
-    marginRight: 6,
-  },
-  locationText: {
-    flex: 1,
-    color: Colors.light.white,
-    fontSize: 14,
-    marginRight: 4,
+    padding: 6,
+    marginLeft: 10,
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,
@@ -339,6 +321,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: Colors.light.primary,
+    marginBottom: 16,
   },
   content: {
     flex: 1,
@@ -394,26 +377,68 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    elevation: 2,
-    shadowColor: '#000',
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
     minHeight: 130,
   },
   optionIcon: {
     marginBottom: 12,
     alignItems: 'center',
+    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    padding: 12,
+    borderRadius: 12,
+    alignSelf: 'center',
   },
   optionName: {
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 4,
+    color: Colors.light.text,
   },
   optionDescription: {
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 16,
+    color: Colors.light.textSecondary,
+  },
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.white,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  locationIcon: {
+    marginRight: 12,
+    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    padding: 8,
+    borderRadius: 10,
+  },
+  locationTextContainer: {
+    flex: 1,
+  },
+  locationLabel: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    marginBottom: 2,
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.light.text,
   },
 }); 

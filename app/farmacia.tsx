@@ -88,8 +88,6 @@ const categories: MedicineCategory[] = [
 const paymentMethods: PaymentMethod[] = [
   { id: '1', name: 'Tarjeta de crédito', icon: 'credit-card', isIconMaterial: true, requiresCardInfo: true },
   { id: '2', name: 'Tarjeta de débito', icon: 'card', isIconMaterial: false, requiresCardInfo: true },
-  { id: '3', name: 'PayPal', icon: 'paypal', isFontAwesome: true, requiresCardInfo: false },
-  { id: '4', name: 'Efectivo', icon: 'cash', isIconMaterial: false, requiresCardInfo: false },
 ];
 
 const deliveryMethods: DeliveryMethod[] = [
@@ -423,7 +421,7 @@ export default function FarmaciaScreen() {
       <View style={[styles.categoryIcon, { 
         backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)'
       }]}>
-        <Ionicons name={item.icon} size={24} color={Colors.light.primary} />
+        <Ionicons name={item.icon} size={20} color={Colors.light.primary} />
       </View>
       <ThemedText style={styles.categoryName}>{item.name}</ThemedText>
     </TouchableOpacity>
@@ -440,13 +438,13 @@ export default function FarmaciaScreen() {
       onPress={() => handleMedicineSelect(item.id)}
     >
       <View style={styles.medicineImageContainer}>
-        <Ionicons name="medical" size={50} color={Colors.light.primary} />
+        <Ionicons name="medical" size={40} color={Colors.light.primary} />
       </View>
       <ThemedText style={styles.medicineName}>{item.name}</ThemedText>
       <ThemedText style={styles.medicinePresentation}>{item.presentation}</ThemedText>
-      <ThemedText style={[styles.medicinePrice, { 
-        color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
-      }]}>${item.price.toFixed(2)}</ThemedText>
+      <ThemedText style={[styles.medicinePrice, {
+        color: isDarkMode ? Colors.dark.text : Colors.light.text
+      }]}>Bs {item.price.toFixed(2)}</ThemedText>
       <ThemedText style={[styles.medicineAvailability, {
         color: item.available ? '#2D7FF9' : '#ff3b30'
       }]}>
@@ -458,7 +456,7 @@ export default function FarmaciaScreen() {
           style={styles.addButton}
           onPress={() => handleAddToCart(item)}
         >
-          <Ionicons name="add-circle" size={28} color={Colors.light.primary} />
+          <Ionicons name="add-circle" size={24} color={Colors.light.primary} />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -470,16 +468,28 @@ export default function FarmaciaScreen() {
       onPress={() => handlePaymentSelect(item.id)}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
-      {item.isIconMaterial ? (
-        <MaterialIcons name={item.icon as any} size={24} color={Colors.light.primary} />
-      ) : item.isFontAwesome ? (
-        <FontAwesome name={item.icon as any} size={24} color={Colors.light.primary} />
-      ) : (
-        <Ionicons name={item.icon as any} size={24} color={Colors.light.primary} />
-      )}
-      <ThemedText style={styles.paymentMethodName}>{item.name}</ThemedText>
+      <View style={[styles.paymentMethodIconContainer, selectedPaymentMethod === item.id && styles.selectedPaymentMethodIcon]}>
+        {item.isIconMaterial ? (
+          <MaterialIcons name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
+        ) : item.isFontAwesome ? (
+          <FontAwesome name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
+        ) : (
+          <Ionicons name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
+        )}
+      </View>
+      <View style={styles.paymentMethodContent}>
+        <ThemedText style={[styles.paymentMethodName, selectedPaymentMethod === item.id && styles.selectedPaymentMethodText]}>
+          {item.name}
+        </ThemedText>
+        <ThemedText style={styles.paymentMethodDescription}>
+          {item.id === '1' ? 'Visa, Mastercard, American Express y otras tarjetas principales' :
+           'Transferencia inmediata desde tu cuenta bancaria'}
+        </ThemedText>
+      </View>
       {selectedPaymentMethod === item.id && (
-        <Ionicons name="checkmark-circle" size={20} color={Colors.light.primary} style={{ marginLeft: 8 }} />
+        <View style={styles.checkmarkContainer}>
+          <Ionicons name="checkmark-circle" size={24} color={Colors.light.primary} />
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -493,7 +503,7 @@ export default function FarmaciaScreen() {
       <View style={styles.deliveryMethodInfo}>
         <ThemedText style={styles.deliveryMethodName}>{item.name}</ThemedText>
         <ThemedText style={styles.deliveryMethodPrice}>
-          {item.price > 0 ? `$${item.price.toFixed(2)}` : 'Gratis'}
+          {item.price > 0 ? `Bs ${item.price.toFixed(2)}` : 'Gratis'}
         </ThemedText>
       </View>
     </TouchableOpacity>
@@ -599,7 +609,7 @@ export default function FarmaciaScreen() {
         }]}>
           <Ionicons 
             name="search" 
-            size={20} 
+            size={18} 
             color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
             style={styles.searchIcon} 
           />
@@ -623,7 +633,7 @@ export default function FarmaciaScreen() {
               <ThemedText style={availability === 'available' ? styles.selectedFilterText : undefined}>Disponibles</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 130])}>
-              <ThemedText>Hasta $130</ThemedText>
+              <ThemedText>Hasta Bs 130</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 1000])}>
               <ThemedText>Todos los precios</ThemedText>
@@ -698,7 +708,7 @@ export default function FarmaciaScreen() {
                       <View style={styles.cartItemInfo}>
                         <ThemedText style={styles.cartItemName}>{item.name}</ThemedText>
                         <ThemedText style={styles.cartItemPresentation}>{item.presentation}</ThemedText>
-                        <ThemedText style={styles.cartItemPrice}>${item.price.toFixed(2)}</ThemedText>
+                        <ThemedText style={styles.cartItemPrice}>Bs {item.price.toFixed(2)}</ThemedText>
                       </View>
                       <View style={styles.cartItemQuantityContainer}>
                         <TouchableOpacity 
@@ -734,7 +744,7 @@ export default function FarmaciaScreen() {
                 <View style={styles.cartSummary}>
                   <View style={styles.summaryRow}>
                     <ThemedText style={styles.summaryLabel}>Subtotal:</ThemedText>
-                    <ThemedText style={styles.summaryValue}>${getCartSubtotal().toFixed(2)}</ThemedText>
+                    <ThemedText style={styles.summaryValue}>Bs {getCartSubtotal().toFixed(2)}</ThemedText>
                   </View>
                   <View style={styles.divider} />
                 </View>
@@ -778,7 +788,7 @@ export default function FarmaciaScreen() {
               <View style={styles.orderSummary}>
                 <View style={styles.summaryRow}>
                   <ThemedText style={styles.summaryLabel}>Productos ({getCartItemCount()}):</ThemedText>
-                  <ThemedText style={styles.summaryValue}>${getCartSubtotal().toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.summaryValue}>Bs {getCartSubtotal().toFixed(2)}</ThemedText>
                 </View>
               </View>
               
@@ -890,16 +900,16 @@ export default function FarmaciaScreen() {
               <View style={styles.summaryContainer}>
                 <View style={styles.summaryRow}>
                   <ThemedText style={styles.summaryLabel}>Subtotal:</ThemedText>
-                  <ThemedText style={styles.summaryValue}>${getCartSubtotal().toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.summaryValue}>Bs {getCartSubtotal().toFixed(2)}</ThemedText>
                 </View>
                 <View style={styles.summaryRow}>
                   <ThemedText style={styles.summaryLabel}>Envío:</ThemedText>
-                  <ThemedText style={styles.summaryValue}>${getDeliveryFee().toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.summaryValue}>Bs {getDeliveryFee().toFixed(2)}</ThemedText>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.summaryRow}>
                   <ThemedText style={styles.totalText}>Total:</ThemedText>
-                  <ThemedText style={styles.totalPrice}>${getCartTotal().toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.totalPrice}>Bs {getCartTotal().toFixed(2)}</ThemedText>
                 </View>
               </View>
               
@@ -1110,8 +1120,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 45,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -1119,15 +1129,15 @@ const styles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   avatarContainer: {
-    marginRight: 8,
+    marginRight: 12,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1136,7 +1146,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   greetingContainer: {
@@ -1144,7 +1154,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
@@ -1159,12 +1169,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'absolute',
     right: 16,
-    top: 58,
+    top: 64,
   },
   headerButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
-    padding: 6,
+    padding: 8,
     marginLeft: 8,
   },
   cartBadge: {
@@ -1215,22 +1225,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 20,
+    paddingVertical: 6,
+    marginBottom: 16,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
   },
   filtersRow: {
     marginBottom: 12,
@@ -1249,46 +1259,46 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   categoriesList: {
-    paddingVertical: 8,
-    marginBottom: 20,
+    paddingVertical: 4,
+    marginBottom: 16,
   },
   categoryItem: {
     alignItems: 'center',
-    marginRight: 16,
-    width: 80,
+    marginRight: 12,
+    width: 70,
   },
   selectedCategoryItem: {
     backgroundColor: 'rgba(45, 127, 249, 0.1)',
     borderRadius: 8,
-    padding: 4,
+    padding: 2,
   },
   categoryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   categoryName: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
   },
   medicinesList: {
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   medicineRow: {
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   medicineCard: {
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 10,
+    padding: 10,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
@@ -1298,39 +1308,39 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     position: 'relative',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   medicineImageContainer: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   medicineName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   medicinePresentation: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#555',
     marginBottom: 2,
   },
   medicinePrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   medicineAvailability: {
-    fontSize: 13,
+    fontSize: 12,
     marginBottom: 2,
   },
   medicinePharmacy: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#555',
     marginBottom: 2,
   },
   addButton: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
+    bottom: 8,
+    right: 8,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -1552,46 +1562,56 @@ const styles = StyleSheet.create({
   paymentMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedPaymentMethod: {
     borderColor: Colors.light.primary,
+    backgroundColor: 'rgba(45, 127, 249, 0.05)',
+    shadowColor: Colors.light.primary,
+    shadowOpacity: 0.2,
+  },
+  paymentMethodIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(45, 127, 249, 0.1)',
-  },
-  paymentMethodName: {
-    marginLeft: 12,
-    fontSize: 16,
-  },
-  deliveryList: {
-    marginBottom: 20,
-  },
-  deliveryMethodItem: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 10,
-    marginBottom: 10,
+    marginRight: 16,
   },
-  selectedDeliveryMethod: {
-    borderColor: Colors.light.primary,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+  selectedPaymentMethodIcon: {
+    backgroundColor: Colors.light.primary,
   },
-  deliveryMethodInfo: {
-    marginLeft: 12,
+  paymentMethodContent: {
     flex: 1,
   },
-  deliveryMethodName: {
+  paymentMethodName: {
     fontSize: 16,
   },
-  deliveryMethodPrice: {
-    fontSize: 14,
+  selectedPaymentMethodText: {
+    color: Colors.light.primary,
+  },
+  paymentMethodDescription: {
+    fontSize: 12,
     color: '#555',
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   
   // Delivery Tracking Styles
@@ -1753,5 +1773,32 @@ const styles = StyleSheet.create({
   loadingMapText: {
     fontSize: 16,
     color: Colors.light.primary,
+  },
+  deliveryList: {
+    marginBottom: 20,
+  },
+  deliveryMethodItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  selectedDeliveryMethod: {
+    borderColor: Colors.light.primary,
+    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+  },
+  deliveryMethodInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  deliveryMethodName: {
+    fontSize: 16,
+  },
+  deliveryMethodPrice: {
+    fontSize: 14,
+    color: '#555',
   },
 });

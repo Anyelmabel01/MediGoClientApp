@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -71,6 +71,7 @@ const labs: Laboratory[] = [
 export default function EncontrarLaboratorioScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
 
   const handleNavigateToDetails = (labId: string) => {
@@ -103,36 +104,35 @@ export default function EncontrarLaboratorioScreen() {
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
       {/* Header */}
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons 
-              name="arrow-back" 
-              size={24} 
-              color="#fff" 
-            />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Encontrar Laboratorio</ThemedText>
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => console.log('Abrir filtros')}
-          >
-            <Ionicons 
-              name="filter" 
-              size={24} 
-              color="#fff" 
-            />
-          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Encontrar Laboratorio
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="location" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView 
         style={styles.content}
@@ -335,42 +335,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-  },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    height: 60,
   },
   backButton: {
-    padding: 10,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
-    color: '#fff',
-    marginHorizontal: -40,
   },
-  filterButton: {
-    padding: 10,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
     width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   content: {
     flex: 1,

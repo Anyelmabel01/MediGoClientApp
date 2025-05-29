@@ -1,10 +1,8 @@
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -19,6 +17,8 @@ import {
     View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 type StepData = {
   collectionMethod: 'laboratory' | 'home' | null;
@@ -108,8 +108,12 @@ const steps = [
 export default function SolicitarScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
-  const { testId, nombrePrueba } = useLocalSearchParams();
+  const { testId, nombrePrueba } = useLocalSearchParams<{
+    testId: string;
+    nombrePrueba: string;
+  }>();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -227,6 +231,10 @@ export default function SolicitarScreen() {
         `Tu cita para ${nombrePrueba} ha sido programada para el ${stepData.appointmentDate?.toLocaleDateString('es-MX')} a las ${stepData.appointmentTime}.`,
         [
           {
+            text: 'Ir al inicio',
+            onPress: () => router.replace('/')
+          },
+          {
             text: 'Ver mis citas',
             onPress: () => router.replace('/laboratorio')
           },
@@ -324,7 +332,7 @@ export default function SolicitarScreen() {
                   styles.methodPrice,
                   { color: stepData.collectionMethod === 'home' ? '#fff' : colors.accent }
                 ]}>
-                  + $100 MXN
+                  + Bs 100 VED
                 </ThemedText>
               </View>
               {stepData.collectionMethod === 'home' && (
@@ -749,7 +757,7 @@ export default function SolicitarScreen() {
                   Prueba de laboratorio
                 </ThemedText>
                 <ThemedText style={[styles.costValue, { color: colors.text }]}>
-                  ${basePrice.toLocaleString()} MXN
+                  Bs {basePrice.toLocaleString()} VED
                 </ThemedText>
               </View>
               
@@ -759,7 +767,7 @@ export default function SolicitarScreen() {
                     Toma a domicilio
                   </ThemedText>
                   <ThemedText style={[styles.costValue, { color: colors.text }]}>
-                    ${homeCollectionFee.toLocaleString()} MXN
+                    Bs {homeCollectionFee.toLocaleString()} VED
                   </ThemedText>
                 </View>
               )}
@@ -770,7 +778,7 @@ export default function SolicitarScreen() {
                     Descuento aplicado
                   </ThemedText>
                   <ThemedText style={[styles.costValue, { color: colors.success }]}>
-                    -${stepData.payment.discount.toLocaleString()} MXN
+                    -Bs {stepData.payment.discount.toLocaleString()} VED
                   </ThemedText>
                 </View>
               )}
@@ -780,7 +788,7 @@ export default function SolicitarScreen() {
                   Total a pagar
                 </ThemedText>
                 <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
-                  ${totalPrice.toLocaleString()} MXN
+                  Bs {totalPrice.toLocaleString()} VED
                 </ThemedText>
               </View>
             </View>
@@ -790,7 +798,7 @@ export default function SolicitarScreen() {
               Selecciona método de pago
             </ThemedText>
             
-            {['card', 'cash', 'insurance'].map(method => (
+            {['card'].map(method => (
               <TouchableOpacity
                 key={method}
                 style={[
@@ -806,21 +814,16 @@ export default function SolicitarScreen() {
                 }))}
               >
                 <Ionicons 
-                  name={
-                    method === 'card' ? 'card-outline' :
-                    method === 'cash' ? 'cash-outline' : 'medical-outline'
-                  } 
+                  name="card-outline"
                   size={24} 
                   color={stepData.payment.method === method ? colors.primary : colors.textSecondary} 
                 />
                 <View style={styles.paymentMethodInfo}>
                   <ThemedText style={[styles.paymentMethodTitle, { color: colors.text }]}>
-                    {method === 'card' ? 'Tarjeta de crédito/débito' :
-                     method === 'cash' ? 'Efectivo en laboratorio' : 'Seguro médico'}
+                    Tarjeta de crédito/débito
                   </ThemedText>
                   <ThemedText style={[styles.paymentMethodDescription, { color: colors.textSecondary }]}>
-                    {method === 'card' ? 'Pago seguro en línea' :
-                     method === 'cash' ? 'Paga al momento de la cita' : 'Facturación directa'}
+                    Pago seguro en línea
                   </ThemedText>
                 </View>
                 {stepData.payment.method === method && (
@@ -893,7 +896,7 @@ export default function SolicitarScreen() {
                   Total a pagar:
                 </ThemedText>
                 <ThemedText style={[styles.confirmationValue, { color: colors.primary, fontWeight: 'bold' }]}>
-                  ${totalPrice.toLocaleString()} MXN
+                  Bs {totalPrice.toLocaleString()} VED
                 </ThemedText>
               </View>
             </View>
@@ -908,23 +911,35 @@ export default function SolicitarScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <LinearGradient
-        colors={['#00A0B0', '#0081B0']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerGradient}
-      >
-        <View style={styles.header}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Agendar Prueba</ThemedText>
-          <View style={styles.headerSpacer} />
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Agendar Prueba
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Indicador de progreso */}
       <View style={[styles.progressContainer, { backgroundColor: colors.background }]}>
@@ -1026,29 +1041,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerGradient: {
-    paddingHorizontal: 0,
-    paddingBottom: 0,
-  },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    height: 60,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
-    color: '#fff',
   },
-  headerSpacer: {
-    width: 40,
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   progressContainer: {
     padding: 16,

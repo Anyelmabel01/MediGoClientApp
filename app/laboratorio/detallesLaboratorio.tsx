@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -102,6 +103,7 @@ const mockLaboratories: { [key: string]: Laboratory } = {
 export default function DetallesLaboratorioScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { labId } = useLocalSearchParams();
   
@@ -139,34 +141,36 @@ export default function DetallesLaboratorioScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
-      {/* Header */}
-      <View style={[styles.header, { 
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-        borderBottomColor: isDarkMode ? Colors.dark.border : Colors.light.border
-      }]}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons 
-            name="arrow-back" 
-            size={24} 
-            color={isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary} 
-          />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Detalles del Laboratorio</ThemedText>
-        <TouchableOpacity 
-          style={styles.favoriteButton}
-          onPress={handleAddToFavorites}
-        >
-          <Ionicons 
-            name="heart-outline" 
-            size={24} 
-            color={Colors.light.primary} 
-          />
-        </TouchableOpacity>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Detalles del Laboratorio
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
 
       <ScrollView 
@@ -220,7 +224,7 @@ export default function DetallesLaboratorioScreen() {
 
           {lab.tomaDomicilio && (
             <View style={[styles.homeCollectionBadge, { backgroundColor: Colors.light.success + '20' }]}>
-              <Ionicons name="home" size={16} color={Colors.light.success} />
+              <Ionicons name="home-outline" size={16} color={Colors.light.success} />
               <ThemedText style={[styles.homeCollectionText, { color: Colors.light.success }]}>
                 Servicio a domicilio disponible
               </ThemedText>
@@ -270,7 +274,7 @@ export default function DetallesLaboratorioScreen() {
                 backgroundColor: Colors.light.primary + '10',
                 borderColor: Colors.light.primary + '30'
               }]}>
-                <Ionicons name="checkmark-circle" size={16} color={Colors.light.primary} />
+                <Ionicons name="medical" size={16} color={Colors.light.primary} />
                 <ThemedText style={[styles.serviceText, {
                   color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
                 }]}>
@@ -347,7 +351,7 @@ export default function DetallesLaboratorioScreen() {
               <View key={index} style={[styles.insuranceChip, {
                 backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border
               }]}>
-                <Ionicons name="card" size={14} color={Colors.light.primary} />
+                <Ionicons name="shield-outline" size={14} color={Colors.light.primary} />
                 <ThemedText style={[styles.insuranceText, {
                   color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
                 }]}>
@@ -450,25 +454,61 @@ export default function DetallesLaboratorioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.light.background,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    textAlign: 'center',
   },
-  favoriteButton: {
-    padding: 8,
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   content: {
     flex: 1,
@@ -478,6 +518,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
+    borderColor: Colors.light.border,
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -490,6 +533,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: Colors.light.text,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -503,6 +547,7 @@ const styles = StyleSheet.create({
   reviewCount: {
     fontSize: 14,
     marginLeft: 4,
+    color: Colors.light.textSecondary,
   },
   infoRow: {
     flexDirection: 'row',
@@ -514,6 +559,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
     lineHeight: 20,
+    color: Colors.light.textSecondary,
   },
   homeCollectionBadge: {
     flexDirection: 'row',
@@ -521,11 +567,13 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     marginTop: 8,
+    backgroundColor: Colors.light.success + '20',
   },
   homeCollectionText: {
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+    color: Colors.light.success,
   },
   mapCard: {
     marginHorizontal: 16,
@@ -533,6 +581,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
+    borderColor: Colors.light.border,
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -543,6 +594,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     padding: 16,
     paddingBottom: 12,
+    color: Colors.light.primary,
   },
   mapContainer: {
     height: height * 0.35, // 35% de la altura de la pantalla
@@ -560,6 +612,7 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 12,
     borderRadius: 8,
+    backgroundColor: Colors.light.primary,
   },
   directionsButtonText: {
     color: 'white',
@@ -572,10 +625,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
+    borderColor: Colors.light.border,
+    shadowColor: Colors.light.shadowColor,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
   servicesGrid: {
     flexDirection: 'row',
@@ -682,6 +738,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    backgroundColor: Colors.light.primary,
   },
   primaryActionText: {
     color: 'white',

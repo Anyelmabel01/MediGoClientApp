@@ -89,7 +89,7 @@ const mockProviders: Record<string, Provider> = {
     bio: 'Cardióloga con 15 años de experiencia en diagnóstico y tratamiento de enfermedades cardiovasculares. Especializada en ecocardiografía, cateterismo cardíaco y medicina preventiva. Comprometida con brindar atención médica de calidad y establecer relaciones de confianza con mis pacientes.',
     rating: 4.9,
     total_reviews: 127,
-    consultation_fee: 800,
+    consultation_fee: 280000,
     location: 'Col. Roma Norte, CDMX',
     phone: '+52 55 1234 5678',
     email: 'dra.gonzalez@centromedico.com',
@@ -118,7 +118,7 @@ const mockProviders: Record<string, Provider> = {
     bio: 'Médico general con amplia experiencia en medicina familiar y atención primaria. Me enfoco en brindar cuidado integral a pacientes de todas las edades, con énfasis en medicina preventiva y seguimiento de enfermedades crónicas.',
     rating: 4.7,
     total_reviews: 89,
-    consultation_fee: 600,
+    consultation_fee: 210000,
     location: 'Col. Condesa, CDMX',
     phone: '+52 55 9876 5432',
     email: 'dr.ramirez@clinicasanmiguel.com',
@@ -207,15 +207,17 @@ export default function PerfilProveedorScreen() {
   if (!provider) {
     return (
       <View style={styles.container}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.title}>Perfil del Proveedor</Text>
+          
+          <Text style={styles.headerTitle}>Perfil del doctor</Text>
+          
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.emptyState}>
@@ -276,7 +278,7 @@ export default function PerfilProveedorScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -284,12 +286,12 @@ export default function PerfilProveedorScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.title}>Perfil del Proveedor</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
+        
+        <Text style={styles.headerTitle}>Perfil del doctor</Text>
+        
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView 
@@ -320,7 +322,7 @@ export default function PerfilProveedorScreen() {
             </View>
             <View style={styles.priceContainer}>
               <Text style={styles.price}>
-                ${provider.consultation_fee}
+                Bs. {provider.consultation_fee.toLocaleString()}
               </Text>
               <Text style={styles.priceLabel}>
                 por consulta
@@ -546,26 +548,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    paddingTop: 50,
   },
   header: {
+    backgroundColor: COLORS.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   backButton: {
     padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
-  title: {
+  headerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    flex: 1,
+    color: COLORS.white,
     textAlign: 'center',
-    color: COLORS.textPrimary,
-  },
-  favoriteButton: {
-    padding: 8,
+    marginHorizontal: 16,
   },
   headerSpacer: {
     width: 40,

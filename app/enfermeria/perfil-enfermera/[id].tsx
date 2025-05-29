@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,7 +8,6 @@ import { useState } from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -204,28 +204,54 @@ const availabilityData: AvailabilityDay[] = [
 
 export default function PerfilEnfermeraScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
+  const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const [selectedDay, setSelectedDay] = useState(availabilityData[0]);
+  const [selectedDay, setSelectedDay] = useState<AvailabilityDay>(availabilityData[0]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
 
   const nurse = nurseData[id as keyof typeof nurseData];
 
   if (!nurse) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <KeyboardAvoidingView 
+        style={[styles.container, { paddingTop: insets.top }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <StatusBar style="auto" />
+        
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-          </TouchableOpacity>
-          <ThemedText style={styles.title}>Perfil no encontrado</ThemedText>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
+            
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  Perfil no encontrado
+                </ThemedText>
+              </View>
+            </View>
+          </View>
         </View>
-      </ThemedView>
+        
+        <View style={styles.content}>
+          <ThemedText>Enfermera no encontrada</ThemedText>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -328,16 +354,36 @@ export default function PerfilEnfermeraScreen() {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title} numberOfLines={1}>Perfil de Enfermera</ThemedText>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Perfil de Enfermera
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="person" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
 
       <ScrollView 
@@ -454,11 +500,6 @@ export default function PerfilEnfermeraScreen() {
         }]}>
           <View style={styles.reviewsHeader}>
             <ThemedText style={styles.sectionTitle}>Reseñas</ThemedText>
-            <ThemedText style={[styles.reviewsCount, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {nurse.reviewsCount} total
-            </ThemedText>
           </View>
           {nurse.reviews.slice(0, 2).map((review) => (
             <View key={review.id} style={[styles.reviewCard, {
@@ -534,60 +575,100 @@ export default function PerfilEnfermeraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scrollContent: {
-    flexGrow: 1,
+    backgroundColor: Colors.light.background,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   backButton: {
     padding: 6,
-    borderRadius: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   nurseInfoCard: {
     flexDirection: 'row',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
     shadowColor: Colors.light.shadowColor,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   nursePhoto: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginRight: 12,
+    marginRight: 16,
   },
   nurseDetails: {
     flex: 1,
   },
   nurseName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 3,
-    lineHeight: 20,
+    marginBottom: 4,
+    lineHeight: 22,
   },
   experience: {
-    fontSize: 13,
-    marginBottom: 8,
+    fontSize: 14,
+    marginBottom: 10,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -601,186 +682,187 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ratingText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 3,
+    marginLeft: 4,
   },
   reviewsCount: {
-    fontSize: 13,
-    marginLeft: 3,
+    fontSize: 14,
+    marginLeft: 4,
     flexShrink: 1,
   },
   price: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   section: {
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
+    color: Colors.light.primary,
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
   specialtiesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
+    marginBottom: 12,
   },
   specialtyTag: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    maxWidth: SCREEN_WIDTH * 0.35,
+    borderRadius: 16,
   },
   specialtyText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   certificationItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   certificationIcon: {
-    marginTop: 1,
-    flexShrink: 0,
+    marginRight: 8,
+    marginTop: 2,
   },
   certificationText: {
     fontSize: 14,
-    marginLeft: 10,
+    lineHeight: 20,
     flex: 1,
-    lineHeight: 18,
   },
   moreCertifications: {
     fontSize: 13,
-    fontWeight: '500',
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   daysContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   daysContent: {
     paddingRight: 16,
   },
   dayButton: {
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginRight: 8,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginRight: 12,
     minWidth: 60,
   },
   dayButtonText: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginBottom: 2,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   dayNumber: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   timeSlotsContainer: {
-    marginTop: 6,
+    marginTop: 8,
   },
   selectedDayTitle: {
-    fontSize: 13,
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   timeSlotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 10,
   },
   timeSlot: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    minWidth: 70,
+    minWidth: 80,
     alignItems: 'center',
   },
   timeSlotText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   reviewCard: {
     padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
+    borderRadius: 8,
+    marginBottom: 12,
     borderWidth: 1,
   },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   reviewerName: {
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     flex: 1,
-    marginRight: 6,
   },
   reviewRating: {
     flexDirection: 'row',
-  },
-  reviewService: {
-    fontSize: 13,
-    marginBottom: 6,
+    gap: 2,
   },
   reviewComment: {
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
     marginBottom: 6,
   },
   reviewDate: {
-    fontSize: 11,
+    fontSize: 12,
+  },
+  moreReviewsButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  moreReviewsText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   bookingSection: {
-    padding: 12,
+    padding: 16,
     borderTopWidth: 1,
   },
   selectedTimeInfo: {
-    marginBottom: 8,
+    marginBottom: 12,
     alignItems: 'center',
   },
   selectedTimeText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   bookButton: {
-    borderRadius: 10,
-    padding: 14,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    minHeight: 48,
     justifyContent: 'center',
   },
   bookButtonText: {
-    color: 'white',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-  },
-  reviewsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  moreReviewsButton: {
-    padding: 8,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  moreReviewsText: {
-    fontSize: 13,
-    fontWeight: '500',
+    color: 'white',
   },
 }); 

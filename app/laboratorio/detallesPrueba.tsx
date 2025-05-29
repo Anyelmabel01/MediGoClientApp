@@ -1,11 +1,19 @@
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
 export default function DetallesPruebaScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user } = useUser();
+  const insets = useSafeAreaInsets();
+  
   // Placeholder data - en una app real, esto vendría de props o un fetch
   const prueba = {
     nombre: 'Glucosa en Ayunas',
@@ -25,13 +33,46 @@ export default function DetallesPruebaScreen() {
     tomaDomicilio: true,
   };
 
+  const colors = isDarkMode ? Colors.dark : Colors.light;
+
   const handleAgendar = () => {
     router.push({ pathname: '/laboratorio/solicitar', params: { nombrePrueba: prueba.nombre } });
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Detalles de Prueba
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <ThemedText style={styles.title}>{prueba.nombre}</ThemedText>
 
         <View style={styles.section}>
@@ -63,7 +104,7 @@ export default function DetallesPruebaScreen() {
           <ThemedText style={styles.label}>Tiempo de Entrega de Resultados:</ThemedText>
           <ThemedText style={styles.text}>{prueba.tiempoResultados}</ThemedText>
           <ThemedText style={styles.label}>Precio:</ThemedText>
-          <ThemedText style={styles.price}>${prueba.precio} MXN</ThemedText>
+          <ThemedText style={styles.price}>Bs {prueba.precio} VED</ThemedText>
         </View>
 
         <View style={styles.section}>
@@ -96,16 +137,111 @@ export default function DetallesPruebaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#00A0B0' },
-  label: { fontSize: 15, fontWeight: '600', marginTop: 8, marginBottom: 2 },
-  text: { fontSize: 14, marginBottom: 6, lineHeight: 20 },
-  price: { fontSize: 16, fontWeight: 'bold', color: '#007bff', marginBottom: 6 },
-  listItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  listItemIcon: { marginRight: 8 },
-  actionsContainer: { marginTop: 20, marginBottom: 30 },
+  container: { 
+    flex: 1 
+  },
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 0,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 6,
+    marginRight: 12,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 20, 
+    textAlign: 'center' 
+  },
+  section: { 
+    marginBottom: 20 
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 10, 
+    color: '#00A0B0' 
+  },
+  label: { 
+    fontSize: 15, 
+    fontWeight: '600', 
+    marginTop: 8, 
+    marginBottom: 2 
+  },
+  text: { 
+    fontSize: 14, 
+    marginBottom: 6, 
+    lineHeight: 20 
+  },
+  price: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    color: '#007bff', 
+    marginBottom: 6 
+  },
+  listItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 5 
+  },
+  listItemIcon: { 
+    marginRight: 8 
+  },
+  actionsContainer: { 
+    marginTop: 20, 
+    marginBottom: 30 
+  },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -119,6 +255,16 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#00A0B0',
   },
-  buttonText: { fontSize: 16, marginLeft: 8, color: '#00A0B0', fontWeight:'600' },
-  primaryButtonText: { fontSize: 16, marginLeft: 8, color: 'white', fontWeight:'600' },
+  buttonText: { 
+    fontSize: 16, 
+    marginLeft: 8, 
+    color: '#00A0B0', 
+    fontWeight:'600' 
+  },
+  primaryButtonText: { 
+    fontSize: 16, 
+    marginLeft: 8, 
+    color: 'white', 
+    fontWeight:'600' 
+  },
 }); 

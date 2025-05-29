@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -38,12 +39,12 @@ const serviceTypes: ServiceType[] = [
 const paymentMethods: PaymentMethod[] = [
   { id: '1', type: 'card', name: 'Tarjeta de crédito', details: '**** **** **** 1234' },
   { id: '2', type: 'card', name: 'Tarjeta de débito', details: '**** **** **** 5678' },
-  { id: '3', type: 'cash', name: 'Efectivo', details: 'Pago en efectivo al momento del servicio' },
 ];
 
 export default function AgendarServicioScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { nurseId, nurseName, date, time, rate } = useLocalSearchParams();
   
@@ -231,16 +232,36 @@ export default function AgendarServicioScreen() {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <StatusBar style="auto" />
       
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title} numberOfLines={1}>Agendar Servicio</ThemedText>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Agendar Servicio
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="calendar" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
 
       <ScrollView 
@@ -561,40 +582,86 @@ export default function AgendarServicioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 6,
+    marginRight: 12,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  title: {
-    fontSize: Math.min(20, SCREEN_WIDTH * 0.05),
-    fontWeight: 'bold',
-    marginLeft: 16,
-    flex: 1,
+    paddingTop: 20,
   },
   section: {
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
+    backgroundColor: Colors.light.white,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 12,
+    color: Colors.light.primary,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -609,13 +676,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
     marginRight: 8,
   },
   summaryValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
     flex: 1,
     textAlign: 'right',
   },
@@ -626,7 +693,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    minHeight: 100,
+    backgroundColor: Colors.light.white,
   },
   serviceOptionContent: {
     flex: 1,
@@ -639,7 +706,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   serviceDuration: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 4,
   },
   servicePrice: {
@@ -648,15 +715,20 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderRadius: 12,
-    padding: 12,
-    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
+  },
+  inputIcon: {
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    marginLeft: 8,
+    fontSize: 15,
     minHeight: 20,
   },
   textArea: {
@@ -671,27 +743,28 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   costLabel: {
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
     marginRight: 8,
   },
   costValue: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
   totalRow: {
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
-    paddingTop: 8,
-    marginTop: 8,
+    paddingTop: 12,
+    marginTop: 12,
   },
   totalLabel: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   totalValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
+    color: Colors.light.primary,
   },
   addPaymentButton: {
     flexDirection: 'row',
@@ -699,8 +772,9 @@ const styles = StyleSheet.create({
   },
   addPaymentText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 4,
+    color: Colors.light.primary,
   },
   paymentOption: {
     flexDirection: 'row',
@@ -709,7 +783,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    minHeight: 80,
+    backgroundColor: Colors.light.white,
   },
   paymentMethodIcon: {
     marginRight: 12,
@@ -732,12 +806,14 @@ const styles = StyleSheet.create({
   confirmSection: {
     padding: 16,
     borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
   },
   confirmButton: {
+    backgroundColor: Colors.light.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    minHeight: 56,
     justifyContent: 'center',
   },
   confirmButtonText: {
@@ -751,36 +827,43 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
+    backgroundColor: Colors.light.primary,
   },
   mapButtonText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 8,
   },
   selectedLocationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 12,
-    padding: 8,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: Colors.light.success,
   },
   selectedLocationText: {
-    fontSize: 12,
+    fontSize: 13,
     marginLeft: 8,
     flex: 1,
+    color: Colors.light.success,
   },
   mapModalContainer: {
     flex: 1,
+    backgroundColor: Colors.light.white,
   },
   mapModalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
   },
   mapModalCloseButton: {
     padding: 8,
@@ -790,6 +873,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: Colors.light.primary,
   },
   mapContainer: {
     flex: 1,
@@ -809,12 +893,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
   },
   mapInstructionsText: {
     fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 20,
+    color: Colors.light.text,
   },
   currentLocationButton: {
     flexDirection: 'row',
@@ -822,23 +909,27 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
+    backgroundColor: Colors.light.primary,
   },
   currentLocationText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 8,
   },
   sampleLocationsContainer: {
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: 'rgba(45, 127, 249, 0.05)',
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   sampleLocationsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
+    color: Colors.light.primary,
   },
   sampleLocationButton: {
     flexDirection: 'row',
@@ -847,6 +938,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
   },
   sampleLocationText: {
     fontSize: 14,

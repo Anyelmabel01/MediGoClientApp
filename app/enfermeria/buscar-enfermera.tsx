@@ -1,10 +1,11 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Dimensions, FlatList, Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -80,6 +81,7 @@ type AvailabilityFilter = 'all' | 'available' | 'today' | 'tomorrow';
 export default function BuscarEnfermeraScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyFilter>('all');
@@ -256,70 +258,98 @@ export default function BuscarEnfermeraScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
-      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="auto" />
       
+      {/* Header with blue background like main screen */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.primary} />
-        </TouchableOpacity>
-        <ThemedText style={styles.title}>Buscar Enfermera</ThemedText>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Buscar Enfermera
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="search" size={14} color={Colors.light.primary} />
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
 
-      {/* Search Section */}
-      <View style={[styles.searchContainer, {
-        backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-      }]}>
-        <Ionicons name="search" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, {
-            color: isDarkMode ? Colors.dark.text : Colors.light.text,
-          }]}
-          placeholder="Buscar por nombre o especialidad..."
-          placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      {/* Specialty Filters */}
-      <ThemedText style={styles.filterTitle}>Especialidad</ThemedText>
       <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {(['all', 'geriatria', 'pediatria', 'cardiologia', 'heridas', 'medicamentos'] as SpecialtyFilter[]).map(renderSpecialtyChip)}
-      </ScrollView>
-
-      {/* Availability Filters */}
-      <ThemedText style={styles.filterTitle}>Disponibilidad</ThemedText>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {(['all', 'available', 'today', 'tomorrow'] as AvailabilityFilter[]).map(renderAvailabilityChip)}
-      </ScrollView>
-      
-      <View style={styles.resultsHeader}>
-        <ThemedText style={styles.resultsCount}>
-          {filteredNurses.length} enfermera{filteredNurses.length !== 1 ? 's' : ''} encontrada{filteredNurses.length !== 1 ? 's' : ''}
-        </ThemedText>
-      </View>
-      
-      <FlatList
-        data={filteredNurses}
-        renderItem={renderNurseItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.nursesList}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
-      />
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+      >
+        {/* Search Section */}
+        <View style={[styles.searchContainer, {
+          backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.white,
+        }]}>
+          <Ionicons name="search" size={20} color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, {
+              color: isDarkMode ? Colors.dark.text : Colors.light.text,
+            }]}
+            placeholder="Buscar por nombre o especialidad..."
+            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        {/* Specialty Filters */}
+        <ThemedText style={styles.filterTitle}>Especialidad</ThemedText>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersContainer}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {(['all', 'geriatria', 'pediatria', 'cardiologia', 'heridas', 'medicamentos'] as SpecialtyFilter[]).map(renderSpecialtyChip)}
+        </ScrollView>
+
+        {/* Availability Filters */}
+        <ThemedText style={styles.filterTitle}>Disponibilidad</ThemedText>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersContainer}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {(['all', 'available', 'today', 'tomorrow'] as AvailabilityFilter[]).map(renderAvailabilityChip)}
+        </ScrollView>
+        
+        <View style={styles.resultsHeader}>
+          <ThemedText style={styles.resultsCount}>
+            {filteredNurses.length} enfermera{filteredNurses.length !== 1 ? 's' : ''} encontrada{filteredNurses.length !== 1 ? 's' : ''}
+          </ThemedText>
+        </View>
+        
+        <FlatList
+          data={filteredNurses}
+          renderItem={renderNurseItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.nursesList}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+        />
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -327,72 +357,110 @@ export default function BuscarEnfermeraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 12,
+    backgroundColor: Colors.light.background,
+    paddingBottom: Platform.OS === 'ios' ? 80 : 60,
   },
   header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 12,
   },
   backButton: {
-    padding: 4,
+    padding: 6,
+    marginRight: 12,
   },
-  title: {
-    fontSize: 18,
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
     fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
     marginLeft: 8,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchInput: {
     flex: 1,
     marginLeft: 10,
     fontSize: 15,
+    minHeight: 32,
   },
   filterTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 12,
+    color: Colors.light.primary,
   },
   filtersContainer: {
-    marginBottom: 6,
+    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 16,
   },
   filterChip: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
-    marginRight: 3,
-    borderWidth: 0.5,
-  },
-  filterChipText: {
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  resultsHeader: {
-    marginBottom: 10,
-  },
-  resultsCount: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  nursesList: {
-    paddingBottom: 20,
-  },
-  nurseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
     borderWidth: 1,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
@@ -400,14 +468,46 @@ const styles = StyleSheet.create({
       height: 1,
     },
     shadowOpacity: 0.08,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 2,
   },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  resultsHeader: {
+    marginBottom: 16,
+  },
+  resultsCount: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.primary,
+  },
+  nursesList: {
+    paddingBottom: 20,
+  },
+  nurseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    backgroundColor: Colors.light.white,
+  },
   nursePhoto: {
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    marginRight: 12,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 16,
   },
   nurseInfo: {
     flex: 1,
@@ -416,10 +516,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   nurseName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
   },
@@ -428,60 +528,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   availabilityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   availabilityText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   experienceRating: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   experience: {
-    fontSize: 13,
+    fontSize: 14,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   ratingText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginLeft: 3,
+    marginLeft: 4,
   },
   reviewsCount: {
-    fontSize: 13,
-    marginLeft: 3,
+    fontSize: 14,
+    marginLeft: 4,
   },
   specialtiesContainer: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   specialtyTag: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginRight: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
   },
   specialtyText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 13,
-    marginRight: 6,
+    fontSize: 14,
+    marginRight: 8,
   },
   price: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 }); 

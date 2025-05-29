@@ -23,9 +23,9 @@ export default function PerfilScreen() {
     <ThemedView style={styles.container}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
-      <View style={[styles.header, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+      <View style={[styles.header, { backgroundColor: Colors.light.primary }]}>
         <View style={styles.headerContent}>
-          <ThemedText style={styles.title}>Mi Perfil</ThemedText>
+          <ThemedText style={[styles.title, { color: Colors.light.white }]}>Mi Perfil</ThemedText>
         </View>
       </View>
       
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerContent: {
     flexDirection: 'row',
