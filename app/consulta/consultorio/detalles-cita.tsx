@@ -102,7 +102,7 @@ const mockAppointmentDetails: Record<string, AppointmentDetail> = {
     license_number: 'GDL67890',
     instructions: 'Presentarse en ayunas para toma de muestras.',
     documents: [],
-    payment_method: 'Efectivo',
+    payment_method: 'Débito o Crédito',
     payment_status: 'PENDING'
   }
 };

@@ -67,10 +67,10 @@ const mockProviders: Record<string, Provider> = {
 
 const paymentMethods: PaymentMethod[] = [
   {
-    id: 'efectivo',
-    name: 'Efectivo',
-    icon: 'cash-outline',
-    description: 'Paga en el consultorio al momento de la cita'
+    id: 'card',
+    name: 'Débito o Crédito',
+    icon: 'card-outline',
+    description: 'Pago seguro con tarjeta bancaria'
   }
 ];
 

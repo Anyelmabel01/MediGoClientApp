@@ -18,8 +18,7 @@ const deliveryMethods = [
 ];
 
 const paymentMethods = [
-  { id: 'card', label: 'Tarjeta de crédito' },
-  { id: 'cash', label: 'Efectivo' },
+  { id: 'card', label: 'Débito o Crédito' },
 ];
 
 export default function CarritoScreen() {
