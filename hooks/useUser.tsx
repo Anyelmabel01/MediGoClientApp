@@ -1,45 +1,87 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, mockUser, UserLocation, mockLocations } from '@/constants/UserModel';
+import { mockLocations, mockUser, User, UserLocation } from '@/constants/UserModel';
+import { User as SupabaseUser } from '@/types/supabase';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from './useAuth';
 
-// Tipo para el contexto del usuario
+// Tipo para el contexto del usuario (datos de usuario + ubicaciones)
 type UserContextType = {
-  user: User;
+  user: User | null;
   locations: UserLocation[];
   currentLocation: UserLocation;
-  updateUser: (userData: Partial<User>) => void;
   addLocation: (location: Omit<UserLocation, 'id'>) => void;
   updateLocation: (locationId: string, locationData: Partial<UserLocation>) => void;
   deleteLocation: (locationId: string) => void;
   setDefaultLocation: (locationId: string) => void;
   setCurrentLocation: (location: UserLocation) => void;
+  updateUser: (userData: Partial<User>) => void;
 };
 
 // Crear el contexto
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Proveedor del contexto
+// Función para transformar el usuario de Supabase al formato local
+const transformSupabaseUser = (supabaseUser: SupabaseUser): User => {
+  return {
+    id: supabaseUser.id,
+    nombre: supabaseUser.nombre,
+    apellido: supabaseUser.apellido,
+    email: supabaseUser.email,
+    telefono: supabaseUser.telefono || '',
+    tipoSangre: supabaseUser.tipo_sangre || '',
+    peso: supabaseUser.peso || 0,
+    altura: supabaseUser.altura || 0,
+    fechaNacimiento: supabaseUser.fecha_nacimiento || '',
+    genero: (supabaseUser.genero as 'masculino' | 'femenino' | 'otro' | 'noEspecificar') || 'noEspecificar',
+    avatar: supabaseUser.avatar_url || '',
+  };
+};
+
+// Proveedor del contexto (usuario completo + ubicaciones)
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(mockUser);
+  const { user: authUser, updateProfile } = useAuth();
   const [locations, setLocations] = useState<UserLocation[]>(mockLocations);
   const [currentLocation, setCurrentLocation] = useState<UserLocation>(
     mockLocations.find(loc => loc.esPrincipal) || mockLocations[0]
   );
 
-  // Actualizar datos del usuario
-  const updateUser = (userData: Partial<User>) => {
-    setUser(prevUser => ({ ...prevUser, ...userData }));
-  };
+  // Estado para el usuario combinado (datos de auth + datos adicionales como mock)
+  const [user, setUser] = useState<User | null>(null);
+
+  // Efecto para combinar datos del usuario autenticado con datos adicionales
+  useEffect(() => {
+    if (authUser) {
+      // Transformar el usuario de Supabase al formato local
+      const transformedUser = transformSupabaseUser(authUser);
+      
+      // Combinar con datos mock para campos faltantes
+      const combinedUser: User = {
+        id: transformedUser.id,
+        nombre: transformedUser.nombre || mockUser.nombre,
+        apellido: transformedUser.apellido || mockUser.apellido,
+        email: transformedUser.email || mockUser.email,
+        telefono: transformedUser.telefono || mockUser.telefono,
+        tipoSangre: transformedUser.tipoSangre || mockUser.tipoSangre,
+        peso: transformedUser.peso || mockUser.peso,
+        altura: transformedUser.altura || mockUser.altura,
+        fechaNacimiento: transformedUser.fechaNacimiento || mockUser.fechaNacimiento,
+        genero: transformedUser.genero || mockUser.genero,
+        avatar: transformedUser.avatar || mockUser.avatar,
+      };
+      setUser(combinedUser);
+    } else {
+      setUser(null);
+    }
+  }, [authUser]);
 
   // Añadir una nueva ubicación
   const addLocation = (location: Omit<UserLocation, 'id'>) => {
     const newLocation: UserLocation = {
       ...location,
-      id: `new-${Date.now()}`, // En una app real, el ID vendría del backend
+      id: `new-${Date.now()}`,
+      userId: user?.id || '',
     };
     
-    // Si es la primera ubicación o está marcada como principal
     if (locations.length === 0 || newLocation.esPrincipal) {
-      // Actualiza todas las demás para que no sean principales
       const updatedLocations = locations.map(loc => ({
         ...loc,
         esPrincipal: false
@@ -61,7 +103,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     
     setLocations(updatedLocations);
     
-    // Si se está actualizando la ubicación actual, o la ubicación se marcó como principal
     const updatedLocation = updatedLocations.find(loc => loc.id === locationId);
     if (updatedLocation && (currentLocation.id === locationId || updatedLocation.esPrincipal)) {
       setCurrentLocation(updatedLocation);
@@ -70,19 +111,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // Eliminar una ubicación
   const deleteLocation = (locationId: string) => {
-    // No permitir eliminar la única ubicación
     if (locations.length <= 1) return;
     
     const locationToDelete = locations.find(loc => loc.id === locationId);
     const updatedLocations = locations.filter(loc => loc.id !== locationId);
     
-    // Si la ubicación eliminada era la principal, hacer principal la primera de la lista
     if (locationToDelete?.esPrincipal && updatedLocations.length > 0) {
       updatedLocations[0].esPrincipal = true;
       setCurrentLocation(updatedLocations[0]);
     }
     
-    // Si la ubicación eliminada era la actual pero no la principal, mantener la principal
     if (currentLocation.id === locationId && !locationToDelete?.esPrincipal) {
       const defaultLocation = updatedLocations.find(loc => loc.esPrincipal) || updatedLocations[0];
       setCurrentLocation(defaultLocation);
@@ -106,17 +144,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Actualizar datos del usuario
+  const updateUser = async (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      
+      // También actualizar en el contexto de autenticación si hay campos que coinciden
+      const authUpdates: any = {};
+      if (userData.nombre) authUpdates.nombre = userData.nombre;
+      if (userData.apellido) authUpdates.apellido = userData.apellido;
+      if (userData.telefono) authUpdates.telefono = userData.telefono;
+      
+      if (Object.keys(authUpdates).length > 0) {
+        await updateProfile(authUpdates);
+      }
+    }
+  };
+
   return (
     <UserContext.Provider value={{
       user,
       locations,
       currentLocation,
-      updateUser,
       addLocation,
       updateLocation,
       deleteLocation,
       setDefaultLocation,
-      setCurrentLocation
+      setCurrentLocation,
+      updateUser
     }}>
       {children}
     </UserContext.Provider>

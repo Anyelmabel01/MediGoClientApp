@@ -2,17 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { BottomNavbar } from '@/components/BottomNavbar';
-import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
-import { UserLocation } from '@/constants/UserModel';
-import { useUser } from '@/hooks/useUser';
 import { handleError } from '@/utils/errorHandler';
+import { useAuth } from '../../hooks/useAuth';
 
 type ServiceItem = {
   id: string;
@@ -69,13 +66,8 @@ const services: ServiceItem[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, currentLocation, setCurrentLocation } = useUser();
+  const { user, session, isLoading } = useAuth();
   const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
-
-  const handleLocationSelect = (location: UserLocation) => {
-    setCurrentLocation(location);
-  };
 
   const renderServiceItem = ({ item }: { item: ServiceItem }) => (
     <TouchableOpacity 
@@ -98,6 +90,20 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  // Show loading if still fetching user data
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0a7ea4" />
+        <ThemedText style={styles.loadingText}>Cargando tu perfil...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  // Show welcome message even if user profile is not fully loaded
+  const userName = user?.nombre || session?.user?.user_metadata?.nombre || 'Usuario';
+  const userEmail = user?.email || session?.user?.email || '';
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
@@ -110,14 +116,14 @@ export default function HomeScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                {userName.charAt(0).toUpperCase()}{userName.split(' ').length > 1 ? userName.split(' ')[1].charAt(0).toUpperCase() : userName.charAt(1).toUpperCase()}
               </ThemedText>
             </View>
           </View>
           
           <View style={styles.greetingContainer}>
             <ThemedText style={styles.greeting}>
-              ¡Hola, {user.nombre} {user.apellido}!
+              ¡Hola, {userName}!
             </ThemedText>
             <View style={styles.editProfileIndicator}>
               <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
@@ -125,18 +131,15 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={styles.locationContainer}
-          onPress={() => setShowLocationSelector(true)}
-        >
+        <View style={styles.locationContainer}>
           <View style={styles.locationIcon}>
             <Ionicons name="location" size={18} color={Colors.light.primary} />
           </View>
           <ThemedText style={styles.locationText} numberOfLines={1}>
-            {currentLocation.direccion}
+            Tu ubicación principal
           </ThemedText>
           <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.servicesHeaderContainer}>
@@ -154,16 +157,21 @@ export default function HomeScreen() {
       
       <BottomNavbar />
       
-      <UserProfile 
-        isVisible={showUserProfile} 
-        onClose={() => setShowUserProfile(false)}
-      />
-      
-      <LocationSelector 
-        isVisible={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
-        onLocationSelect={handleLocationSelect}
-      />
+      {showUserProfile && (
+        <View style={styles.userProfileModal}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowUserProfile(false)}
+            >
+              <Ionicons name="close" size={24} color={Colors.light.text} />
+            </TouchableOpacity>
+            <ThemedText style={styles.modalTitle}>Perfil de Usuario</ThemedText>
+            <ThemedText style={styles.modalText}>Nombre: {userName}</ThemedText>
+            <ThemedText style={styles.modalText}>Email: {userEmail}</ThemedText>
+          </View>
+        </View>
+      )}
     </ThemedView>
   );
 }
@@ -173,6 +181,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
     paddingBottom: Platform.OS === 'ios' ? 80 : 60,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.light.background,
   },
   header: {
     backgroundColor: Colors.light.primary,
@@ -296,5 +310,41 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  userProfileModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.white,
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    minWidth: 300,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
   },
 });

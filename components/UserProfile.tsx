@@ -1,11 +1,11 @@
 import { Colors } from '@/constants/Colors';
-import { User } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
-import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useEffect, useState } from 'react';
-import { Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
+import { User } from '../types/supabase';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 
@@ -15,44 +15,71 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ isVisible, onClose }: UserProfileProps) {
-  const { user, updateUser } = useUser();
+  const { user, updateProfile } = useAuth();
   const { isDarkMode } = useTheme();
   
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Datos temporales para edición
-  const [editData, setEditData] = useState<User>(user);
+  const [editData, setEditData] = useState<User | null>(null);
 
   // Cargar datos del usuario desde el contexto cuando el modal se abre
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && user) {
       setEditData(user);
     }
   }, [isVisible, user]);
 
-  const handleSave = () => {
-    // Actualizar datos del usuario con los valores de editData
-    updateUser(editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!editData || !user) return;
+
+    setIsLoading(true);
+    try {
+      const result = await updateProfile({
+        nombre: editData.nombre,
+        apellido: editData.apellido,
+        telefono: editData.telefono,
+        tipo_sangre: editData.tipo_sangre,
+        peso: editData.peso,
+        altura: editData.altura,
+        fecha_nacimiento: editData.fecha_nacimiento,
+        genero: editData.genero,
+      });
+
+      if (result.error) {
+        Alert.alert('Error', 'No se pudo actualizar el perfil: ' + result.error);
+      } else {
+        Alert.alert('Éxito', 'Perfil actualizado correctamente');
+        setIsEditing(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Error inesperado al actualizar el perfil');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    setEditData(user);
+    if (user) {
+      setEditData(user);
+    }
     setIsEditing(false);
   };
 
   const handleChangeDate = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
+    if (selectedDate && editData) {
       setEditData({
         ...editData,
-        fechaNacimiento: selectedDate.toISOString().split('T')[0]
+        fecha_nacimiento: selectedDate.toISOString().split('T')[0]
       });
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'No especificado';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -70,7 +97,7 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
 
   const renderEditField = (
     label: string, 
-    value: string, 
+    value: string | null, 
     field: keyof User, 
     keyboardType: 'default' | 'email-address' | 'numeric' | 'phone-pad' = 'default'
   ) => (
@@ -81,13 +108,22 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
           styles.input,
           isDarkMode && styles.inputDark
         ]}
-        value={value.toString()}
-        onChangeText={(text) => setEditData({ ...editData, [field]: keyboardType === 'numeric' ? Number(text) : text })}
+        value={value?.toString() || ''}
+        onChangeText={(text) => {
+          if (!editData) return;
+          const newValue = keyboardType === 'numeric' ? (text ? Number(text) : null) : text;
+          setEditData({ ...editData, [field]: newValue });
+        }}
         keyboardType={keyboardType}
         placeholderTextColor={isDarkMode ? '#999' : '#777'}
       />
     </View>
   );
+
+  // Si no hay usuario, no mostrar el modal
+  if (!user || !editData) {
+    return null;
+  }
 
   return (
     <Modal
@@ -139,10 +175,10 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
                 {renderEditField('Nombre', editData.nombre, 'nombre')}
                 {renderEditField('Apellido', editData.apellido, 'apellido')}
                 {renderEditField('Correo electrónico', editData.email, 'email', 'email-address')}
-                {renderEditField('Teléfono', editData.telefono, 'telefono', 'phone-pad')}
-                {renderEditField('Tipo de sangre', editData.tipoSangre, 'tipoSangre')}
-                {renderEditField('Peso (kg)', editData.peso.toString(), 'peso', 'numeric')}
-                {renderEditField('Altura (cm)', editData.altura.toString(), 'altura', 'numeric')}
+                {renderEditField('Teléfono', editData.telefono || '', 'telefono', 'phone-pad')}
+                {renderEditField('Tipo de sangre', editData.tipo_sangre || '', 'tipo_sangre')}
+                {renderEditField('Peso (kg)', editData.peso?.toString() || '', 'peso', 'numeric')}
+                {renderEditField('Altura (cm)', editData.altura?.toString() || '', 'altura', 'numeric')}
                 
                 <View style={styles.editField}>
                   <ThemedText style={styles.fieldLabel}>Fecha de nacimiento</ThemedText>
@@ -153,11 +189,11 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
                     ]}
                     onPress={() => setShowDatePicker(true)}
                   >
-                    <ThemedText>{editData.fechaNacimiento}</ThemedText>
+                    <ThemedText>{editData.fecha_nacimiento || 'No especificado'}</ThemedText>
                   </TouchableOpacity>
                   {showDatePicker && (
                     <DateTimePicker
-                      value={new Date(editData.fechaNacimiento)}
+                      value={editData.fecha_nacimiento ? new Date(editData.fecha_nacimiento) : new Date()}
                       mode="date"
                       display="default"
                       onChange={handleChangeDate}
@@ -200,11 +236,11 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
               <>
                 {renderField('Nombre', `${user.nombre} ${user.apellido}`)}
                 {renderField('Correo electrónico', user.email)}
-                {renderField('Teléfono', user.telefono)}
-                {renderField('Tipo de sangre', user.tipoSangre)}
-                {renderField('Peso', `${user.peso} kg`)}
-                {renderField('Altura', `${user.altura} cm`)}
-                {renderField('Fecha de nacimiento', formatDate(user.fechaNacimiento))}
+                {renderField('Teléfono', user.telefono || 'No especificado')}
+                {renderField('Tipo de sangre', user.tipo_sangre || 'No especificado')}
+                {renderField('Peso', `${user.peso || 'No especificado'} kg`)}
+                {renderField('Altura', `${user.altura || 'No especificado'} cm`)}
+                {renderField('Fecha de nacimiento', formatDate(user.fecha_nacimiento))}
                 {renderField('Género', 
                   user.genero === 'masculino' ? 'Masculino' : 
                   user.genero === 'femenino' ? 'Femenino' : 

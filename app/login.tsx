@@ -29,10 +29,10 @@ const COLORS = {
   border: '#E9ECEF',
   buttonBlue: '#0099CC',
   buttonBlueDark: '#007BA3',
-  buttonGradient: ['#0099CC', '#00B5E2'],
+  buttonGradient: ['#0099CC', '#00B5E2'] as const,
   shadowColor: '#1A88B8',
   placeholder: '#A0A0A0',
-  backgroundGradient: ['#F8F9FA', '#EDF3F5'],
+  backgroundGradient: ['#F8F9FA', '#EDF3F5'] as const,
   inputShadow: 'rgba(0, 154, 176, 0.1)',
 };
 
@@ -113,13 +113,24 @@ export default function LoginScreen() {
     buttonScale.value = withTiming(1, { duration: 200 });
     buttonBgOpacity.value = withTiming(0, { duration: 200 });
     
+    if (!email || !password) {
+      alert('Por favor ingresa tu email y contraseña');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Simulamos una petición
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      signIn(email, password);
+      const result = await signIn(email, password);
+      
+      if (result.error) {
+        alert('Error al iniciar sesión: ' + result.error);
+      } else {
+        // El router se maneja automáticamente en el AuthProvider
+        console.log('Inicio de sesión exitoso');
+      }
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
+      alert('Error inesperado al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -156,27 +167,30 @@ export default function LoginScreen() {
       
       {/* Círculos decorativos con gradientes */}
       <View style={styles.backgroundCircles}>
-        <LinearGradient
-          colors={[COLORS.accent, COLORS.primary]}
-          style={[styles.circle, styles.circle1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          opacity={0.08}
-        />
-        <LinearGradient
-          colors={[COLORS.primary, COLORS.primaryDark]}
-          style={[styles.circle, styles.circle2]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          opacity={0.06}
-        />
-        <LinearGradient
-          colors={[COLORS.accent, COLORS.primary]}
-          style={[styles.circle, styles.circle3]}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 1, y: 0 }}
-          opacity={0.07}
-        />
+        <View style={{ opacity: 0.08 }}>
+          <LinearGradient
+            colors={[COLORS.accent, COLORS.primary]}
+            style={[styles.circle, styles.circle1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+        <View style={{ opacity: 0.06 }}>
+          <LinearGradient
+            colors={[COLORS.primary, COLORS.primaryDark]}
+            style={[styles.circle, styles.circle2]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+        <View style={{ opacity: 0.07 }}>
+          <LinearGradient
+            colors={[COLORS.accent, COLORS.primary]}
+            style={[styles.circle, styles.circle3]}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+          />
+        </View>
       </View>
       
       <Animated.View style={[styles.contentContainer, animatedStyle]}>

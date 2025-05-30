@@ -1,28 +1,10 @@
 import { ScreenContentWrapper } from '@/components/ScreenContentWrapper';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
-import { useEffect } from '@/hooks/react';
-import { useAuth } from '@/hooks/useAuth';
-import { Tabs, useRouter, useSegments } from 'expo-router';
-
-function useProtectedRoute(isAuthenticated: boolean) {
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    const inTabsGroup = segments[0] === '(tabs)';
-    
-    if (!isAuthenticated && inTabsGroup) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, segments, router]);
-}
+import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
   const { isDarkMode } = useTheme();
-  const { isAuthenticated } = useAuth();
-  
-  useProtectedRoute(isAuthenticated);
 
   return (
     <ScreenContentWrapper>
@@ -50,6 +32,18 @@ export default function TabLayout() {
           name="configuracion"
           options={{
             title: 'Configuración',
+          }}
+        />
+        <Tabs.Screen
+          name="resultados"
+          options={{
+            title: 'Resultados',
+          }}
+        />
+        <Tabs.Screen
+          name="pruebas"
+          options={{
+            title: 'Pruebas',
           }}
         />
       </Tabs>

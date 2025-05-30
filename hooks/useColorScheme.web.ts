@@ -1,5 +1,5 @@
+import { useTheme } from '@/context/ThemeContext';
 import { useEffect, useState } from 'react';
-import { useColorScheme as useThemeColorScheme } from './useTheme';
 
 /**
  * Para soportar renderizado estático, este valor necesita ser recalculado 
@@ -7,15 +7,14 @@ import { useColorScheme as useThemeColorScheme } from './useTheme';
  */
 export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     setHasHydrated(true);
   }, []);
 
-  const colorScheme = useThemeColorScheme();
-
   if (hasHydrated) {
-    return colorScheme;
+    return isDarkMode ? 'dark' : 'light';
   }
 
   return 'light';

@@ -2,24 +2,88 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
 import { COLORS } from '../constants/UIConstants';
-
+import { useAuth } from '../hooks/useAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = () => {
-    // Aquí iría la lógica de registro
-    router.replace('/(tabs)');
+  const validateForm = () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu nombre');
+      return false;
+    }
+    if (!lastName.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu apellido');
+      return false;
+    }
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu email');
+      return false;
+    }
+    if (!email.includes('@')) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return false;
+    }
+    if (!password) {
+      Alert.alert('Error', 'Por favor ingresa una contraseña');
+      return false;
+    }
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return false;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return false;
+    }
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const result = await signUp(email, password, {
+        nombre: name.trim(),
+        apellido: lastName.trim(),
+        telefono: phone.trim() || undefined,
+      });
+
+      if (result.error) {
+        Alert.alert('Error al registrarse', result.error);
+      } else {
+        Alert.alert(
+          'Registro exitoso',
+          'Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/login'),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error en registro:', error);
+      Alert.alert('Error', 'Error inesperado al registrarse');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,9 +107,21 @@ export default function RegisterScreen() {
           <Ionicons name="person-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Nombre completo"
+            placeholder="Nombre"
             value={name}
             onChangeText={setName}
+            autoCapitalize="words"
+            placeholderTextColor={COLORS.placeholder}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Ionicons name="person-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Apellido"
+            value={lastName}
+            onChangeText={setLastName}
             autoCapitalize="words"
             placeholderTextColor={COLORS.placeholder}
           />
@@ -60,6 +136,18 @@ export default function RegisterScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            placeholderTextColor={COLORS.placeholder}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Ionicons name="call-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Teléfono (opcional)"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
             placeholderTextColor={COLORS.placeholder}
           />
         </View>
@@ -111,10 +199,13 @@ export default function RegisterScreen() {
         </View>
 
         <TouchableOpacity 
-          style={styles.button} 
+          style={[styles.button, isLoading && styles.buttonDisabled]} 
           onPress={handleRegister}
+          disabled={isLoading}
         >
-          <ThemedText style={styles.buttonText}>Registrarme</ThemedText>
+          <ThemedText style={styles.buttonText}>
+            {isLoading ? 'Registrando...' : 'Registrarme'}
+          </ThemedText>
         </TouchableOpacity>
 
         <View style={styles.terms}>
@@ -219,5 +310,8 @@ const styles = StyleSheet.create({
   termsLink: {
     color: COLORS.primary,
     fontWeight: '500',
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
   },
 }); 
