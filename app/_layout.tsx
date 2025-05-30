@@ -8,6 +8,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+import { CartProvider } from '../context/CartContext';
 import { ThemeProvider as CustomThemeProvider } from '../context/ThemeContext';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { useColorScheme } from '../hooks/useColorScheme';
@@ -76,6 +77,12 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="farmacia" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia" options={{ headerShown: false }} />
+        <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
+        <Stack.Screen name="expediente" options={{ headerShown: false }} />
+        <Stack.Screen name="perfil" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
@@ -106,7 +113,9 @@ export default function RootLayout() {
     <CustomThemeProvider>
       <AuthProvider>
         <UserProvider>
-          <RootLayoutNav />
+          <CartProvider>
+            <RootLayoutNav />
+          </CartProvider>
         </UserProvider>
       </AuthProvider>
     </CustomThemeProvider>

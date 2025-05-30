@@ -529,6 +529,61 @@ export default function FarmaciaScreen() {
     setCurrentLocation(location);
   };
 
+  const renderHeader = () => (
+    <>
+      <View style={[styles.searchContainer, { 
+        backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
+        borderColor: isDarkMode ? Colors.dark.border : 'transparent',
+        borderWidth: 1
+      }]}>
+        <Ionicons 
+          name="search" 
+          size={18} 
+          color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
+          style={styles.searchIcon} 
+        />
+        <TextInput
+          style={[styles.searchInput, { 
+            color: isDarkMode ? Colors.dark.text : Colors.light.text 
+          }]}
+          placeholder="Buscar medicamentos..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
+        />
+      </View>
+      
+      <View style={styles.filtersRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TouchableOpacity style={[styles.filterBtn, availability === 'all' && styles.selectedFilter]} onPress={() => setAvailability('all')}>
+            <ThemedText style={availability === 'all' ? styles.selectedFilterText : undefined}>Todos</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.filterBtn, availability === 'available' && styles.selectedFilter]} onPress={() => setAvailability('available')}>
+            <ThemedText style={availability === 'available' ? styles.selectedFilterText : undefined}>Disponibles</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 130])}>
+            <ThemedText>Hasta Bs 130</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 1000])}>
+            <ThemedText>Todos los precios</ThemedText>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+      
+      <ThemedText style={styles.sectionTitle}>Categorías</ThemedText>
+      <FlatList
+        horizontal
+        data={categories}
+        renderItem={renderCategoryItem}
+        keyExtractor={item => item.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesList}
+      />
+      
+      <ThemedText style={styles.sectionTitle}>Medicamentos disponibles</ThemedText>
+    </>
+  );
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
@@ -542,7 +597,7 @@ export default function FarmaciaScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
               </ThemedText>
             </View>
           </View>
@@ -597,79 +652,24 @@ export default function FarmaciaScreen() {
         <ThemedText style={styles.subtitle}>Medicamentos y productos de salud</ThemedText>
       </View>
       
-      <ScrollView 
-        style={styles.content}
+      <FlatList
+        data={filteredMedicines}
+        renderItem={renderMedicineItem}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.medicineRow}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={[styles.searchContainer, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : '#f0f0f0',
-          borderColor: isDarkMode ? Colors.dark.border : 'transparent',
-          borderWidth: 1
-        }]}>
-          <Ionicons 
-            name="search" 
-            size={18} 
-            color={isDarkMode ? Colors.dark.textSecondary : '#777'} 
-            style={styles.searchIcon} 
-          />
-          <TextInput
-            style={[styles.searchInput, { 
-              color: isDarkMode ? Colors.dark.text : Colors.light.text 
-            }]}
-            placeholder="Buscar medicamentos..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : '#999'}
-          />
-        </View>
-        
-        <View style={styles.filtersRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <TouchableOpacity style={[styles.filterBtn, availability === 'all' && styles.selectedFilter]} onPress={() => setAvailability('all')}>
-              <ThemedText style={availability === 'all' ? styles.selectedFilterText : undefined}>Todos</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.filterBtn, availability === 'available' && styles.selectedFilter]} onPress={() => setAvailability('available')}>
-              <ThemedText style={availability === 'available' ? styles.selectedFilterText : undefined}>Disponibles</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 130])}>
-              <ThemedText>Hasta Bs 130</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setPriceRange([0, 1000])}>
-              <ThemedText>Todos los precios</ThemedText>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-        
-        <ThemedText style={styles.sectionTitle}>Categorías</ThemedText>
-        <FlatList
-          horizontal
-          data={categories}
-          renderItem={renderCategoryItem}
-          keyExtractor={item => item.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesList}
-        />
-        
-        <ThemedText style={styles.sectionTitle}>Medicamentos disponibles</ThemedText>
-        <FlatList
-          data={filteredMedicines}
-          renderItem={renderMedicineItem}
-          keyExtractor={item => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.medicineRow}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.medicinesList}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="search" size={48} color="#ccc" />
-              <ThemedText style={styles.emptyText}>
-                No se encontraron medicamentos
-              </ThemedText>
-            </View>
-          }
-        />
-      </ScrollView>
+        contentContainerStyle={[styles.medicinesList, { paddingHorizontal: 16 }]}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search" size={48} color="#ccc" />
+            <ThemedText style={styles.emptyText}>
+              No se encontraron medicamentos
+            </ThemedText>
+          </View>
+        }
+      />
       
       {/* Cart Modal */}
       <Modal
@@ -793,13 +793,11 @@ export default function FarmaciaScreen() {
               </View>
               
               <ThemedText style={styles.sectionTitle}>Selecciona un método de pago</ThemedText>
-              <FlatList
-                data={paymentMethods}
-                extraData={selectedPaymentMethod}
-                keyExtractor={item => item.id}
-                renderItem={renderPaymentMethodItem}
-                style={styles.paymentList}
-              />
+              {paymentMethods.map(item => (
+                <View key={item.id} style={styles.paymentMethodWrapper}>
+                  {renderPaymentMethodItem({ item })}
+                </View>
+              ))}
               
               {/* Credit Card Info Form */}
               {showCardInfo && (
@@ -890,12 +888,11 @@ export default function FarmaciaScreen() {
               )}
               
               <ThemedText style={styles.sectionTitle}>Método de entrega</ThemedText>
-              <FlatList
-                data={deliveryMethods}
-                keyExtractor={item => item.id}
-                renderItem={renderDeliveryMethodItem}
-                style={styles.deliveryList}
-              />
+              {deliveryMethods.map(item => (
+                <View key={item.id} style={styles.deliveryMethodWrapper}>
+                  {renderDeliveryMethodItem({ item })}
+                </View>
+              ))}
               
               <View style={styles.summaryContainer}>
                 <View style={styles.summaryRow}>
@@ -1800,5 +1797,11 @@ const styles = StyleSheet.create({
   deliveryMethodPrice: {
     fontSize: 14,
     color: '#555',
+  },
+  paymentMethodWrapper: {
+    marginBottom: 10,
+  },
+  deliveryMethodWrapper: {
+    marginBottom: 10,
   },
 });
