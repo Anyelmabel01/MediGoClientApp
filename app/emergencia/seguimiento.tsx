@@ -188,7 +188,7 @@ export default function EmergenciaSeguimientoScreen() {
 
   const emergencyData = {
     type: 'Emergencia Médica',
-    patient: `${user.nombre} ${user.apellido}`,
+    patient: `${user?.nombre || 'Usuario'} ${user?.apellido || 'Apellido'}`,
     location: currentLocation.direccion,
     requestTime: new Date().toLocaleTimeString(),
     paramedicName: 'Dr. María González',
@@ -481,12 +481,12 @@ export default function EmergenciaSeguimientoScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 45,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
+    paddingTop: 50,
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomLeftRadius: 20,

@@ -21,10 +21,10 @@ const categorias = [
   { nombre: 'Paquetes de Salud', icon: 'medkit' },
 ];
 
-const pruebas = [
-  { id: '1', nombre: 'Biometría Hemática', descripcion: 'Conteo y análisis de células sanguíneas', precio: '$250', requierePreparacion: true },
-  { id: '2', nombre: 'Examen General de Orina', descripcion: 'Análisis de orina para detección de enfermedades', precio: '$180', requierePreparacion: false },
-  { id: '3', nombre: 'Perfil Lipídico', descripcion: 'Medición de colesterol y triglicéridos', precio: '$320', requierePreparacion: true },
+const pruebas: Prueba[] = [
+  { id: '1', nombre: 'Biometría Hemática', descripcion: 'Conteo y análisis de células sanguíneas', precio: 'Bs 80', requierePreparacion: true },
+  { id: '2', nombre: 'Examen General de Orina', descripcion: 'Análisis de orina para detección de enfermedades', precio: 'Bs 50', requierePreparacion: false },
+  { id: '3', nombre: 'Perfil Lipídico', descripcion: 'Medición de colesterol y triglicéridos', precio: 'Bs 120', requierePreparacion: true },
 ];
 
 export default function PruebasScreen() {

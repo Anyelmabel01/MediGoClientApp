@@ -2,7 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -15,6 +15,7 @@ const PAYMENT_METHODS = [
 
 export default function EmergenciaConfirmacionScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { isDarkMode } = useTheme();
   const { user, currentLocation } = useUser();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
@@ -23,22 +24,25 @@ export default function EmergenciaConfirmacionScreen() {
     router.push('/emergencia/seguimiento' as any);
   };
 
+  // Detectar si es emergencia rápida
+  const isQuickEmergency = params.quickEmergency === 'true';
+
   // Datos simulados del resumen usando información del usuario
   const emergencyData = {
-    type: 'Emergencia Médica',
-    description: 'Solicitud de emergencia médica',
-    severity: 'Media',
-    patient: `${user.nombre} ${user.apellido}`,
-    bloodType: user.tipoSangre,
-    phone: user.telefono,
+    type: isQuickEmergency ? 'Emergencia Médica Rápida' : 'Emergencia Médica',
+    description: isQuickEmergency ? 'Solicitud de emergencia médica inmediata' : 'Solicitud de emergencia médica',
+    severity: isQuickEmergency ? 'Alta - Emergencia Inmediata' : 'Media',
+    patient: `${user?.nombre || 'Usuario'} ${user?.apellido || 'Apellido'}`,
+    bloodType: user?.tipoSangre || 'No especificado',
+    phone: user?.telefono || 'Sin teléfono',
     location: currentLocation.direccion,
-    contact: `${user.nombre} ${user.apellido} - ${user.telefono}`,
+    contact: `${user?.nombre || 'Usuario'} ${user?.apellido || 'Apellido'} - ${user?.telefono || 'Sin teléfono'}`,
     provider: 'MediGo Emergency Services',
-    estimatedTime: '8-12 minutos',
+    estimatedTime: isQuickEmergency ? '3-5 minutos' : '8-12 minutos',
     rating: 4.8,
-    baseFee: 25.00,
+    baseFee: isQuickEmergency ? 40.00 : 25.00,
     distanceFee: 5.00,
-    total: 30.00,
+    total: isQuickEmergency ? 45.00 : 30.00,
   };
 
   return (
@@ -56,14 +60,18 @@ export default function EmergenciaConfirmacionScreen() {
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.alertBox}>
-          <View style={styles.alertIcon}>
-            <Ionicons name="flash" size={20} color={Colors.light.primary} />
+        {isQuickEmergency && (
+          <View style={styles.quickEmergencyBanner}>
+            <View style={styles.quickBannerContent}>
+              <Ionicons name="flash" size={24} color="white" />
+              <View style={styles.quickBannerText}>
+                <ThemedText style={styles.quickBannerTitle}>EMERGENCIA RÁPIDA ACTIVADA</ThemedText>
+                <ThemedText style={styles.quickBannerSubtitle}>Respuesta inmediata en camino</ThemedText>
+              </View>
+              <Ionicons name="flash" size={24} color="white" />
+            </View>
           </View>
-          <ThemedText style={styles.alertText}>
-            Proceso rápido: Tu información ha sido cargada automáticamente
-          </ThemedText>
-        </View>
+        )}
         
         {/* Resumen de la Emergencia */}
         <View style={styles.summaryCard}>
@@ -212,13 +220,13 @@ export default function EmergenciaConfirmacionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 45,
     backgroundColor: Colors.light.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
+    paddingTop: 50,
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomLeftRadius: 20,
@@ -471,5 +479,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#E65100',
     lineHeight: 16,
+  },
+  quickEmergencyBanner: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  quickBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickBannerText: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+  quickBannerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    marginBottom: 4,
+  },
+  quickBannerSubtitle: {
+    fontSize: 14,
+    color: Colors.light.white,
   },
 }); 

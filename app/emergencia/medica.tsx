@@ -132,15 +132,15 @@ export default function EmergenciaMedicaScreen() {
             <View style={styles.userInfoPreview}>
               <View style={styles.infoRow}>
                 <Ionicons name="person" size={16} color={Colors.light.primary} />
-                <ThemedText style={styles.infoText}>{user.nombre} {user.apellido}</ThemedText>
+                <ThemedText style={styles.infoText}>{user?.nombre || 'Usuario'} {user?.apellido || 'Apellido'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="call" size={16} color={Colors.light.primary} />
-                <ThemedText style={styles.infoText}>{user.telefono}</ThemedText>
+                <ThemedText style={styles.infoText}>{user?.telefono || 'Sin teléfono'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="water" size={16} color={Colors.light.primary} />
-                <ThemedText style={styles.infoText}>Tipo de sangre: {user.tipoSangre}</ThemedText>
+                <ThemedText style={styles.infoText}>Tipo de sangre: {user?.tipoSangre || 'No especificado'}</ThemedText>
               </View>
               <View style={styles.infoRow}>
                 <Ionicons name="location" size={16} color={Colors.light.primary} />
@@ -230,12 +230,12 @@ export default function EmergenciaMedicaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
+    paddingTop: 50,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderBottomLeftRadius: 20,

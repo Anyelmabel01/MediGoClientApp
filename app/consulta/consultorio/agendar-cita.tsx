@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type Provider = {
   id: string;
@@ -95,6 +95,11 @@ export default function AgendarCitaScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Estados para modales personalizados
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'error' });
+
   const provider = mockProviders[providerId as string];
 
   if (!provider) {
@@ -148,7 +153,12 @@ export default function AgendarCitaScreen() {
         setUploadedDocuments([...uploadedDocuments, newDocument]);
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo cargar el documento. Inténtalo de nuevo.');
+      setModalConfig({
+        title: 'Error',
+        message: 'No se pudo cargar el documento. Inténtalo de nuevo.',
+        type: 'error'
+      });
+      setShowErrorModal(true);
     }
   };
 
@@ -158,15 +168,30 @@ export default function AgendarCitaScreen() {
 
   const validateForm = () => {
     if (!reason.trim()) {
-      Alert.alert('Campo requerido', 'Por favor describe el motivo de tu consulta.');
+      setModalConfig({
+        title: 'Campo requerido',
+        message: 'Por favor describe el motivo de tu consulta.',
+        type: 'validation'
+      });
+      setShowValidationModal(true);
       return false;
     }
     if (!selectedPayment) {
-      Alert.alert('Método de pago', 'Por favor selecciona un método de pago.');
+      setModalConfig({
+        title: 'Método de pago',
+        message: 'Por favor selecciona un método de pago.',
+        type: 'validation'
+      });
+      setShowValidationModal(true);
       return false;
     }
     if (!acceptedTerms) {
-      Alert.alert('Términos y condiciones', 'Debes aceptar los términos y condiciones para continuar.');
+      setModalConfig({
+        title: 'Términos y condiciones',
+        message: 'Debes aceptar los términos y condiciones para continuar.',
+        type: 'validation'
+      });
+      setShowValidationModal(true);
       return false;
     }
     return true;
@@ -174,9 +199,16 @@ export default function AgendarCitaScreen() {
 
   const handleConfirmAppointment = () => {
     if (!selectedTime || !selectedPayment || !acceptedTerms) {
-      Alert.alert('Información incompleta', 'Por favor completa todos los campos requeridos.');
+      setModalConfig({
+        title: 'Información incompleta',
+        message: 'Por favor completa todos los campos requeridos.',
+        type: 'validation'
+      });
+      setShowValidationModal(true);
       return;
     }
+
+    if (!validateForm()) return;
 
     // Crear la cita nueva
     const today = new Date();
@@ -515,6 +547,55 @@ export default function AgendarCitaScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Modal de Error */}
+      <Modal
+        visible={showErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="alert-circle" size={48} color="#ef4444" />
+            </View>
+            <Text style={styles.errorModalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.errorModalMessage}>{modalConfig.message}</Text>
+            <TouchableOpacity 
+              style={styles.errorModalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <Text style={styles.errorModalButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Validación */}
+      <Modal
+        visible={showValidationModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowValidationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="information-circle" size={48} color="#f59e0b" />
+            </View>
+            <Text style={styles.validationModalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.validationModalMessage}>{modalConfig.message}</Text>
+            <TouchableOpacity 
+              style={styles.validationModalButton}
+              onPress={() => setShowValidationModal(false)}
+            >
+              <Ionicons name="checkmark" size={20} color="white" />
+              <Text style={styles.validationModalButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <SuccessModal />
     </KeyboardAvoidingView>
@@ -908,5 +989,63 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.light.textPrimary,
+  },
+  modalIconContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    padding: 16,
+    marginBottom: 20,
+  },
+  errorModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  errorModalMessage: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  errorModalButton: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#F1F3F4',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  errorModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textPrimary,
+  },
+  validationModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#f59e0b',
+    textAlign: 'center',
+  },
+  validationModalMessage: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  validationModalButton: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  validationModalButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.white,
   },
 }); 

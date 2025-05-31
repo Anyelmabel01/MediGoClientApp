@@ -53,6 +53,12 @@ type Provider = {
   education: string[];
   specializations: string[];
   languages: string[];
+  next_availability: string;
+  certifications: string[];
+  hospital_affiliations: string[];
+  total_consultations: number;
+  response_time: string;
+  available_today: boolean;
 };
 
 type Review = {
@@ -85,20 +91,20 @@ const mockProviders: Record<string, Provider> = {
     display_name: 'Dr. María González',
     provider_type: 'CARDIOLOGIST',
     organization_name: 'Centro Médico Integral',
-    avatar_url: 'https://img.freepik.com/foto-gratis/hermosa-doctora-joven-mirar-camara-oficina_1301-7807.jpg?w=360',
+    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
     license_number: 'CDL12345',
     bio: 'Cardióloga con 15 años de experiencia en diagnóstico y tratamiento de enfermedades cardiovasculares. Especializada en ecocardiografía, cateterismo cardíaco y medicina preventiva. Comprometida con brindar atención médica de calidad y establecer relaciones de confianza con mis pacientes.',
     rating: 4.9,
     total_reviews: 127,
     consultation_fee: 280000,
-    location: 'Col. Roma Norte, CDMX',
-    phone: '+52 55 1234 5678',
+    location: 'Altamira, Caracas',
+    phone: '+58 212 9876 5432',
     email: 'dra.gonzalez@centromedico.com',
     years_experience: 15,
     education: [
-      'Médico Cirujano - UNAM (2008)',
-      'Especialidad en Cardiología - Instituto Nacional de Cardiología (2012)',
-      'Maestría en Ciencias Médicas - UNAM (2014)'
+      'Médico Cirujano - Universidad Central de Venezuela (2008)',
+      'Especialidad en Cardiología - Instituto Nacional de Cardiología de Venezuela (2012)',
+      'Maestría en Ciencias Médicas - UCV (2014)'
     ],
     specializations: [
       'Ecocardiografía',
@@ -107,26 +113,40 @@ const mockProviders: Record<string, Provider> = {
       'Hipertensión Arterial',
       'Insuficiencia Cardíaca'
     ],
-    languages: ['Español', 'Inglés']
+    languages: ['Español', 'Inglés'],
+    next_availability: 'Hoy, 2:00 PM',
+    certifications: [
+      'Certificación en Cardiología - Sociedad Venezolana de Cardiología',
+      'Certificación en Ecocardiografía - Federación Mundial del Corazón',
+      'Certificación en Medicina Interna - Colegio de Médicos de Venezuela'
+    ],
+    hospital_affiliations: [
+      'Hospital de Clínicas Caracas',
+      'Centro Médico Docente La Trinidad',
+      'Hospital Metropolitano'
+    ],
+    total_consultations: 1250,
+    response_time: '< 2 horas',
+    available_today: true
   },
   '2': {
     id: '2',
     display_name: 'Dr. Carlos Ramírez',
     provider_type: 'GENERAL_DOCTOR',
     organization_name: 'Clínica San Miguel',
-    avatar_url: 'https://img.freepik.com/foto-gratis/medico-masculino-bata-blanca-estetoscopio_114579-1201.jpg?w=360',
+    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
     license_number: 'GDL67890',
     bio: 'Médico general con amplia experiencia en medicina familiar y atención primaria. Me enfoco en brindar cuidado integral a pacientes de todas las edades, con énfasis en medicina preventiva y seguimiento de enfermedades crónicas.',
     rating: 4.7,
     total_reviews: 89,
     consultation_fee: 210000,
-    location: 'Col. Condesa, CDMX',
-    phone: '+52 55 9876 5432',
+    location: 'Las Mercedes, Caracas',
+    phone: '+58 212 1234 5678',
     email: 'dr.ramirez@clinicasanmiguel.com',
     years_experience: 12,
     education: [
-      'Médico Cirujano - IPN (2011)',
-      'Especialidad en Medicina Familiar - IMSS (2014)'
+      'Médico Cirujano - Universidad Central de Venezuela (2011)',
+      'Especialidad en Medicina Familiar - Hospital Universitario de Caracas (2014)'
     ],
     specializations: [
       'Medicina Familiar',
@@ -135,7 +155,11 @@ const mockProviders: Record<string, Provider> = {
       'Hipertensión',
       'Medicina Geriátrica'
     ],
-    languages: ['Español']
+    languages: ['Español'],
+    next_availability: 'Mañana, 10:00 AM',
+    total_consultations: 1000,
+    response_time: '< 2 horas',
+    available_today: false
   },
   '3': {
     id: '3',
@@ -164,7 +188,11 @@ const mockProviders: Record<string, Provider> = {
       'Tratamiento de Acné',
       'Procedimientos Estéticos'
     ],
-    languages: ['Español', 'Inglés', 'Francés']
+    languages: ['Español', 'Inglés', 'Francés'],
+    next_availability: 'Hoy, 10:00 AM',
+    total_consultations: 1000,
+    response_time: '< 2 horas',
+    available_today: true
   },
   '4': {
     id: '4',
@@ -193,7 +221,11 @@ const mockProviders: Record<string, Provider> = {
       'Vacunación',
       'Enfermedades Respiratorias Infantiles'
     ],
-    languages: ['Español', 'Inglés']
+    languages: ['Español', 'Inglés'],
+    next_availability: 'Mañana, 9:00 AM',
+    total_consultations: 800,
+    response_time: '< 2 horas',
+    available_today: true
   }
 };
 

@@ -6,8 +6,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -120,6 +120,12 @@ export default function SolicitarScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Estados para modales personalizados  
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'error' });
+
   const [stepData, setStepData] = useState<StepData>({
     collectionMethod: null,
     appointmentDate: null,
@@ -180,7 +186,12 @@ export default function SolicitarScreen() {
 
   const handleNext = () => {
     if (!validateCurrentStep()) {
-      Alert.alert('Información incompleta', 'Por favor completa todos los campos requeridos.');
+      setModalConfig({
+        title: 'Información incompleta',
+        message: 'Por favor completa todos los campos requeridos.',
+        type: 'error'
+      });
+      setShowErrorModal(true);
       return;
     }
     
@@ -226,26 +237,19 @@ export default function SolicitarScreen() {
       // Simular envío de datos
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert(
-        'Cita Agendada Exitosamente',
-        `Tu cita para ${nombrePrueba} ha sido programada para el ${stepData.appointmentDate?.toLocaleDateString('es-MX')} a las ${stepData.appointmentTime}.`,
-        [
-          {
-            text: 'Ir al inicio',
-            onPress: () => router.replace('/')
-          },
-          {
-            text: 'Ver mis citas',
-            onPress: () => router.replace('/laboratorio')
-          },
-          {
-            text: 'OK',
-            onPress: () => router.back()
-          }
-        ]
-      );
+      setModalConfig({
+        title: 'Cita Agendada Exitosamente',
+        message: `Tu cita para ${nombrePrueba} ha sido programada para el ${stepData.appointmentDate?.toLocaleDateString('es-VE')} a las ${stepData.appointmentTime}.`,
+        type: 'success'
+      });
+      setShowSuccessModal(true);
     } catch (error) {
-      Alert.alert('Error', 'Hubo un problema al agendar tu cita. Intenta nuevamente.');
+      setModalConfig({
+        title: 'Error',
+        message: 'Hubo un problema al agendar tu cita. Intenta nuevamente.',
+        type: 'error'
+      });
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -420,7 +424,7 @@ export default function SolicitarScreen() {
               <Ionicons name="calendar-outline" size={20} color={colors.primary} />
               <ThemedText style={[styles.dateButtonText, { color: colors.text }]}>
                 {stepData.appointmentDate 
-                  ? stepData.appointmentDate.toLocaleDateString('es-MX', { 
+                  ? stepData.appointmentDate.toLocaleDateString('es-VE', { 
                       weekday: 'long', 
                       year: 'numeric', 
                       month: 'long', 
@@ -555,19 +559,18 @@ export default function SolicitarScreen() {
                     Calle y número *
                   </ThemedText>
                   <TextInput
-                    style={[styles.formInput, { 
-                      backgroundColor: colors.background,
-                      borderColor: colors.border,
-                      color: colors.text 
-                    }]}
+                    style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card, color: colors.text }]}
                     placeholder="Av. Insurgentes Sur 1234"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor={colors.text + '80'}
                     value={stepData.personalInfo.address?.street || ''}
                     onChangeText={(text) => setStepData(prev => ({
                       ...prev,
-                      personalInfo: { 
-                        ...prev.personalInfo, 
-                        address: { ...prev.personalInfo.address, street: text, city: '', postalCode: '', references: '' }
+                      personalInfo: {
+                        ...prev.personalInfo,
+                        address: {
+                          ...prev.personalInfo.address!,
+                          street: text
+                        }
                       }
                     }))}
                   />
@@ -583,7 +586,7 @@ export default function SolicitarScreen() {
                       borderColor: colors.border,
                       color: colors.text 
                     }]}
-                    placeholder="Col. Del Valle, CDMX"
+                    placeholder="Col. Del Valle, Caracas"
                     placeholderTextColor={colors.textSecondary}
                     value={stepData.personalInfo.address?.city || ''}
                     onChangeText={(text) => setStepData(prev => ({
@@ -887,7 +890,7 @@ export default function SolicitarScreen() {
                   Fecha y hora:
                 </ThemedText>
                 <ThemedText style={[styles.confirmationValue, { color: colors.text }]}>
-                  {stepData.appointmentDate?.toLocaleDateString('es-MX')} a las {stepData.appointmentTime}
+                  {stepData.appointmentDate?.toLocaleDateString('es-VE')} a las {stepData.appointmentTime}
                 </ThemedText>
               </View>
 
@@ -1033,6 +1036,68 @@ export default function SolicitarScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Modal de Error */}
+      <Modal
+        visible={showErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="alert-circle" size={48} color="#ef4444" />
+            </View>
+            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <ThemedText style={styles.modalButtonText}>Entendido</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Éxito */}
+      <Modal
+        visible={showSuccessModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="checkmark-circle" size={48} color="#10b981" />
+            </View>
+            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButton}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/');
+                }}
+              >
+                <ThemedText style={styles.modalButtonText}>Ir al inicio</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalButton}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/laboratorio');
+                }}
+              >
+                <ThemedText style={styles.modalButtonText}>Ver mis citas</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -1421,5 +1486,54 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     textAlign: 'right',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: Colors.light.background,
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: 24,
+    padding: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
 }); 

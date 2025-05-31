@@ -61,8 +61,8 @@ export default function EmergenciaScreen() {
   };
 
   const handleQuickEmergency = () => {
-    // Ir directamente a emergencia médica con el flujo rápido activado
-    router.push('/emergencia/medica?fastTrack=true' as any);
+    // Ir directamente a confirmación saltándose todos los pasos - EMERGENCIA RÁPIDA
+    router.push('/emergencia/confirmacion?quickEmergency=true' as any);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function EmergenciaScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
               </ThemedText>
             </View>
           </View>
@@ -119,7 +119,7 @@ export default function EmergenciaScreen() {
         <View style={styles.emergencyButtonContent}>
           <Ionicons name="flash" size={32} color="white" />
           <View style={styles.emergencyButtonText}>
-            <ThemedText style={styles.emergencyButtonTitle}>EMERGENCIA</ThemedText>
+            <ThemedText style={styles.emergencyButtonTitle}>EMERGENCIA RÁPIDA</ThemedText>
             <ThemedText style={styles.emergencyButtonSubtitle}>Solicitar ayuda inmediata</ThemedText>
           </View>
         </View>

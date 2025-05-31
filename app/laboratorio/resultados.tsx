@@ -503,10 +503,10 @@ export default function ResultadosScreen() {
                   {item.labName}
                 </ThemedText>
                 <ThemedText style={[styles.resultDate, { color: colors.textSecondary }]}>
-                  {new Date(item.date).toLocaleDateString('es-MX', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date(item.date).toLocaleDateString('es-VE', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
                   })}
                 </ThemedText>
                 {item.orderingPhysician && (

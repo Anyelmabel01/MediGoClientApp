@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-    Alert,
     Image,
     Modal,
     ScrollView,
@@ -87,14 +86,14 @@ const mockSpecialists: Record<string, VirtualSpecialist> = {
     available_today: true,
     years_experience: 10,
     education: [
-      'Medicina - Universidad Nacional Autónoma de México',
-      'Especialidad en Cardiología - Instituto Nacional de Cardiología',
-      'Maestría en Telemedicina - Universidad de Barcelona'
+      'Medicina - Universidad Central de Venezuela',
+      'Especialidad en Cardiología - Instituto Nacional de Cardiología de Venezuela',
+      'Maestría en Telemedicina - Universidad Simón Bolívar'
     ],
     certifications: [
-      'Certificación en Cardiología - Consejo Mexicano de Cardiología',
+      'Certificación en Cardiología - Sociedad Venezolana de Cardiología',
       'Certificación en Telemedicina - American Telemedicine Association',
-      'Certificación en Ecocardiografía - Sociedad Mexicana de Cardiología'
+      'Certificación en Ecocardiografía - Sociedad Venezolana de Cardiología'
     ],
     total_consultations: 1250,
     response_time: '< 2 horas'
@@ -151,6 +150,7 @@ export default function PerfilEspecialistaScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showTimeErrorModal, setShowTimeErrorModal] = useState(false);
 
   const specialist = mockSpecialists[specialistId as string];
 
@@ -179,7 +179,7 @@ export default function PerfilEspecialistaScreen() {
 
   const handleScheduleConsultation = () => {
     if (!selectedTime) {
-      Alert.alert('Selecciona un horario', 'Por favor selecciona un horario disponible para agendar tu consulta.');
+      setShowTimeErrorModal(true);
       return;
     }
 
@@ -502,6 +502,34 @@ export default function PerfilEspecialistaScreen() {
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Modal de Error de Horario */}
+      <Modal
+        visible={showTimeErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowTimeErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="time-outline" size={48} color="#f59e0b" />
+            </View>
+            <ThemedText style={styles.modalTitle}>
+              Selecciona un horario
+            </ThemedText>
+            <ThemedText style={styles.modalMessage}>
+              Por favor selecciona un horario disponible para agendar tu consulta.
+            </ThemedText>
+            <TouchableOpacity 
+              style={styles.continueButton}
+              onPress={() => setShowTimeErrorModal(false)}
+            >
+              <ThemedText style={styles.continueButtonText}>Entendido</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal de Confirmación de Consulta */}
       <Modal
@@ -1135,5 +1163,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
   },
 }); 

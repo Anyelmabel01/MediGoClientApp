@@ -233,9 +233,9 @@ export default function CategoriaScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.filterBtn} 
-          onPress={() => setPriceRange([0, 150])}
+          onPress={() => setPriceRange([0, 500])}
         >
-          <ThemedText>Hasta $150</ThemedText>
+          <ThemedText>Hasta Bs 500</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.filterBtn} 

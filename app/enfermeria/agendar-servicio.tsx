@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapboxMap } from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
@@ -66,6 +66,12 @@ export default function AgendarServicioScreen() {
     longitude: number;
   } | null>(null);
 
+  // Estados para modales personalizados
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'info' });
+
   // Get current location on component mount
   useEffect(() => {
     getCurrentLocation();
@@ -75,7 +81,12 @@ export default function AgendarServicioScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permisos requeridos', 'Se necesitan permisos de ubicación para usar esta función');
+        setModalConfig({
+          title: 'Permisos requeridos',
+          message: 'Se necesitan permisos de ubicación para usar esta función',
+          type: 'error'
+        });
+        setShowErrorModal(true);
         return;
       }
 
@@ -125,26 +136,26 @@ export default function AgendarServicioScreen() {
 
   const handleConfirmBooking = () => {
     if (!selectedService || !serviceAddress || !selectedPaymentMethod) {
-      Alert.alert('Error', 'Por favor completa todos los campos requeridos');
+      setModalConfig({
+        title: 'Error',
+        message: 'Por favor completa todos los campos requeridos',
+        type: 'error'
+      });
+      setShowErrorModal(true);
       return;
     }
 
-    Alert.alert(
-      'Confirmar Reserva',
-      `¿Confirmas la reserva del servicio de ${selectedService.name} con ${nurseName} el ${date} a las ${time}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Confirmar', 
-          onPress: () => {
-            // Here you would typically make an API call to book the service
-            Alert.alert('¡Reserva Confirmada!', 'Tu servicio ha sido agendado exitosamente', [
-              { text: 'OK', onPress: () => router.push('/enfermeria/mis-servicios' as any) }
-            ]);
-          }
-        }
-      ]
-    );
+    setShowConfirmModal(true);
+  };
+
+  const confirmBooking = () => {
+    setShowConfirmModal(false);
+    setModalConfig({
+      title: '¡Reserva Confirmada!',
+      message: 'Tu servicio ha sido agendado exitosamente',
+      type: 'success'
+    });
+    setShowSuccessModal(true);
   };
 
   const renderServiceOption = (service: ServiceType) => (
@@ -247,7 +258,7 @@ export default function AgendarServicioScreen() {
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                 </ThemedText>
               </View>
             </View>
@@ -271,21 +282,24 @@ export default function AgendarServicioScreen() {
       >
         {/* Booking Summary */}
         <View style={[styles.section, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: Colors.light.primary + '30',
         }]}>
-          <ThemedText style={styles.sectionTitle}>Resumen de la cita</ThemedText>
+          <View style={styles.sectionHeaderWithIcon}>
+            <Ionicons name="clipboard" size={20} color={Colors.light.primary} />
+            <ThemedText style={[styles.sectionTitle, { color: Colors.light.primary }]}>Resumen de la cita</ThemedText>
+          </View>
           <View style={styles.summaryRow}>
             <ThemedText style={[styles.summaryLabel, {
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
             }]}>Enfermera:</ThemedText>
-            <ThemedText style={styles.summaryValue} numberOfLines={1}>{nurseName}</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]} numberOfLines={1}>{nurseName}</ThemedText>
           </View>
           <View style={styles.summaryRow}>
             <ThemedText style={[styles.summaryLabel, {
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
             }]}>Fecha y hora:</ThemedText>
-            <ThemedText style={styles.summaryValue} numberOfLines={1}>{date} a las {time}</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]} numberOfLines={1}>{date} a las {time}</ThemedText>
           </View>
         </View>
 
@@ -533,21 +547,87 @@ export default function AgendarServicioScreen() {
           </View>
         </View>
 
-        {/* Payment Method */}
+        {/* Payment Methods */}
         <View style={[styles.section, {
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
           borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
         }]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>Método de pago *</ThemedText>
-            <TouchableOpacity style={styles.addPaymentButton}>
-              <Ionicons name="add" size={20} color={Colors.light.primary} />
-              <ThemedText style={[styles.addPaymentText, { color: Colors.light.primary }]}>
-                Agregar nuevo
-              </ThemedText>
-            </TouchableOpacity>
+          <ThemedText style={styles.sectionTitle}>Método de pago *</ThemedText>
+          <View style={styles.paymentMethodsContainer}>
+            {paymentMethods.map((method) => (
+              <TouchableOpacity
+                key={method.id}
+                style={[
+                  styles.paymentMethodCard,
+                  {
+                    backgroundColor: selectedPaymentMethod?.id === method.id
+                      ? (isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)')
+                      : (isDarkMode ? Colors.dark.background : Colors.light.background),
+                    borderColor: selectedPaymentMethod?.id === method.id
+                      ? Colors.light.primary
+                      : (isDarkMode ? Colors.dark.border : Colors.light.border),
+                  }
+                ]}
+                onPress={() => setSelectedPaymentMethod(method)}
+              >
+                <View style={styles.paymentMethodContent}>
+                  <Ionicons 
+                    name={method.type === 'card' ? 'card' : 'cash'} 
+                    size={24} 
+                    color={Colors.light.primary} 
+                  />
+                  <View style={styles.paymentMethodInfo}>
+                    <ThemedText style={[
+                      styles.paymentMethodName,
+                      { 
+                        color: selectedPaymentMethod?.id === method.id 
+                          ? Colors.light.primary 
+                          : (isDarkMode ? Colors.dark.text : Colors.light.text) 
+                      }
+                    ]}>
+                      {method.name}
+                    </ThemedText>
+                    <ThemedText style={[styles.paymentMethodDetails, {
+                      color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                    }]}>
+                      {method.details}
+                    </ThemedText>
+                  </View>
+                </View>
+                {selectedPaymentMethod?.id === method.id && (
+                  <Ionicons name="checkmark-circle" size={24} color={Colors.light.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
-          {paymentMethods.map(renderPaymentMethod)}
+        </View>
+
+        {/* Personal Information Section - Datos del usuario */}
+        <View style={[styles.section, {
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+        }]}>
+          <ThemedText style={styles.sectionTitle}>Información personal</ThemedText>
+          <View style={styles.userInfoContainer}>
+            <View style={styles.infoRow}>
+              <Ionicons name="person" size={18} color={Colors.light.primary} />
+              <ThemedText style={styles.infoText}>
+                {user?.nombre || 'Usuario'} {user?.apellido || 'Apellido'}
+              </ThemedText>
+            </View>
+            <View style={styles.infoRow}>
+              <Ionicons name="call" size={18} color={Colors.light.primary} />
+              <ThemedText style={styles.infoText}>
+                {user?.telefono || 'Sin teléfono'}
+              </ThemedText>
+            </View>
+            {user?.email && (
+              <View style={styles.infoRow}>
+                <Ionicons name="mail" size={18} color={Colors.light.primary} />
+                <ThemedText style={styles.infoText}>{user.email}</ThemedText>
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -575,6 +655,92 @@ export default function AgendarServicioScreen() {
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Modal de Error */}
+      <Modal
+        visible={showErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="alert-circle" size={48} color="#ef4444" />
+            </View>
+            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <ThemedText style={styles.modalButtonText}>Entendido</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Confirmación */}
+      <Modal
+        visible={showConfirmModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="clipboard" size={48} color="#00A0B0" />
+            </View>
+            <ThemedText style={styles.modalTitle}>Confirmar Reserva</ThemedText>
+            <ThemedText style={styles.modalMessage}>
+              ¿Confirmas la reserva del servicio de {selectedService?.name} con {nurseName} el {date} a las {time}?
+            </ThemedText>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowConfirmModal(false)}
+              >
+                <ThemedText style={styles.modalCancelButtonText}>Cancelar</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmBooking}
+              >
+                <Ionicons name="checkmark" size={20} color="white" />
+                <ThemedText style={styles.modalConfirmButtonText}>Confirmar</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Éxito */}
+      <Modal
+        visible={showSuccessModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="checkmark-circle" size={48} color="#10b981" />
+            </View>
+            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.push('/enfermeria/mis-servicios' as any);
+              }}
+            >
+              <ThemedText style={styles.modalButtonText}>Continuar</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -658,10 +824,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: Colors.light.primary,
+    marginLeft: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -944,5 +1109,101 @@ const styles = StyleSheet.create({
   sampleLocationText: {
     fontSize: 14,
     marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: Colors.light.white,
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalIconContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: Colors.light.primary,
+  },
+  modalMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: Colors.light.text,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalCancelButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalCancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalConfirmButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalConfirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sectionHeaderWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  paymentMethodsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  paymentMethodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.white,
+  },
+  paymentMethodInfo: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  infoText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 }); 

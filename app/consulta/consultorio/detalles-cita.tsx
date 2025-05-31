@@ -9,9 +9,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-    Alert,
     Image,
     Linking,
+    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -71,12 +71,12 @@ const mockAppointmentDetails: Record<string, AppointmentDetail> = {
     provider_type: 'Cardiólogo',
     organization_name: 'Centro Médico Integral',
     status: 'CONFIRMED',
-    address: 'Av. Reforma 123, Col. Roma Norte',
-    full_address: 'Av. Reforma 123, Col. Roma Norte, Delegación Cuauhtémoc, 06700 Ciudad de México, CDMX',
+    address: 'Av. Francisco de Miranda, Altamira',
+    full_address: 'Av. Francisco de Miranda, Centro Comercial Altamira, Torre Humboldt, Piso 3, Consultorio 305, Caracas 1060, Venezuela',
     consultation_fee: 800,
     avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
     reason: 'Revisión cardiológica de rutina',
-    phone_number: '+52 55 1234 5678',
+    phone_number: '+58 212 1234 5678',
     email: 'consultas@centromedicointegral.com',
     license_number: 'CDL12345',
     instructions: 'Favor de llegar 15 minutos antes de la cita. Traer estudios previos si los tiene.',
@@ -92,12 +92,12 @@ const mockAppointmentDetails: Record<string, AppointmentDetail> = {
     provider_type: 'Médico General',
     organization_name: 'Clínica San Miguel',
     status: 'PENDING',
-    address: 'Calle Condesa 456, Col. Condesa',
-    full_address: 'Calle Condesa 456, Col. Condesa, Delegación Cuauhtémoc, 06140 Ciudad de México, CDMX',
+    address: 'Av. Urdaneta, Las Mercedes',
+    full_address: 'Av. Urdaneta, Centro Empresarial Las Mercedes, Torre B, Piso 8, Consultorio 802, Caracas 1080, Venezuela',
     consultation_fee: 600,
     avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
     reason: 'Consulta general',
-    phone_number: '+52 55 9876 5432',
+    phone_number: '+58 212 9876 5432',
     email: 'citas@clinicasanmiguel.com',
     license_number: 'GDL67890',
     instructions: 'Presentarse en ayunas para toma de muestras.',
@@ -109,10 +109,17 @@ const mockAppointmentDetails: Record<string, AppointmentDetail> = {
 
 export default function DetallesCitaScreen() {
   const router = useRouter();
-  const { appointmentId } = useLocalSearchParams();
+  const { appointmentId, providerId } = useLocalSearchParams();
   const { isDarkMode } = useTheme();
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
+
+  // Estados para modales personalizados
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'info' });
 
   const appointment = mockAppointmentDetails[appointmentId as string];
 
@@ -205,70 +212,74 @@ export default function DetallesCitaScreen() {
     });
   };
 
-  const handleCallProvider = () => {
-    const phoneUrl = `tel:${appointment.phone_number}`;
-    Linking.canOpenURL(phoneUrl).then(supported => {
-      if (supported) {
-        Linking.openURL(phoneUrl);
-      } else {
-        Alert.alert('Error', 'No se puede realizar la llamada desde este dispositivo');
-      }
-    });
+  const handleCall = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL(`tel:${appointment.phone_number}`)
+        .catch(() => {
+          setModalConfig({
+            title: 'Error',
+            message: 'No se puede realizar la llamada desde este dispositivo',
+            type: 'error'
+          });
+          setShowErrorModal(true);
+        });
+    } else {
+      setModalConfig({
+        title: 'Error',
+        message: 'No se puede realizar la llamada desde este dispositivo',
+        type: 'error'
+      });
+      setShowErrorModal(true);
+    }
   };
 
-  const handleGetDirections = () => {
-    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(appointment.full_address)}`;
-    Linking.canOpenURL(mapsUrl).then(supported => {
-      if (supported) {
-        Linking.openURL(mapsUrl);
-      } else {
-        Alert.alert('Error', 'No se puede abrir el mapa desde este dispositivo');
-      }
-    });
+  const handleDirections = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL(`maps://?q=${encodeURIComponent(appointment.full_address)}`)
+        .catch(() => {
+          setModalConfig({
+            title: 'Error',
+            message: 'No se puede abrir el mapa desde este dispositivo',
+            type: 'error'
+          });
+          setShowErrorModal(true);
+        });
+    } else {
+      setModalConfig({
+        title: 'Error',
+        message: 'No se puede abrir el mapa desde este dispositivo',
+        type: 'error'
+      });
+      setShowErrorModal(true);
+    }
   };
 
   const handleReschedule = () => {
-    Alert.alert(
-      'Reprogramar Cita',
-      '¿Estás seguro de que quieres reprogramar esta cita?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Reprogramar', 
-          onPress: () => {
-            setLoading(true);
-            // Simular API call
-            setTimeout(() => {
-              setLoading(false);
-              Alert.alert('Éxito', 'Tu solicitud de reprogramación ha sido enviada');
-            }, 2000);
-          }
-        }
-      ]
-    );
+    setShowRescheduleModal(true);
+  };
+
+  const confirmReschedule = () => {
+    setShowRescheduleModal(false);
+    setModalConfig({
+      title: 'Solicitud enviada',
+      message: 'Tu solicitud de reprogramación ha sido enviada. Te contactaremos pronto para coordinar la nueva fecha.',
+      type: 'success'
+    });
+    setShowSuccessModal(true);
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancelar Cita',
-      '¿Estás seguro de que quieres cancelar esta cita? Esta acción no se puede deshacer.',
-      [
-        { text: 'No cancelar', style: 'cancel' },
-        { 
-          text: 'Sí, cancelar', 
-          style: 'destructive',
-          onPress: () => {
-            setLoading(true);
-            // Simular API call
-            setTimeout(() => {
-              setLoading(false);
-              Alert.alert('Cita cancelada', 'Tu cita ha sido cancelada exitosamente');
-              router.back();
-            }, 2000);
-          }
-        }
-      ]
-    );
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelModal(false);
+    setModalConfig({
+      title: 'Cita cancelada',
+      message: 'Tu cita ha sido cancelada exitosamente. Si tienes dudas, contacta a soporte.',
+      type: 'success'
+    });
+    setShowSuccessModal(true);
   };
 
   const handleRate = () => {
@@ -478,7 +489,7 @@ export default function DetallesCitaScreen() {
           <View style={styles.contactActions}>
             <TouchableOpacity 
               style={styles.contactButton}
-              onPress={handleCallProvider}
+              onPress={handleCall}
             >
               <Ionicons name="call" size={20} color={Colors.light.white} />
               <Text style={styles.contactButtonText}>Llamar</Text>
@@ -486,7 +497,7 @@ export default function DetallesCitaScreen() {
             
             <TouchableOpacity 
               style={styles.contactButton}
-              onPress={handleGetDirections}
+              onPress={handleDirections}
             >
               <Ionicons name="navigate" size={20} color={Colors.light.white} />
               <Text style={styles.contactButtonText}>Cómo llegar</Text>
@@ -535,6 +546,129 @@ export default function DetallesCitaScreen() {
       </View>
 
       <BottomNavbar />
+
+      {/* Modal de Error */}
+      <Modal
+        visible={showErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="alert-circle" size={48} color="#ef4444" />
+            </View>
+            <Text style={styles.modalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.modalMessage}>{modalConfig.message}</Text>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <Text style={styles.modalButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Reprogramar */}
+      <Modal
+        visible={showRescheduleModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowRescheduleModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="calendar" size={48} color="#00A0B0" />
+            </View>
+            <Text style={styles.modalTitle}>Reprogramar Cita</Text>
+            <Text style={styles.modalMessage}>
+              ¿Estás seguro de que quieres reprogramar esta cita? Te contactaremos para coordinar una nueva fecha y hora.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowRescheduleModal(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmReschedule}
+              >
+                <Ionicons name="checkmark" size={20} color="white" />
+                <Text style={styles.modalConfirmButtonText}>Reprogramar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Cancelar */}
+      <Modal
+        visible={showCancelModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCancelModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="close-circle" size={48} color="#ef4444" />
+            </View>
+            <Text style={styles.modalTitle}>Cancelar Cita</Text>
+            <Text style={styles.modalMessage}>
+              ¿Estás seguro de que quieres cancelar esta cita? Esta acción no se puede deshacer y podrían aplicar cargos según nuestra política.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>No, mantener</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalConfirmButton, { backgroundColor: '#ef4444' }]}
+                onPress={confirmCancel}
+              >
+                <Ionicons name="close" size={20} color="white" />
+                <Text style={styles.modalConfirmButtonText}>Sí, cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Éxito */}
+      <Modal
+        visible={showSuccessModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="checkmark-circle" size={48} color="#10b981" />
+            </View>
+            <Text style={styles.modalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.modalMessage}>{modalConfig.message}</Text>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                if (modalConfig.title === 'Cita cancelada') {
+                  router.back();
+                }
+              }}
+            >
+              <Text style={styles.modalButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -895,5 +1029,73 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: Colors.light.white,
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalIconContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: Colors.light.textSecondary,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+  },
+  modalCancelButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+    textAlign: 'center',
+  },
+  modalConfirmButton: {
+    backgroundColor: Colors.light.primary,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+  },
+  modalConfirmButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    textAlign: 'center',
   },
 }); 

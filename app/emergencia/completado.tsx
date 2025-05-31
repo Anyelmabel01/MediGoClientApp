@@ -1,12 +1,15 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
 import { useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+
 
 type RatingCategory = 'overall' | 'responseTime' | 'serviceQuality' | 'paramedic';
 
@@ -34,6 +37,224 @@ export default function EmergenciaCompletadoScreen() {
 
   const handleNewRequest = () => {
     router.push('/emergencia/medica' as any);
+  };
+
+  const handleDownloadReceipt = async () => {
+    try {
+      // Generar HTML del recibo con estilos profesionales
+      const receiptHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Recibo de Emergencia MediGo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #00A0B0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00A0B0;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            background-color: #00A0B0;
+            color: white;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #00A0B0;
+            font-weight: 600;
+        }
+        .total-row {
+            background-color: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .total-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00A0B0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #00A0B0;
+            color: #666;
+        }
+        .footer-message {
+            font-style: italic;
+            color: #00A0B0;
+            font-weight: 600;
+        }
+        .receipt-id {
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">MediGo</div>
+            <div class="subtitle">Recibo de Servicio de Emergencia</div>
+        </div>
+        
+        <div class="receipt-id">
+            <strong>ID de Solicitud:</strong> ${serviceData.requestId}<br>
+            <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-VE')} - ${new Date().toLocaleTimeString('es-VE')}
+        </div>
+
+        <div class="section">
+            <div class="section-title">Detalles del Servicio</div>
+            <div class="info-row">
+                <span class="label">Tipo de emergencia:</span>
+                <span class="value">${serviceData.emergencyType}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Hora de inicio:</span>
+                <span class="value">${serviceData.startTime}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Hora de finalización:</span>
+                <span class="value">${serviceData.endTime}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Duración total:</span>
+                <span class="value">${serviceData.duration}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Proveedor:</span>
+                <span class="value">${serviceData.providerName}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Paramédico asignado:</span>
+                <span class="value">${serviceData.paramedicName}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Desglose de Costos</div>
+            <div class="info-row">
+                <span class="label">Tarifa base del servicio:</span>
+                <span class="value">Bs ${serviceData.baseFee.toFixed(2)}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Tarifa por distancia:</span>
+                <span class="value">Bs ${serviceData.distanceFee.toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+                <div class="info-row">
+                    <span class="label">TOTAL PAGADO:</span>
+                    <span class="total-amount">Bs ${serviceData.total.toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Información de Pago</div>
+            <div class="info-row">
+                <span class="label">Método de pago:</span>
+                <span class="value">${serviceData.paymentMethod}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">ID de transacción:</span>
+                <span class="value">${serviceData.transactionId}</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Gracias por confiar en MediGo Emergency Services</p>
+            <p class="footer-message">¡Tu seguridad es nuestra prioridad!</p>
+            <p style="font-size: 12px; margin-top: 20px;">
+                Este recibo es válido como comprobante de pago.<br>
+                Para consultas, contacta nuestro centro de atención: +58 212-XXX-XXXX
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+      `;
+
+      // Generar PDF
+      const { uri } = await Print.printToFileAsync({
+        html: receiptHTML,
+        base64: false,
+      });
+
+      // Verificar si el sharing está disponible
+      const isAvailable = await Sharing.isAvailableAsync();
+      
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Compartir recibo de emergencia',
+        });
+      } else {
+        Alert.alert(
+          'Recibo generado',
+          'El recibo PDF se ha generado exitosamente.',
+          [{ text: 'OK' }]
+        );
+      }
+      
+    } catch (error) {
+      console.error('Error al generar recibo:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo generar el recibo. Inténtalo de nuevo.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const serviceData = {
@@ -98,78 +319,82 @@ export default function EmergenciaCompletadoScreen() {
       <ScrollView style={styles.content}>
         {/* Resumen del Servicio */}
         <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: Colors.light.primary + '30'
         }]}>
-          <ThemedText style={styles.cardTitle}>Resumen del Servicio</ThemedText>
+          <View style={styles.cardHeaderWithIcon}>
+            <Ionicons name="document-text" size={24} color={Colors.light.primary} />
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>Resumen del Servicio</ThemedText>
+          </View>
           
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>ID de solicitud:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.requestId}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>ID de solicitud:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.requestId}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Tipo de emergencia:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.emergencyType}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Tipo de emergencia:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.emergencyType}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Hora de inicio:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.startTime}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Hora de inicio:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.startTime}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Hora de finalización:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.endTime}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Hora de finalización:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.endTime}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Duración:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.duration}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Duración:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.duration}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Proveedor:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.providerName}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Proveedor:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.providerName}</ThemedText>
           </View>
 
           <View style={styles.summaryRow}>
-            <ThemedText style={styles.summaryLabel}>Paramédico:</ThemedText>
-            <ThemedText style={styles.summaryValue}>{serviceData.paramedicName}</ThemedText>
+            <ThemedText style={[styles.summaryLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Paramédico:</ThemedText>
+            <ThemedText style={[styles.summaryValue, { color: Colors.light.primary }]}>{serviceData.paramedicName}</ThemedText>
           </View>
         </View>
 
         {/* Recibo de Pago */}
         <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: Colors.light.primary + '30'
         }]}>
-          <View style={styles.cardHeader}>
-            <ThemedText style={styles.cardTitle}>Recibo de Pago</ThemedText>
+          <View style={styles.cardHeaderWithIcon}>
+            <Ionicons name="card" size={24} color={Colors.light.primary} />
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>Recibo de Pago</ThemedText>
             <TouchableOpacity 
               style={styles.downloadButton}
-              onPress={() => setShowReceipt(!showReceipt)}
+              onPress={handleDownloadReceipt}
             >
               <Ionicons name="download" size={20} color={Colors.light.primary} />
             </TouchableOpacity>
           </View>
           
           <View style={styles.priceRow}>
-            <ThemedText style={styles.priceLabel}>Tarifa base:</ThemedText>
-            <ThemedText style={styles.priceValue}>${serviceData.baseFee.toFixed(2)}</ThemedText>
+            <ThemedText style={[styles.priceLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Tarifa base:</ThemedText>
+            <ThemedText style={[styles.priceValue, { color: Colors.light.primary }]}>Bs {serviceData.baseFee.toFixed(2)}</ThemedText>
           </View>
 
           <View style={styles.priceRow}>
-            <ThemedText style={styles.priceLabel}>Tarifa por distancia:</ThemedText>
-            <ThemedText style={styles.priceValue}>${serviceData.distanceFee.toFixed(2)}</ThemedText>
+            <ThemedText style={[styles.priceLabel, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>Tarifa por distancia:</ThemedText>
+            <ThemedText style={[styles.priceValue, { color: Colors.light.primary }]}>Bs {serviceData.distanceFee.toFixed(2)}</ThemedText>
           </View>
 
-          <View style={[styles.priceRow, styles.totalRow]}>
-            <ThemedText style={styles.totalLabel}>Total pagado:</ThemedText>
-            <ThemedText style={styles.totalValue}>${serviceData.total.toFixed(2)}</ThemedText>
+          <View style={[styles.priceRow, styles.totalRow, { borderTopColor: Colors.light.primary + '30' }]}>
+            <ThemedText style={[styles.totalLabel, { color: Colors.light.primary }]}>Total pagado:</ThemedText>
+            <ThemedText style={[styles.totalValue, { color: Colors.light.primary }]}>Bs {serviceData.total.toFixed(2)}</ThemedText>
           </View>
 
-          <View style={styles.paymentInfo}>
+          <View style={[styles.paymentInfo, { borderTopColor: Colors.light.primary + '30' }]}>
             <ThemedText style={[styles.paymentMethod, { 
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
             }]}>
@@ -185,10 +410,13 @@ export default function EmergenciaCompletadoScreen() {
 
         {/* Sistema de Calificaciones */}
         <View style={[styles.summaryCard, { 
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: Colors.light.primary + '30'
         }]}>
-          <ThemedText style={styles.cardTitle}>Califica el Servicio</ThemedText>
+          <View style={styles.cardHeaderWithIcon}>
+            <Ionicons name="star" size={24} color={Colors.light.primary} />
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>Califica el Servicio</ThemedText>
+          </View>
           <ThemedText style={[styles.ratingSubtitle, { 
             color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
           }]}>
@@ -298,50 +526,53 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
   },
-  cardHeader: {
+  cardHeaderWithIcon: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 8,
   },
   downloadButton: {
     padding: 8,
+    marginLeft: 'auto',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   summaryLabel: {
     fontSize: 14,
-    opacity: 0.7,
+    flex: 1,
+    marginRight: 8,
   },
   summaryValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+    textAlign: 'right',
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   priceLabel: {
     fontSize: 16,
   },
   priceValue: {
     fontSize: 16,
+    fontWeight: '600',
   },
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   totalLabel: {
     fontSize: 18,
@@ -350,13 +581,11 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4CAF50',
   },
   paymentInfo: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   paymentMethod: {
     fontSize: 14,
@@ -381,6 +610,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 8,
+    color: Colors.light.primary,
   },
   starsContainer: {
     flexDirection: 'row',
@@ -396,9 +626,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 8,
+    color: Colors.light.primary,
   },
   commentsInput: {
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     fontSize: 16,
     height: 80,
@@ -406,8 +637,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 10,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
     height: 50,
     alignItems: 'center',
     justifyContent: 'center',
@@ -425,7 +656,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
     height: 50,
     marginBottom: 12,
   },
@@ -447,6 +678,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   homeButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: Colors.light.primary,
   },
 }); 

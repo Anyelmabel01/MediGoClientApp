@@ -123,6 +123,14 @@ function RootLayoutNav() {
         <Stack.Screen name="emergencia" options={{ headerShown: false }} />
         <Stack.Screen name="emergencia/medica" options={{ headerShown: false }} />
         <Stack.Screen name="emergencia/accidente" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/traslado" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/seguimiento" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/ubicacion" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/paciente" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/historial" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/contacto" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/confirmacion" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/completado" options={{ headerShown: false }} />
         
         {/* Expediente y Perfil */}
         <Stack.Screen name="expediente" options={{ headerShown: false }} />
