@@ -79,6 +79,14 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="farmacia" options={{ headerShown: false }} />
         <Stack.Screen name="consulta" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/buscar-proveedores" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/mis-citas" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/detalles-cita" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/perfil-proveedor" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/agendar-cita" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/consultorio/calificar-cita" options={{ headerShown: false }} />
         <Stack.Screen name="emergencia" options={{ headerShown: false }} />
         <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
         <Stack.Screen name="expediente" options={{ headerShown: false }} />

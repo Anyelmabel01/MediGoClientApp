@@ -2,6 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { UserLocation, mockLocations } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { MapboxMap } from './MapboxMap';
@@ -258,7 +259,9 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
       animationType="slide"
       transparent={true}
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
+      <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
       <ThemedView style={styles.centeredView}>
         <View style={[styles.modalView, { 
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
@@ -274,7 +277,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
               }
             </ThemedText>
             <TouchableOpacity onPress={isEditing ? resetEditState : onClose} style={styles.closeButton}>
-              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color="white" />
+              <Ionicons name={isEditing ? "arrow-back" : "close"} size={24} color="#666" />
             </TouchableOpacity>
           </View>
 
@@ -386,17 +389,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#00A0B0',
-    borderBottomWidth: 0,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#333',
   },
   closeButton: {
     padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#e9ecef',
     borderRadius: 12,
   },
   locationsList: {

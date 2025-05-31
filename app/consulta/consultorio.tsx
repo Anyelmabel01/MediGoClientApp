@@ -254,7 +254,6 @@ const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: Colors.light.background,
-    paddingTop: 50,
   },
   header: {
     backgroundColor: Colors.light.primary,

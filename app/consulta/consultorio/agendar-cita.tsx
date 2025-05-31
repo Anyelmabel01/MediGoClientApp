@@ -498,7 +498,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
-    paddingTop: 50,
   },
   header: {
     backgroundColor: Colors.light.primary,

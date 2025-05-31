@@ -677,7 +677,9 @@ export default function FarmaciaScreen() {
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowCart(false)}
+        statusBarTranslucent={true}
       >
+        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, {
             backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background
@@ -767,7 +769,9 @@ export default function FarmaciaScreen() {
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowPaymentModal(false)}
+        statusBarTranslucent={true}
       >
+        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalContainer}
@@ -930,7 +934,9 @@ export default function FarmaciaScreen() {
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowDeliveryTracking(false)}
+        statusBarTranslucent={true}
       >
+        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, {
             backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,

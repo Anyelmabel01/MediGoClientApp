@@ -2,6 +2,7 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
@@ -131,7 +132,9 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
       animationType="slide"
       transparent={true}
       onRequestClose={onClose}
+      statusBarTranslucent={true}
     >
+      <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
       <ThemedView style={styles.centeredView}>
         <View style={[
           styles.modalView,
@@ -141,31 +144,28 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
             styles.modalHeader,
             isDarkMode && styles.modalHeaderDark
           ]}>
-            <View style={styles.headerTitleContainer}>
-            <ThemedText style={styles.modalTitle}>
-              {isEditing ? 'Editar Perfil' : 'Mi Perfil'}
-            </ThemedText>
+            <View style={styles.profileHeader}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.profileInfo}>
+                <ThemedText style={styles.userName}>
+                  {user.nombre} {user.apellido}
+                </ThemedText>
+                <ThemedText style={styles.userEmail}>{user.email}</ThemedText>
+              </View>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons 
                 name="close" 
-                size={24} 
-                color="white" 
+                size={20} 
+                color="#666" 
               />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
-            <ThemedText style={styles.userName}>
-              {user.nombre} {user.apellido}
-            </ThemedText>
           </View>
 
           <ScrollView style={styles.modalContent}>
@@ -307,11 +307,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    backgroundColor: Colors.light.primary,
+    backgroundColor: '#f8f9fa',
   },
   modalHeaderDark: {
     borderBottomColor: '#333',
-    backgroundColor: Colors.light.primary,
+    backgroundColor: '#2a2a2a',
   },
   modalTitle: {
     fontSize: 18,
@@ -346,6 +346,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: 'bold',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#777',
   },
   modalContent: {
     padding: 16,
@@ -456,5 +460,8 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  profileInfo: {
+    marginLeft: 10,
   },
 }); 
