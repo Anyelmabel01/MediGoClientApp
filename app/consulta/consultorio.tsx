@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -13,28 +14,29 @@ type Appointment = {
   estado: 'pendiente' | 'confirmada' | 'cancelada' | 'completada';
 };
 
-// Datos de ejemplo
-const proximasCitas: Appointment[] = [
-  {
-    id: '1',
-    fecha: '28 Dic 2024',
-    hora: '10:00 AM',
-    nombreProveedor: 'Dr. María González',
-    tipoProveedor: 'Cardióloga',
-    estado: 'confirmada',
-  },
-  {
-    id: '2',
-    fecha: '30 Dic 2024',
-    hora: '3:30 PM',
-    nombreProveedor: 'Dr. Carlos Ramírez',
-    tipoProveedor: 'Médico General',
-    estado: 'pendiente',
-  },
-];
-
 export default function ConsultorioScreen() {
   const router = useRouter();
+  const { consultorioAppointments } = useAppointments();
+
+  // Convertir las citas del contexto al formato esperado por esta pantalla
+  const proximasCitas: Appointment[] = consultorioAppointments
+    .filter(apt => {
+      const today = new Date();
+      const appointmentDate = new Date(apt.date);
+      return appointmentDate >= today && (apt.status === 'CONFIRMED' || apt.status === 'PENDING');
+    })
+    .map(apt => ({
+      id: apt.id,
+      fecha: new Date(apt.date).toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      }),
+      hora: apt.time,
+      nombreProveedor: apt.provider_name,
+      tipoProveedor: apt.provider_type,
+      estado: apt.status.toLowerCase() as 'pendiente' | 'confirmada' | 'cancelada' | 'completada',
+    }));
 
   const handleNuevaCita = () => {
     router.push('/consulta/consultorio/buscar-proveedores');
@@ -189,7 +191,7 @@ export default function ConsultorioScreen() {
           <View style={styles.statIconContainer}>
             <Ionicons name="calendar-outline" size={20} color={Colors.light.primary} />
           </View>
-          <Text style={styles.statNumber}>{proximasCitas.length}</Text>
+          <Text style={styles.statNumber}>{consultorioAppointments.length}</Text>
           <Text style={styles.statLabel}>Próximas</Text>
         </View>
         <View style={styles.statCard}>
@@ -212,7 +214,7 @@ export default function ConsultorioScreen() {
       <View style={styles.appointmentsSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Próximas Citas</Text>
-          {proximasCitas.length > 0 && (
+          {consultorioAppointments.length > 0 && (
             <TouchableOpacity onPress={handleMisCitas}>
               <Text style={styles.viewAllText}>Ver todas</Text>
             </TouchableOpacity>

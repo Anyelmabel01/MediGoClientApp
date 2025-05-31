@@ -1,6 +1,5 @@
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +13,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { ThemedText } from '../../../components/ThemedText';
+import { ThemedView } from '../../../components/ThemedView';
 
 // Login color palette
 const PRIMARY_COLOR = '#00A0B0';
@@ -29,7 +30,7 @@ type VirtualConsultation = {
   time: string;
   specialist_name: string;
   specialty: string;
-  avatar_url: string;
+  avatar_url?: string;
   status: ConsultationStatus;
   meeting_link?: string;
   can_join: boolean;
@@ -38,69 +39,32 @@ type VirtualConsultation = {
   consultation_fee: number;
 };
 
-const mockConsultations: VirtualConsultation[] = [
-  {
-    id: '1',
-    date: '2024-12-28',
-    time: '14:00',
-    specialist_name: 'Dr. Carlos Mendoza',
-    specialty: 'Cardiología',
-    avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-    status: 'CONFIRMED',
-    can_join: true,
-    prescription_count: 0,
-    consultation_fee: 750
-  },
-  {
-    id: '2',
-    date: '2024-12-25',
-    time: '10:30',
-    specialist_name: 'Dra. Ana López',
-    specialty: 'Psicología',
-    avatar_url: 'https://images.unsplash.com/photo-1594824047323-65b2b4e20c9e?w=150&h=150&fit=crop&crop=face',
-    status: 'COMPLETED',
-    can_join: false,
-    prescription_count: 2,
-    notes: 'Consulta completada exitosamente. Se prescribieron medicamentos.',
-    consultation_fee: 550
-  },
-  {
-    id: '3',
-    date: '2024-12-22',
-    time: '16:00',
-    specialist_name: 'Dr. Roberto Silva',
-    specialty: 'Dermatología',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    status: 'COMPLETED',
-    can_join: false,
-    prescription_count: 1,
-    notes: 'Diagnóstico: Dermatitis. Seguimiento en 2 semanas.',
-    consultation_fee: 700
-  },
-  {
-    id: '4',
-    date: '2024-12-30',
-    time: '09:00',
-    specialist_name: 'Dra. María Fernández',
-    specialty: 'Medicina General',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    status: 'PENDING',
-    can_join: false,
-    prescription_count: 0,
-    consultation_fee: 600
-  }
-];
-
 export default function MisConsultasTelemedicina() {
   const router = useRouter();
+  const { telemedicineAppointments } = useAppointments();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [refreshing, setRefreshing] = useState(false);
 
-  const upcomingConsultations = mockConsultations.filter(
+  // Convertir las citas del contexto al formato esperado por esta pantalla
+  const allConsultations: VirtualConsultation[] = telemedicineAppointments.map(apt => ({
+    id: apt.id,
+    date: apt.date,
+    time: apt.time,
+    specialist_name: apt.specialist_name,
+    specialty: apt.specialty,
+    avatar_url: apt.avatar_url,
+    status: apt.status,
+    can_join: apt.can_join || false,
+    prescription_count: apt.prescription_count || 0,
+    notes: apt.notes,
+    consultation_fee: apt.consultation_fee
+  }));
+
+  const upcomingConsultations = allConsultations.filter(
     c => c.status === 'PENDING' || c.status === 'CONFIRMED' || c.status === 'IN_PROGRESS'
   );
   
-  const pastConsultations = mockConsultations.filter(
+  const pastConsultations = allConsultations.filter(
     c => c.status === 'COMPLETED' || c.status === 'CANCELLED'
   );
 

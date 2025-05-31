@@ -230,14 +230,14 @@ export default function EmergenciaMedicaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 45,
+    paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.light.primary,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     marginBottom: 20,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.light.white,
     flex: 1,

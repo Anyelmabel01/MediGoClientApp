@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { UserLocation } from '@/constants/UserModel';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,49 +28,26 @@ type Appointment = {
   consultation_fee: number;
 };
 
-// Mock data
-const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    date: '2024-12-28',
-    time: '10:00 AM',
-    provider_name: 'Dr. María González',
-    provider_type: 'Cardióloga',
-    organization_name: 'Centro Médico Integral',
-    status: 'CONFIRMED',
-    location: 'Altamira, Caracas',
-    consultation_fee: 120,
-  },
-  {
-    id: '2',
-    date: '2024-12-30',
-    time: '3:30 PM',
-    provider_name: 'Dr. Carlos Ramírez',
-    provider_type: 'Médico General',
-    organization_name: 'Clínica San Miguel',
-    status: 'PENDING',
-    location: 'Las Mercedes, Caracas',
-    consultation_fee: 80,
-  },
-  {
-    id: '3',
-    date: '2024-12-25',
-    time: '2:00 PM',
-    provider_name: 'Dra. Ana Martínez',
-    provider_type: 'Dermatóloga',
-    organization_name: 'Instituto Dermatológico',
-    status: 'COMPLETED',
-    location: 'Chacao, Caracas',
-    consultation_fee: 100,
-  },
-];
-
 export default function MisCitasScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   const { user, currentLocation, setCurrentLocation } = useUser();
+  const { consultorioAppointments } = useAppointments();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  // Convertir las citas del contexto al formato esperado por esta pantalla
+  const mockAppointments: Appointment[] = consultorioAppointments.map(apt => ({
+    id: apt.id,
+    date: apt.date,
+    time: apt.time,
+    provider_name: apt.provider_name,
+    provider_type: apt.provider_type,
+    organization_name: apt.organization_name,
+    status: apt.status,
+    location: apt.location,
+    consultation_fee: apt.consultation_fee,
+  }));
 
   const handleLocationSelect = (location: UserLocation) => {
     setCurrentLocation(location);

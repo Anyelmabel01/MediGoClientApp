@@ -6,6 +6,7 @@ import { useState } from 'react';
 import {
     Alert,
     Image,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -84,7 +85,7 @@ const mockProviders: Record<string, Provider> = {
     display_name: 'Dr. María González',
     provider_type: 'CARDIOLOGIST',
     organization_name: 'Centro Médico Integral',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
+    avatar_url: 'https://img.freepik.com/foto-gratis/hermosa-doctora-joven-mirar-camara-oficina_1301-7807.jpg?w=360',
     license_number: 'CDL12345',
     bio: 'Cardióloga con 15 años de experiencia en diagnóstico y tratamiento de enfermedades cardiovasculares. Especializada en ecocardiografía, cateterismo cardíaco y medicina preventiva. Comprometida con brindar atención médica de calidad y establecer relaciones de confianza con mis pacientes.',
     rating: 4.9,
@@ -113,7 +114,7 @@ const mockProviders: Record<string, Provider> = {
     display_name: 'Dr. Carlos Ramírez',
     provider_type: 'GENERAL_DOCTOR',
     organization_name: 'Clínica San Miguel',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
+    avatar_url: 'https://img.freepik.com/foto-gratis/medico-masculino-bata-blanca-estetoscopio_114579-1201.jpg?w=360',
     license_number: 'GDL67890',
     bio: 'Médico general con amplia experiencia en medicina familiar y atención primaria. Me enfoco en brindar cuidado integral a pacientes de todas las edades, con énfasis en medicina preventiva y seguimiento de enfermedades crónicas.',
     rating: 4.7,
@@ -135,6 +136,64 @@ const mockProviders: Record<string, Provider> = {
       'Medicina Geriátrica'
     ],
     languages: ['Español']
+  },
+  '3': {
+    id: '3',
+    display_name: 'Dra. Ana Martínez',
+    provider_type: 'DERMATOLOGIST',
+    organization_name: 'Instituto Dermatológico',
+    avatar_url: 'https://img.freepik.com/foto-gratis/retrato-joven-doctora-bata-blanca_114579-13833.jpg?w=360',
+    license_number: 'DER54321',
+    bio: 'Dermatóloga especializada en dermatología clínica y cosmética con más de 10 años de experiencia. Experta en tratamiento de enfermedades de la piel, prevención del cáncer de piel y procedimientos estéticos mínimamente invasivos.',
+    rating: 4.8,
+    total_reviews: 156,
+    consultation_fee: 250000,
+    location: 'Chacao, Caracas',
+    phone: '+58 212 1234 5678',
+    email: 'dra.martinez@institutoderma.com',
+    years_experience: 10,
+    education: [
+      'Médico Cirujano - UCV (2013)',
+      'Especialidad en Dermatología - Hospital Universitario de Caracas (2017)',
+      'Fellowship en Dermatología Cosmética - Universidad de Barcelona (2019)'
+    ],
+    specializations: [
+      'Dermatología Clínica',
+      'Dermatología Cosmética',
+      'Prevención de Cáncer de Piel',
+      'Tratamiento de Acné',
+      'Procedimientos Estéticos'
+    ],
+    languages: ['Español', 'Inglés', 'Francés']
+  },
+  '4': {
+    id: '4',
+    display_name: 'Dr. Luis Hernández',
+    provider_type: 'PEDIATRICIAN',
+    organization_name: 'Hospital Infantil',
+    avatar_url: 'https://img.freepik.com/foto-gratis/doctor-masculino-feliz-sonriendo-brazos-cruzados_1298-10.jpg?w=360',
+    license_number: 'PED98765',
+    bio: 'Pediatra con 8 años de experiencia en el cuidado integral de niños y adolescentes. Especializado en medicina preventiva, desarrollo infantil y manejo de enfermedades comunes de la infancia. Comprometido con crear un ambiente cálido y confiable para los pequeños pacientes.',
+    rating: 4.6,
+    total_reviews: 203,
+    consultation_fee: 180000,
+    location: 'El Valle, Caracas',
+    phone: '+58 212 9876 5432',
+    email: 'dr.hernandez@hospitalinfantil.com',
+    years_experience: 8,
+    education: [
+      'Médico Cirujano - Universidad Central de Venezuela (2015)',
+      'Especialidad en Pediatría - Hospital de Niños J.M. de los Ríos (2019)',
+      'Diplomado en Desarrollo Infantil - UCV (2021)'
+    ],
+    specializations: [
+      'Pediatría General',
+      'Medicina Preventiva Infantil',
+      'Desarrollo y Crecimiento',
+      'Vacunación',
+      'Enfermedades Respiratorias Infantiles'
+    ],
+    languages: ['Español', 'Inglés']
   }
 };
 
@@ -161,6 +220,46 @@ const mockReviews: Review[] = [
     rating: 4,
     comment: 'Muy buena atención, aunque el tiempo de espera fue un poco largo. La doctora es muy conocedora.',
     date: '2024-12-15',
+    verified: true
+  },
+  {
+    id: '4',
+    patient_name: 'José R.',
+    rating: 5,
+    comment: 'Excelente profesional, muy atento y dedicado. Resolvió todas mis dudas con paciencia.',
+    date: '2024-12-12',
+    verified: true
+  },
+  {
+    id: '5',
+    patient_name: 'María F.',
+    rating: 4,
+    comment: 'Muy buena atención, instalaciones limpias y modernas. Lo recomiendo ampliamente.',
+    date: '2024-12-10',
+    verified: false
+  },
+  {
+    id: '6',
+    patient_name: 'Pedro L.',
+    rating: 5,
+    comment: 'Doctor muy profesional y humano. Se toma el tiempo necesario para explicar cada procedimiento.',
+    date: '2024-12-08',
+    verified: true
+  },
+  {
+    id: '7',
+    patient_name: 'Sofía G.',
+    rating: 4,
+    comment: 'Buena experiencia en general, aunque me gustaría que tuviera más horarios disponibles.',
+    date: '2024-12-05',
+    verified: true
+  },
+  {
+    id: '8',
+    patient_name: 'Diego M.',
+    rating: 5,
+    comment: 'Increíble profesional, muy actualizado en las últimas técnicas. Totalmente recomendado.',
+    date: '2024-12-01',
     verified: true
   }
 ];
@@ -201,6 +300,7 @@ export default function PerfilProveedorScreen() {
   
   const [selectedDay, setSelectedDay] = useState<'today' | 'tomorrow'>('today');
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   const provider = mockProviders[providerId as string];
 
@@ -247,6 +347,10 @@ export default function PerfilProveedorScreen() {
         selectedTime: selectedTime
       }
     });
+  };
+
+  const handleViewAllReviews = () => {
+    setShowAllReviews(true);
   };
 
   const renderStarRating = (rating: number, size: number = 16) => {
@@ -512,7 +616,7 @@ export default function PerfilProveedorScreen() {
             </View>
           ))}
           
-          <TouchableOpacity style={styles.viewAllReviews}>
+          <TouchableOpacity style={styles.viewAllReviews} onPress={handleViewAllReviews}>
             <Text style={styles.viewAllReviewsText}>
               Ver todas las reseñas ({provider.total_reviews})
             </Text>
@@ -520,6 +624,57 @@ export default function PerfilProveedorScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Modal de todas las reseñas */}
+      <Modal
+        visible={showAllReviews}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              Todas las reseñas ({mockReviews.length})
+            </Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowAllReviews(false)}
+            >
+              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {mockReviews.map((review) => (
+              <View key={review.id} style={styles.modalReviewItem}>
+                <View style={styles.reviewHeader}>
+                  <View style={styles.reviewerInfo}>
+                    <Text style={styles.reviewerName}>{review.patient_name}</Text>
+                    {review.verified && (
+                      <View style={styles.verifiedBadge}>
+                        <Ionicons name="checkmark-circle" size={12} color={COLORS.success} />
+                        <Text style={styles.verifiedText}>Verificado</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.reviewRating}>
+                    {renderStarRating(review.rating, 14)}
+                  </View>
+                </View>
+                <Text style={styles.reviewComment}>
+                  {review.comment}
+                </Text>
+                <Text style={styles.reviewDate}>
+                  {new Date(review.date).toLocaleDateString('es-ES')}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* Schedule Button */}
       <View style={styles.scheduleContainer}>
@@ -552,7 +707,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.primary,
     paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -566,12 +721,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
+    marginRight: 12,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.white,
     textAlign: 'center',
@@ -884,5 +1038,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 16,
     textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  modalHeader: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.white,
+  },
+  closeButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  modalReviewItem: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
 }); 

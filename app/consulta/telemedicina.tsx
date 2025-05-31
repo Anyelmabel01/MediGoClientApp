@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,9 +7,9 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-    Alert,
     Dimensions,
     Image,
+    Modal,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -54,188 +55,144 @@ type Feature = {
   available: boolean;
 };
 
-// Mock data for upcoming consultations
-const upcomingConsultations: ConsultaVirtual[] = [
-  {
-    id: '1',
-    date: '2024-12-28',
-    time: '9:00 AM',
-    provider_name: 'Dr. Pedro López',
-    provider_type: 'VIRTUAL_SPECIALIST',
-    specialty: 'Dermatología',
-    status: 'CONFIRMED',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    start_time: new Date(new Date().getTime() + 5 * 60000), // 5 minutes from now
-    can_join: true,
-  },
-  {
-    id: '2',
-    date: '2024-12-30',
-    time: '11:30 AM',
-    provider_name: 'Dra. Ana Sánchez',
-    provider_type: 'VIRTUAL_SPECIALIST',
-    specialty: 'Psicología',
-    status: 'PENDING',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    start_time: new Date(new Date().getTime() + 24 * 60 * 60000), // 1 day from now
-    can_join: false,
-  },
-  {
-    id: '3',
-    date: '2024-12-29',
-    time: '2:00 PM',
-    provider_name: 'Dr. Roberto Silva',
-    provider_type: 'VIRTUAL_SPECIALIST',
-    specialty: 'Cardiología',
-    status: 'CONFIRMED',
-    avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-    start_time: new Date(new Date().getTime() + 12 * 60 * 60000), // 12 hours from now
-    can_join: false,
-  },
-  {
-    id: '4',
-    date: '2024-12-31',
-    time: '10:15 AM',
-    provider_name: 'Dra. Carmen Torres',
-    provider_type: 'VIRTUAL_SPECIALIST',
-    specialty: 'Medicina General',
-    status: 'CONFIRMED',
-    avatar_url: 'https://images.unsplash.com/photo-1594824047323-65b2b4e20c9e?w=150&h=150&fit=crop&crop=face',
-    start_time: new Date(new Date().getTime() + 36 * 60 * 60000), // 36 hours from now
-    can_join: false,
-  },
-  {
-    id: '5',
-    date: '2025-01-02',
-    time: '4:30 PM',
-    provider_name: 'Dr. Miguel Ramírez',
-    provider_type: 'VIRTUAL_SPECIALIST',
-    specialty: 'Neurología',
-    status: 'CONFIRMED',
-    avatar_url: 'https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=150&h=150&fit=crop&crop=face',
-    start_time: new Date(new Date().getTime() + 60 * 60 * 60000), // 60 hours from now
-    can_join: false,
-  },
-];
-
-// Mock data for featured specialists
-const featuredSpecialists: VirtualSpecialist[] = [
-  {
-    id: '1',
-    display_name: 'Dr. Carlos Mendoza',
-    specialty: 'Cardiología',
-    bio: 'Cardiólogo con 10 años de experiencia en telemedicina',
-    avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
-    next_availability: 'Hoy, 2:00 PM',
-    rating: 4.8,
-    consultation_fee: 750,
-    languages: ['Español', 'Inglés']
-  },
-  {
-    id: '2',
-    display_name: 'Dra. María Fernández',
-    specialty: 'Medicina General',
-    bio: 'Especialista en medicina familiar virtual',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    next_availability: 'Mañana, 10:00 AM',
-    rating: 4.9,
-    consultation_fee: 600,
-    languages: ['Español']
-  }
-];
-
-// Login color palette
-const PRIMARY_COLOR = '#00A0B0';
-const PRIMARY_LIGHT = '#33b5c2';
-const PRIMARY_DARK = '#006070';
-const ACCENT_COLOR = '#70D0E0';
-
-// Beneficios de la telemedicina
-const telemedicineBenefits = [
-  {
-    id: 'access',
-    title: 'Acceso desde cualquier lugar',
-    description: 'Consulta con especialistas desde la comodidad de tu hogar o mientras viajas.',
-    icon: 'location-outline'
-  },
-  {
-    id: 'time',
-    title: 'Ahorro de tiempo',
-    description: 'Sin traslados ni salas de espera. Tu tiempo es valioso.',
-    icon: 'time-outline'
-  },
-  {
-    id: 'prescriptions',
-    title: 'Prescripciones digitales',
-    description: 'Recibe tus recetas médicas directamente en la app.',
-    icon: 'document-text-outline'
-  },
-  {
-    id: 'follow',
-    title: 'Seguimiento continuo',
-    description: 'Mantén comunicación constante con tu médico para un mejor control.',
-    icon: 'analytics-outline'
-  },
-  {
-    id: 'history',
-    title: 'Historial integrado',
-    description: 'Toda tu información médica en un solo lugar.',
-    icon: 'folder-open-outline'
-  },
-  {
-    id: 'privacy',
-    title: 'Privacidad garantizada',
-    description: 'Comunicación cifrada de extremo a extremo para proteger tus datos.',
-    icon: 'shield-checkmark-outline'
-  }
-];
-
-// Cómo funciona la telemedicina
-const howItWorks = [
-  {
-    step: 1,
-    title: 'Elige especialista',
-    description: 'Navega por nuestro directorio de médicos certificados y elige al especialista que mejor se adapte a tus necesidades.',
-    icon: 'people-outline'
-  },
-  {
-    step: 2,
-    title: 'Agenda tu cita',
-    description: 'Selecciona fecha y hora que más te convenga según la disponibilidad del médico.',
-    icon: 'calendar-outline'
-  },
-  {
-    step: 3,
-    title: 'Pago seguro',
-    description: 'Realiza el pago de forma segura a través de nuestra plataforma.',
-    icon: 'card-outline'
-  },
-  {
-    step: 4,
-    title: 'Prepárate para la consulta',
-    description: 'Recibe un recordatorio y accede a la sala de espera 5 minutos antes.',
-    icon: 'notifications-outline'
-  },
-  {
-    step: 5,
-    title: 'Consulta virtual',
-    description: 'Conéctate con tu médico vía videollamada de alta calidad.',
-    icon: 'videocam-outline'
-  },
-  {
-    step: 6,
-    title: 'Seguimiento',
-    description: 'Recibe tus recetas, recomendaciones y programa seguimiento si es necesario.',
-    icon: 'checkmark-circle-outline'
-  }
-];
-
 export default function TelemedicinaSelectorScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   const { user, currentLocation, setCurrentLocation } = useUser();
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const { telemedicineAppointments } = useAppointments();
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [showBenefitsModal, setShowBenefitsModal] = useState(false);
+  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
+
+  // Filtrar citas próximas
+  const upcomingConsultations = telemedicineAppointments.filter(apt => {
+    const today = new Date();
+    const appointmentDate = new Date(apt.date);
+    return appointmentDate >= today && (apt.status === 'CONFIRMED' || apt.status === 'PENDING');
+  }).map(apt => ({
+    id: apt.id,
+    date: apt.date,
+    time: apt.time,
+    provider_name: apt.specialist_name,
+    provider_type: 'VIRTUAL_SPECIALIST' as const,
+    specialty: apt.specialty,
+    status: apt.status as 'CONFIRMED' | 'PENDING',
+    avatar_url: apt.avatar_url,
+    start_time: new Date(), // You can calculate this based on date and time if needed
+    can_join: apt.can_join || false,
+  }));
+
+  // Mock data for featured specialists
+  const featuredSpecialists: VirtualSpecialist[] = [
+    {
+      id: '1',
+      display_name: 'Dr. Carlos Mendoza',
+      specialty: 'Cardiología',
+      bio: 'Cardiólogo con 10 años de experiencia en telemedicina',
+      avatar_url: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
+      next_availability: 'Hoy, 2:00 PM',
+      rating: 4.8,
+      consultation_fee: 750,
+      languages: ['Español', 'Inglés']
+    },
+    {
+      id: '2',
+      display_name: 'Dra. María Fernández',
+      specialty: 'Medicina General',
+      bio: 'Especialista en medicina familiar virtual',
+      avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
+      next_availability: 'Mañana, 10:00 AM',
+      rating: 4.9,
+      consultation_fee: 600,
+      languages: ['Español']
+    }
+  ];
+
+  // Login color palette
+  const PRIMARY_COLOR = '#00A0B0';
+  const PRIMARY_LIGHT = '#33b5c2';
+  const PRIMARY_DARK = '#006070';
+  const ACCENT_COLOR = '#70D0E0';
+
+  // Beneficios de la telemedicina
+  const telemedicineBenefits = [
+    {
+      id: 'access',
+      title: 'Acceso desde cualquier lugar',
+      description: 'Consulta con especialistas desde la comodidad de tu hogar o mientras viajas.',
+      icon: 'location-outline'
+    },
+    {
+      id: 'time',
+      title: 'Ahorro de tiempo',
+      description: 'Sin traslados ni salas de espera. Tu tiempo es valioso.',
+      icon: 'time-outline'
+    },
+    {
+      id: 'prescriptions',
+      title: 'Prescripciones digitales',
+      description: 'Recibe tus recetas médicas directamente en la app.',
+      icon: 'document-text-outline'
+    },
+    {
+      id: 'follow',
+      title: 'Seguimiento continuo',
+      description: 'Mantén comunicación constante con tu médico para un mejor control.',
+      icon: 'analytics-outline'
+    },
+    {
+      id: 'history',
+      title: 'Historial integrado',
+      description: 'Toda tu información médica en un solo lugar.',
+      icon: 'folder-open-outline'
+    },
+    {
+      id: 'privacy',
+      title: 'Privacidad garantizada',
+      description: 'Comunicación cifrada de extremo a extremo para proteger tus datos.',
+      icon: 'shield-checkmark-outline'
+    }
+  ];
+
+  // Cómo funciona la telemedicina
+  const howItWorks = [
+    {
+      step: 1,
+      title: 'Elige especialista',
+      description: 'Navega por nuestro directorio de médicos certificados y elige al especialista que mejor se adapte a tus necesidades.',
+      icon: 'people-outline'
+    },
+    {
+      step: 2,
+      title: 'Agenda tu cita',
+      description: 'Selecciona fecha y hora que más te convenga según la disponibilidad del médico.',
+      icon: 'calendar-outline'
+    },
+    {
+      step: 3,
+      title: 'Pago seguro',
+      description: 'Realiza el pago de forma segura a través de nuestra plataforma.',
+      icon: 'card-outline'
+    },
+    {
+      step: 4,
+      title: 'Prepárate para la consulta',
+      description: 'Recibe un recordatorio y accede a la sala de espera 5 minutos antes.',
+      icon: 'notifications-outline'
+    },
+    {
+      step: 5,
+      title: 'Consulta virtual',
+      description: 'Conéctate con tu médico vía videollamada de alta calidad.',
+      icon: 'videocam-outline'
+    },
+    {
+      step: 6,
+      title: 'Seguimiento',
+      description: 'Recibe tus recetas, recomendaciones y programa seguimiento si es necesario.',
+      icon: 'checkmark-circle-outline'
+    }
+  ];
 
   const handleLocationSelect = (location: any) => {
     setCurrentLocation(location);
@@ -285,23 +242,21 @@ export default function TelemedicinaSelectorScreen() {
   };
 
   const handleNewConsultation = () => {
-    // TODO: Create virtual specialist search screen
-    Alert.alert('Próximamente', 'La búsqueda de especialistas virtuales estará disponible próximamente');
+    router.push('/consulta/telemedicina/buscar-especialistas');
   };
 
   const handleMyConsultations = () => {
-    // TODO: Create telemedicine consultations screen
-    Alert.alert('Próximamente', 'El historial de consultas de telemedicina estará disponible próximamente');
+    router.push('/consulta/telemedicina/mis-consultas');
   };
 
   const handleMedicineInfo = () => {
     // TODO: Create medicine information screen
-    Alert.alert('Información de Medicamentos', 'Esta función permitirá acceder a información médica y FAQs');
+    console.log('Información de Medicamentos');
   };
 
   const handleConsultationDetails = (id: string) => {
     // TODO: Create consultation details screen
-    Alert.alert('Detalles de Consulta', `Ver detalles de la consulta ${id}`);
+    console.log(`Ver detalles de la consulta ${id}`);
   };
 
   const handleJoinCall = (consultation: ConsultaVirtual) => {
@@ -318,16 +273,15 @@ export default function TelemedicinaSelectorScreen() {
         }
       });
     } else {
-      Alert.alert(
-        'Consulta no disponible',
-        'La consulta aún no está disponible para unirse. Por favor, espera hasta la hora programada.'
-      );
+      console.log('La consulta aún no está disponible para unirse');
     }
   };
 
   const handleSpecialistPress = (specialist: VirtualSpecialist) => {
-    // TODO: Create specialist details screen
-    Alert.alert('Detalle del Especialista', `Ver perfil de ${specialist.display_name}`);
+    router.push({
+      pathname: '/consulta/telemedicina/perfil-especialista',
+      params: { specialistId: specialist.id }
+    });
   };
 
   const isConsultationStartingSoon = (consultation: ConsultaVirtual): boolean => {
@@ -509,32 +463,17 @@ export default function TelemedicinaSelectorScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
       
-      {/* Header simplificado */}
+      {/* Header igual al de consultorio */}
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-        </View>
-
         <TouchableOpacity 
-          style={styles.userInfoContainer}
-          onPress={() => setShowUserProfile(true)}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={20} color={Colors.light.primary} />
-            </View>
-          </View>
-          <View style={styles.userDetails}>
-            <ThemedText style={styles.greeting}>Telemedicina</ThemedText>
-          </View>
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
+        <ThemedText style={styles.title}>Telemedicina</ThemedText>
       </View>
       
       <ScrollView 
@@ -613,10 +552,7 @@ export default function TelemedicinaSelectorScreen() {
         <View style={styles.bottomActionsSection}>
           <TouchableOpacity 
             style={styles.bottomActionButton}
-            onPress={() => {
-              // Navegar a una pantalla de beneficios o mostrar modal
-              Alert.alert('Beneficios', 'Acceso desde cualquier lugar, ahorro de tiempo, prescripciones digitales...');
-            }}
+            onPress={() => setShowBenefitsModal(true)}
           >
             <View style={[styles.bottomActionIcon, { backgroundColor: '#10B981' }]}>
               <Ionicons name="checkmark-circle" size={20} color="white" />
@@ -630,10 +566,7 @@ export default function TelemedicinaSelectorScreen() {
 
           <TouchableOpacity 
             style={styles.bottomActionButton}
-            onPress={() => {
-              // Navegar a una pantalla de cómo funciona o mostrar modal
-              Alert.alert('Cómo funciona', 'Elige especialista → Agenda → Pago → Consulta virtual');
-            }}
+            onPress={() => setShowHowItWorksModal(true)}
           >
             <View style={[styles.bottomActionIcon, { backgroundColor: '#8B5CF6' }]}>
               <Ionicons name="information-circle" size={20} color="white" />
@@ -646,6 +579,111 @@ export default function TelemedicinaSelectorScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Modal de Beneficios */}
+      <Modal
+        visible={showBenefitsModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <ThemedText style={styles.modalTitle}>
+              Beneficios de Telemedicina
+            </ThemedText>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowBenefitsModal(false)}
+            >
+              <Ionicons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {telemedicineBenefits.map((benefit) => (
+              <View key={benefit.id} style={styles.benefitCard}>
+                <View style={styles.benefitIconContainer}>
+                  <Ionicons name={benefit.icon as any} size={28} color={PRIMARY_COLOR} />
+                </View>
+                <View style={styles.benefitContent}>
+                  <ThemedText style={styles.benefitTitle}>{benefit.title}</ThemedText>
+                  <ThemedText style={styles.benefitDescription}>{benefit.description}</ThemedText>
+                </View>
+              </View>
+            ))}
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalCTAButton}
+                onPress={() => {
+                  setShowBenefitsModal(false);
+                  router.push('/consulta/telemedicina/buscar-especialistas');
+                }}
+              >
+                <ThemedText style={styles.modalCTAText}>Buscar Especialista</ThemedText>
+                <Ionicons name="arrow-forward" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Modal de Cómo Funciona */}
+      <Modal
+        visible={showHowItWorksModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <ThemedText style={styles.modalTitle}>
+              ¿Cómo funciona la Telemedicina?
+            </ThemedText>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowHowItWorksModal(false)}
+            >
+              <Ionicons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {howItWorks.map((step) => (
+              <View key={step.step} style={styles.stepCard}>
+                <View style={styles.stepNumber}>
+                  <ThemedText style={styles.stepNumberText}>{step.step}</ThemedText>
+                </View>
+                <View style={styles.stepContent}>
+                  <View style={styles.stepHeader}>
+                    <Ionicons name={step.icon as any} size={24} color={PRIMARY_COLOR} />
+                    <ThemedText style={styles.stepTitle}>{step.title}</ThemedText>
+                  </View>
+                  <ThemedText style={styles.stepDescription}>{step.description}</ThemedText>
+                </View>
+              </View>
+            ))}
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalCTAButton}
+                onPress={() => {
+                  setShowHowItWorksModal(false);
+                  router.push('/consulta/telemedicina/buscar-especialistas');
+                }}
+              >
+                <ThemedText style={styles.modalCTAText}>Comenzar Ahora</ThemedText>
+                <Ionicons name="arrow-forward" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -657,99 +695,23 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 45,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
   },
   backButton: {
-    padding: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
+    padding: 8,
+    marginRight: 12,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    marginRight: 8,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-  },
-  userDetails: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  greeting: {
-    fontSize: 18,
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.light.white,
-  },
-  servicesHeaderContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    gap: 8,
-  },
-  navButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.primary,
-    backgroundColor: 'white',
-    gap: 4,
     flex: 1,
-    minHeight: 32,
-  },
-  navButtonActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  navButtonText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.light.primary,
-    textAlign: 'center',
-  },
-  navButtonTextActive: {
-    color: 'white',
   },
   content: {
     flex: 1,
@@ -758,9 +720,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 12,
     paddingBottom: 24,
-  },
-  tabContent: {
-    flex: 1,
   },
   actionsSection: {
     marginBottom: 16,
@@ -772,12 +731,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: Colors.light.text,
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -804,31 +757,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: Colors.light.text,
   },
-  actionsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quickStatsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.light.primary,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  consultationsSection: {
+  upcomingSection: {
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -838,6 +767,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: Colors.light.text,
+  },
+  seeAllLink: {
+    fontSize: 12,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  specialistsSection: {
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  specialistsContainer: {
+    paddingBottom: 8,
+    gap: 12,
   },
   consultationCard: {
     backgroundColor: '#F8FBFC',
@@ -852,15 +813,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
-  },
-  consultationStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    fontSize: 10,
-    fontWeight: '600',
-    textAlign: 'center',
-    minWidth: 60,
   },
   consultationDoctorInfo: {
     flexDirection: 'row',
@@ -929,32 +881,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: 'white',
-  },
-  specialistsSection: {
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  seeAllLink: {
-    fontSize: 12,
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  specialistsContainer: {
-    paddingBottom: 8,
-    gap: 12,
   },
   specialistCard: {
     borderRadius: 12,
@@ -1031,112 +957,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
-  // Estilos para sección de beneficios
-  benefitsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  benefitCard: {
-    width: '47%',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    alignItems: 'center',
-  },
-  benefitIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    backgroundColor: 'rgba(0, 160, 176, 0.1)',
-  },
-  benefitCardTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 4,
-    color: Colors.light.text,
-  },
-  benefitCardDescription: {
-    fontSize: 11,
-    textAlign: 'center',
-    color: Colors.light.textSecondary,
-    lineHeight: 16,
-  },
-  // Estilos para sección de funcionamiento
-  howItWorksContainer: {
-    gap: 12,
-  },
-  stepCardCompact: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  stepNumberContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  stepNumberText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  stepIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: 'rgba(0, 160, 176, 0.1)',
-  },
-  stepCardContent: {
-    flex: 1,
-  },
-  stepCardTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: Colors.light.text,
-  },
-  stepCardDescription: {
-    fontSize: 12,
-    color: Colors.light.textSecondary,
-    lineHeight: 16,
-  },
-  upcomingSection: {
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
   bottomActionsSection: {
     marginTop: 16,
     gap: 12,
@@ -1172,6 +992,119 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bottomActionSubtitle: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  modalHeader: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  benefitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  benefitIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  benefitContent: {
+    flex: 1,
+  },
+  benefitTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+    marginBottom: 4,
+  },
+  benefitDescription: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+  },
+  modalFooter: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  modalCTAButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.light.primary,
+  },
+  modalCTAText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    marginRight: 8,
+  },
+  stepCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 160, 176, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+    marginLeft: 8,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 20,
+  },
+  stepFooter: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  stepFooterText: {
     fontSize: 14,
     color: Colors.light.textSecondary,
   },

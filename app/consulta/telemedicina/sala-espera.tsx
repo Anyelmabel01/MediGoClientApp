@@ -200,15 +200,13 @@ export default function SalaEsperaScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Sala de Espera</ThemedText>
-        </View>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+        </TouchableOpacity>
+        <ThemedText style={styles.headerTitle}>Sala de Espera</ThemedText>
       </View>
 
       <ScrollView 
@@ -434,28 +432,27 @@ export default function SalaEsperaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    backgroundColor: Colors.light.background,
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 45,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
+    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.light.white,
-    marginLeft: 16,
+    flex: 1,
   },
   content: {
     flex: 1,

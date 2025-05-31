@@ -1,22 +1,11 @@
 import { Colors } from '@/constants/Colors';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type Provider = {
   id: string;
@@ -50,7 +39,7 @@ const mockProviders: Record<string, Provider> = {
     display_name: 'Dr. María González',
     provider_type: 'Cardióloga',
     organization_name: 'Centro Médico Integral',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
+    avatar_url: 'https://img.freepik.com/foto-gratis/hermosa-doctora-joven-mirar-camara-oficina_1301-7807.jpg?w=360',
     consultation_fee: 120,
     location: 'Altamira, Caracas'
   },
@@ -59,9 +48,27 @@ const mockProviders: Record<string, Provider> = {
     display_name: 'Dr. Carlos Ramírez',
     provider_type: 'Médico General',
     organization_name: 'Clínica San Miguel',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
+    avatar_url: 'https://img.freepik.com/foto-gratis/medico-masculino-bata-blanca-estetoscopio_114579-1201.jpg?w=360',
     consultation_fee: 80,
     location: 'Las Mercedes, Caracas'
+  },
+  '3': {
+    id: '3',
+    display_name: 'Dra. Ana Martínez',
+    provider_type: 'Dermatóloga',
+    organization_name: 'Instituto Dermatológico',
+    avatar_url: 'https://img.freepik.com/foto-gratis/retrato-joven-doctora-bata-blanca_114579-13833.jpg?w=360',
+    consultation_fee: 100,
+    location: 'Chacao, Caracas'
+  },
+  '4': {
+    id: '4',
+    display_name: 'Dr. Luis Hernández',
+    provider_type: 'Pediatra',
+    organization_name: 'Hospital Infantil',
+    avatar_url: 'https://img.freepik.com/foto-gratis/doctor-masculino-feliz-sonriendo-brazos-cruzados_1298-10.jpg?w=360',
+    consultation_fee: 75,
+    location: 'El Valle, Caracas'
   }
 };
 
@@ -76,11 +83,13 @@ const paymentMethods: PaymentMethod[] = [
 
 export default function AgendarCitaScreen() {
   const router = useRouter();
-  const { providerId, selectedDate, selectedTime } = useLocalSearchParams();
-  
+  const { providerId } = useLocalSearchParams();
+  const { addConsultorioAppointment } = useAppointments();
+  const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow'>('today');
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedPayment, setSelectedPayment] = useState<string>('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -163,16 +172,34 @@ export default function AgendarCitaScreen() {
     return true;
   };
 
-  const handleConfirmAppointment = async () => {
-    if (!validateForm()) return;
+  const handleConfirmAppointment = () => {
+    if (!selectedTime || !selectedPayment || !acceptedTerms) {
+      Alert.alert('Información incompleta', 'Por favor completa todos los campos requeridos.');
+      return;
+    }
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setShowSuccessModal(true);
-    }, 2000);
+    // Crear la cita nueva
+    const today = new Date();
+    const appointmentDate = selectedDate === 'today' 
+      ? today.toISOString().split('T')[0]
+      : new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    addConsultorioAppointment({
+      date: appointmentDate,
+      time: selectedTime,
+      provider_name: provider.display_name,
+      provider_type: provider.provider_type,
+      organization_name: provider.organization_name,
+      status: 'CONFIRMED',
+      location: provider.location,
+      consultation_fee: provider.consultation_fee,
+      type: 'consultorio',
+      reason: reason || 'Consulta general',
+      address: provider.location,
+      provider_id: provider.id,
+    });
+
+    setShowSuccessModal(true);
   };
 
   const SuccessModal = () => (

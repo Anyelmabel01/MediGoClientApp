@@ -8,6 +8,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
+import { AppointmentsProvider } from '../context/AppointmentsContext';
 import { CartProvider } from '../context/CartContext';
 import { ThemeProvider as CustomThemeProvider } from '../context/ThemeContext';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
@@ -77,18 +78,53 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        
+        {/* Farmacia */}
         <Stack.Screen name="farmacia" options={{ headerShown: false }} />
+        <Stack.Screen name="farmacia/producto/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="farmacia/categoria/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="farmacia/carrito" options={{ headerShown: false }} />
+        
+        {/* Consulta - Consultorio */}
         <Stack.Screen name="consulta" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio" options={{ headerShown: false }} />
-        <Stack.Screen name="consulta/telemedicina" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/buscar-proveedores" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/mis-citas" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/detalles-cita" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/perfil-proveedor" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/agendar-cita" options={{ headerShown: false }} />
         <Stack.Screen name="consulta/consultorio/calificar-cita" options={{ headerShown: false }} />
-        <Stack.Screen name="emergencia" options={{ headerShown: false }} />
+        
+        {/* Consulta - Telemedicina */}
+        <Stack.Screen name="consulta/telemedicina" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/buscar-especialistas" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/mis-consultas" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/sala-espera" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/perfil-especialista" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/videollamada" options={{ headerShown: false }} />
+        <Stack.Screen name="consulta/telemedicina/calificar-consulta" options={{ headerShown: false }} />
+        
+        {/* Enfermería */}
         <Stack.Screen name="enfermeria" options={{ headerShown: false }} />
+        <Stack.Screen name="enfermeria/mis-servicios" options={{ headerShown: false }} />
+        <Stack.Screen name="enfermeria/buscar-enfermera" options={{ headerShown: false }} />
+        <Stack.Screen name="enfermeria/agendar-servicio" options={{ headerShown: false }} />
+        <Stack.Screen name="enfermeria/perfil-enfermera/[id]" options={{ headerShown: false }} />
+        
+        {/* Laboratorio */}
+        <Stack.Screen name="laboratorio/index" options={{ headerShown: false }} />
+        <Stack.Screen name="laboratorio/detallesLaboratorio" options={{ headerShown: false }} />
+        <Stack.Screen name="laboratorio/resultados" options={{ headerShown: false }} />
+        <Stack.Screen name="laboratorio/historial" options={{ headerShown: false }} />
+        <Stack.Screen name="laboratorio/encontrarLaboratorio" options={{ headerShown: false }} />
+        <Stack.Screen name="laboratorio/solicitar" options={{ headerShown: false }} />
+        
+        {/* Emergencia */}
+        <Stack.Screen name="emergencia" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/medica" options={{ headerShown: false }} />
+        <Stack.Screen name="emergencia/accidente" options={{ headerShown: false }} />
+        
+        {/* Expediente y Perfil */}
         <Stack.Screen name="expediente" options={{ headerShown: false }} />
         <Stack.Screen name="perfil" options={{ headerShown: false }} />
       </Stack>
@@ -122,7 +158,9 @@ export default function RootLayout() {
       <AuthProvider>
         <UserProvider>
           <CartProvider>
-            <RootLayoutNav />
+            <AppointmentsProvider>
+              <RootLayoutNav />
+            </AppointmentsProvider>
           </CartProvider>
         </UserProvider>
       </AuthProvider>

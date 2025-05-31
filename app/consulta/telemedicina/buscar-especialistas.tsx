@@ -6,13 +6,13 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 type SpecialtyType = 'CARDIOLOGY' | 'DERMATOLOGY' | 'GENERAL_MEDICINE' | 'PSYCHOLOGY' | 'NEUROLOGY' | 'PEDIATRICS';
@@ -295,15 +295,13 @@ export default function BuscarEspecialistasScreen() {
       
       {/* Header simplificado con botón de atrás */}
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          <ThemedText style={styles.headerTitle}>Buscar Especialistas</ThemedText>
-        </View>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+        </TouchableOpacity>
+        <ThemedText style={styles.headerTitle}>Buscar Especialistas</ThemedText>
       </View>
       
       {/* Barra de búsqueda */}
@@ -356,24 +354,23 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 45,
-    paddingBottom: 12,
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
+    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.light.white,
-    marginLeft: 16,
+    flex: 1,
   },
   searchContainer: {
     paddingHorizontal: 16,

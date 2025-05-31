@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.light.primary,
     paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
   },
   userInfoContainer: {
