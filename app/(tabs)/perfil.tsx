@@ -75,8 +75,55 @@ export default function PerfilScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Sección Principal del Perfil del Usuario */}
+        <View style={styles.section}>
+          <View style={[styles.profileMainCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+            {/* Avatar y datos principales */}
+            <View style={styles.profileHeader}>
+              <TouchableOpacity 
+                style={styles.avatarMainContainer}
+                onPress={() => setShowUserProfile(true)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.avatarMain, { backgroundColor: Colors.light.primary }]}>
+                  <ThemedText style={styles.avatarMainText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
+                <View style={styles.editAvatarOverlay}>
+                  <Ionicons name="camera" size={16} color={Colors.light.white} />
+                </View>
+              </TouchableOpacity>
+              
+              <View style={styles.profileMainInfo}>
+                <ThemedText style={[styles.userName, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                  {user?.nombre} {user?.apellido}
+                </ThemedText>
+                <ThemedText style={[styles.userEmail, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                  {user?.email}
+                </ThemedText>
+                
+                {/* Botón de editar perfil más visible */}
+                <TouchableOpacity 
+                  style={[styles.editProfileMainButton, { borderColor: Colors.light.primary }]}
+                  onPress={() => setShowUserProfile(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={16} color={Colors.light.primary} />
+                  <ThemedText style={[styles.editProfileMainText, { color: Colors.light.primary }]}>
+                    Editar perfil
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Cards de Información Médica */}
         <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: Colors.light.primary }]}>
+            Información Médica
+          </ThemedText>
           <View style={styles.infoCardsContainer}>
             <View style={[styles.infoCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
               <View style={[styles.infoCardIcon, { backgroundColor: '#FFE5E5' }]}>
@@ -112,6 +159,9 @@ export default function PerfilScreen() {
         
         {/* Card de Ubicación */}
         <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: Colors.light.primary }]}>
+            Mi Ubicación
+          </ThemedText>
           <TouchableOpacity 
             style={[styles.actionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
             onPress={() => setShowLocationSelector(true)}
@@ -138,9 +188,12 @@ export default function PerfilScreen() {
         
         {/* Card de Expediente */}
         <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: Colors.light.primary }]}>
+            Expediente Médico
+          </ThemedText>
           <TouchableOpacity 
             style={[styles.actionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
-            onPress={() => router.push('/expediente')}
+            onPress={() => router.push('expediente')}
             activeOpacity={0.7}
           >
             <View style={[styles.actionCardIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
@@ -354,5 +407,74 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 20,
+  },
+  profileMainCard: {
+    borderRadius: 12,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  avatarMainContainer: {
+    marginRight: 12,
+  },
+  avatarMain: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarMainText: {
+    color: Colors.light.primary,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  editAvatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileMainInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+  },
+  editProfileMainButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderWidth: 2,
+    borderColor: Colors.light.primary,
+    borderRadius: 12,
+  },
+  editProfileMainText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 }); 

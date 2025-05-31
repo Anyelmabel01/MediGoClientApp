@@ -2,7 +2,8 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+
 import { StatusBar } from 'expo-status-bar';
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -140,314 +141,317 @@ export default function DetallesLaboratorioScreen() {
   }];
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar style="auto" />
-      
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
             
-            <View style={styles.greetingContainer}>
-              <ThemedText style={styles.greeting}>
-                Detalles del Laboratorio
-              </ThemedText>
-              <View style={styles.editProfileIndicator}>
-                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting} numberOfLines={1} adjustsFontSizeToFit>
+                  Detalles del Laboratorio
+                </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="business" size={14} color={Colors.light.primary} />
+                </View>
               </View>
             </View>
           </View>
         </View>
-      </View>
 
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
-      >
-        {/* Información principal */}
-        <View style={[styles.mainInfoCard, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <View style={styles.labHeader}>
-            <ThemedText style={[styles.labName, {
-              color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-            }]}>
-              {lab.nombre}
-            </ThemedText>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={20} color="#ffc107" />
-              <ThemedText style={[styles.rating, {
+        <ScrollView 
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        >
+          {/* Información principal */}
+          <View style={[styles.mainInfoCard, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <View style={styles.labHeader}>
+              <ThemedText style={[styles.labName, {
                 color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
               }]}>
-                {lab.rating}
+                {lab.nombre}
               </ThemedText>
-              <ThemedText style={[styles.reviewCount, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                ({lab.reviews.length} reseñas)
-              </ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
-            <ThemedText style={[styles.infoText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {lab.direccion}
-            </ThemedText>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons name="time" size={18} color={Colors.light.primary} />
-            <ThemedText style={[styles.infoText, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              {lab.horario}
-            </ThemedText>
-          </View>
-
-          {lab.tomaDomicilio && (
-            <View style={[styles.homeCollectionBadge, { backgroundColor: Colors.light.success + '20' }]}>
-              <Ionicons name="home-outline" size={16} color={Colors.light.success} />
-              <ThemedText style={[styles.homeCollectionText, { color: Colors.light.success }]}>
-                Servicio a domicilio disponible
-              </ThemedText>
-            </View>
-          )}
-        </View>
-
-        {/* Mapa Grande */}
-        <View style={[styles.mapCard, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Ubicación
-          </ThemedText>
-          <View style={styles.mapContainer}>
-            <MapboxMap
-              latitude={lab.latitude}
-              longitude={lab.longitude}
-              zoom={15}
-              markers={mapMarkers}
-              showCurrentLocation={true}
-              interactive={true}
-              style={styles.map}
-            />
-          </View>
-          <TouchableOpacity 
-            style={[styles.directionsButton, { backgroundColor: Colors.light.primary }]}
-            onPress={handleGetDirections}
-          >
-            <Ionicons name="navigate" size={18} color="white" />
-            <ThemedText style={styles.directionsButtonText}>Obtener Direcciones</ThemedText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Servicios */}
-        <View style={[styles.card, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Servicios Ofrecidos
-          </ThemedText>
-          <View style={styles.servicesGrid}>
-            {lab.servicios.slice(0, 6).map((servicio, index) => (
-              <View key={index} style={[styles.serviceItem, {
-                backgroundColor: Colors.light.primary + '10',
-                borderColor: Colors.light.primary + '30'
-              }]}>
-                <Ionicons name="medical" size={16} color={Colors.light.primary} />
-                <ThemedText style={[styles.serviceText, {
+              <View style={styles.ratingContainer}>
+                <Ionicons name="star" size={20} color="#ffc107" />
+                <ThemedText style={[styles.rating, {
                   color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
                 }]}>
-                  {servicio}
+                  {lab.rating}
+                </ThemedText>
+                <ThemedText style={[styles.reviewCount, {
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                }]}>
+                  ({lab.reviews.length} reseñas)
                 </ThemedText>
               </View>
-            ))}
-            {lab.servicios.length > 6 && (
-              <View style={[styles.serviceItem, {
-                backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border
+            </View>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="location" size={18} color={Colors.light.primary} />
+              <ThemedText style={[styles.infoText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
               }]}>
-                <ThemedText style={[styles.moreServicesText, {
-                  color: Colors.light.primary
-                }]}>
-                  +{lab.servicios.length - 6} más...
+                {lab.direccion}
+              </ThemedText>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="time" size={18} color={Colors.light.primary} />
+              <ThemedText style={[styles.infoText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                {lab.horario}
+              </ThemedText>
+            </View>
+
+            {lab.tomaDomicilio && (
+              <View style={[styles.homeCollectionBadge, { backgroundColor: Colors.light.success + '20' }]}>
+                <Ionicons name="home-outline" size={16} color={Colors.light.success} />
+                <ThemedText style={[styles.homeCollectionText, { color: Colors.light.success }]}>
+                  Servicio a domicilio disponible
                 </ThemedText>
               </View>
             )}
           </View>
-        </View>
 
-        {/* Especialidades */}
-        <View style={[styles.card, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Especialidades
-          </ThemedText>
-          <View style={styles.specialtiesRow}>
-            {lab.especialidades.map((especialidad, index) => (
-              <View key={index} style={[styles.specialtyChip, {
-                backgroundColor: Colors.light.primary + '20',
-                borderColor: Colors.light.primary
-              }]}>
-                <ThemedText style={[styles.specialtyText, { color: Colors.light.primary }]}>
-                  {especialidad}
-                </ThemedText>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Acreditaciones */}
-        <View style={[styles.card, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Acreditaciones y Certificaciones
-          </ThemedText>
-          {lab.acreditaciones.map((acreditacion, index) => (
-            <View key={index} style={styles.accreditationItem}>
-              <Ionicons name="shield-checkmark" size={16} color={Colors.light.success} />
-              <ThemedText style={[styles.accreditationText, {
-                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-              }]}>
-                {acreditacion}
-              </ThemedText>
+          {/* Mapa Grande */}
+          <View style={[styles.mapCard, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Ubicación
+            </ThemedText>
+            <View style={styles.mapContainer}>
+              <MapboxMap
+                latitude={lab.latitude}
+                longitude={lab.longitude}
+                zoom={15}
+                markers={mapMarkers}
+                showCurrentLocation={true}
+                interactive={true}
+                style={styles.map}
+              />
             </View>
-          ))}
-        </View>
-
-        {/* Seguros Médicos */}
-        <View style={[styles.card, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Seguros Médicos Aceptados
-          </ThemedText>
-          <View style={styles.insuranceRow}>
-            {lab.segurosMedicos.map((seguro, index) => (
-              <View key={index} style={[styles.insuranceChip, {
-                backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border
-              }]}>
-                <Ionicons name="shield-outline" size={14} color={Colors.light.primary} />
-                <ThemedText style={[styles.insuranceText, {
-                  color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-                }]}>
-                  {seguro}
-                </ThemedText>
-              </View>
-            ))}
+            <TouchableOpacity 
+              style={[styles.directionsButton, { backgroundColor: Colors.light.primary }]}
+              onPress={handleGetDirections}
+            >
+              <Ionicons name="navigate" size={18} color="white" />
+              <ThemedText style={styles.directionsButtonText}>Obtener Direcciones</ThemedText>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Reseñas */}
-        <View style={[styles.card, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-        }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Reseñas de Usuarios
-          </ThemedText>
-          {lab.reviews.slice(0, 3).map((review, index) => (
-            <View key={index} style={[styles.reviewCard, {
-              backgroundColor: isDarkMode ? Colors.dark.border + '30' : Colors.light.border + '30',
-              borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
-            }]}>
-              <View style={styles.reviewHeader}>
-                <ThemedText style={[styles.reviewUser, {
-                  color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+          {/* Servicios */}
+          <View style={[styles.card, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Servicios Ofrecidos
+            </ThemedText>
+            <View style={styles.servicesGrid}>
+              {lab.servicios.slice(0, 6).map((servicio, index) => (
+                <View key={index} style={[styles.serviceItem, {
+                  backgroundColor: Colors.light.primary + '10',
+                  borderColor: Colors.light.primary + '30'
                 }]}>
-                  {review.user}
-                </ThemedText>
-                <View style={styles.reviewRating}>
-                  {[...Array(5)].map((_, i) => (
-                    <Ionicons 
-                      key={i}
-                      name="star" 
-                      size={12} 
-                      color={i < review.rating ? '#ffc107' : '#e0e0e0'} 
-                    />
-                  ))}
+                  <Ionicons name="medical" size={16} color={Colors.light.primary} />
+                  <ThemedText style={[styles.serviceText, {
+                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+                  }]}>
+                    {servicio}
+                  </ThemedText>
                 </View>
-              </View>
-              <ThemedText style={[styles.reviewComment, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                "{review.comment}"
-              </ThemedText>
+              ))}
+              {lab.servicios.length > 6 && (
+                <View style={[styles.serviceItem, {
+                  backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border
+                }]}>
+                  <ThemedText style={[styles.moreServicesText, {
+                    color: Colors.light.primary
+                  }]}>
+                    +{lab.servicios.length - 6} más...
+                  </ThemedText>
+                </View>
+              )}
             </View>
-          ))}
-          {lab.reviews.length > 3 && (
-            <TouchableOpacity style={styles.seeAllReviews}>
-              <ThemedText style={[styles.seeAllText, { color: Colors.light.primary }]}>
-                Ver todas las reseñas ({lab.reviews.length})
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Botones de acción */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={[styles.primaryActionButton, { backgroundColor: Colors.light.primary }]}
-            onPress={handleScheduleTest}
-          >
-            <Ionicons name="calendar" size={20} color="white" />
-            <ThemedText style={styles.primaryActionText}>Agendar Prueba Aquí</ThemedText>
-          </TouchableOpacity>
-
-          <View style={styles.secondaryActionsRow}>
-            <TouchableOpacity 
-              style={[styles.secondaryActionButton, {
-                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-                borderColor: Colors.light.primary
-              }]}
-              onPress={handleCallLab}
-            >
-              <Ionicons name="call" size={18} color={Colors.light.primary} />
-              <ThemedText style={[styles.secondaryActionText, { color: Colors.light.primary }]}>
-                Llamar
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.secondaryActionButton, {
-                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-                borderColor: Colors.light.primary
-              }]}
-              onPress={handleEmailLab}
-            >
-              <Ionicons name="mail" size={18} color={Colors.light.primary} />
-              <ThemedText style={[styles.secondaryActionText, { color: Colors.light.primary }]}>
-                Email
-              </ThemedText>
-            </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
-    </ThemedView>
+
+          {/* Especialidades */}
+          <View style={[styles.card, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Especialidades
+            </ThemedText>
+            <View style={styles.specialtiesRow}>
+              {lab.especialidades.map((especialidad, index) => (
+                <View key={index} style={[styles.specialtyChip, {
+                  backgroundColor: Colors.light.primary + '20',
+                  borderColor: Colors.light.primary
+                }]}>
+                  <ThemedText style={[styles.specialtyText, { color: Colors.light.primary }]}>
+                    {especialidad}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Acreditaciones */}
+          <View style={[styles.card, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Acreditaciones y Certificaciones
+            </ThemedText>
+            {lab.acreditaciones.map((acreditacion, index) => (
+              <View key={index} style={styles.accreditationItem}>
+                <Ionicons name="shield-checkmark" size={16} color={Colors.light.success} />
+                <ThemedText style={[styles.accreditationText, {
+                  color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+                }]}>
+                  {acreditacion}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+
+          {/* Seguros Médicos */}
+          <View style={[styles.card, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Seguros Médicos Aceptados
+            </ThemedText>
+            <View style={styles.insuranceRow}>
+              {lab.segurosMedicos.map((seguro, index) => (
+                <View key={index} style={[styles.insuranceChip, {
+                  backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border
+                }]}>
+                  <Ionicons name="shield-outline" size={14} color={Colors.light.primary} />
+                  <ThemedText style={[styles.insuranceText, {
+                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+                  }]}>
+                    {seguro}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Reseñas */}
+          <View style={[styles.card, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+          }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
+              Reseñas de Usuarios
+            </ThemedText>
+            {lab.reviews.slice(0, 3).map((review, index) => (
+              <View key={index} style={[styles.reviewCard, {
+                backgroundColor: isDarkMode ? Colors.dark.border + '30' : Colors.light.border + '30',
+                borderColor: isDarkMode ? Colors.dark.border : Colors.light.border
+              }]}>
+                <View style={styles.reviewHeader}>
+                  <ThemedText style={[styles.reviewUser, {
+                    color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+                  }]}>
+                    {review.user}
+                  </ThemedText>
+                  <View style={styles.reviewRating}>
+                    {[...Array(5)].map((_, i) => (
+                      <Ionicons 
+                        key={i}
+                        name="star" 
+                        size={12} 
+                        color={i < review.rating ? '#ffc107' : '#e0e0e0'} 
+                      />
+                    ))}
+                  </View>
+                </View>
+                <ThemedText style={[styles.reviewComment, {
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                }]}>
+                  &ldquo;{review.comment}&rdquo;
+                </ThemedText>
+              </View>
+            ))}
+            {lab.reviews.length > 3 && (
+              <TouchableOpacity style={styles.seeAllReviews}>
+                <ThemedText style={[styles.seeAllText, { color: Colors.light.primary }]}>
+                  Ver todas las reseñas ({lab.reviews.length})
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Botones de acción */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={[styles.primaryActionButton, { backgroundColor: Colors.light.primary }]}
+              onPress={handleScheduleTest}
+            >
+              <Ionicons name="calendar" size={20} color="white" />
+              <ThemedText style={styles.primaryActionText}>Agendar Prueba Aquí</ThemedText>
+            </TouchableOpacity>
+
+            <View style={styles.secondaryActionsRow}>
+              <TouchableOpacity 
+                style={[styles.secondaryActionButton, {
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                  borderColor: Colors.light.primary
+                }]}
+                onPress={handleCallLab}
+              >
+                <Ionicons name="call" size={18} color={Colors.light.primary} />
+                <ThemedText style={[styles.secondaryActionText, { color: Colors.light.primary }]}>
+                  Llamar
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.secondaryActionButton, {
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+                  borderColor: Colors.light.primary
+                }]}
+                onPress={handleEmailLab}
+              >
+                <Ionicons name="mail" size={18} color={Colors.light.primary} />
+                <ThemedText style={[styles.secondaryActionText, { color: Colors.light.primary }]}>
+                  Email
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    </>
   );
 }
 
@@ -469,8 +473,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
@@ -597,7 +607,7 @@ const styles = StyleSheet.create({
     color: Colors.light.primary,
   },
   mapContainer: {
-    height: height * 0.35, // 35% de la altura de la pantalla
+    height: height * 0.35,
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',

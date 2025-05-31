@@ -2,11 +2,13 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+
 import { useMemo, useState } from 'react';
 import {
-    Alert,
+    Animated,
     FlatList,
+    Modal,
     RefreshControl,
     StyleSheet,
     TextInput,
@@ -155,10 +157,17 @@ export default function ResultadosScreen() {
   const insets = useSafeAreaInsets();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'week' | 'month' | 'quarter'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Estados para modales elegantes
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<Result | null>(null);
+  const [modalAnimation] = useState(new Animated.Value(0));
 
   // Actualizar conteos de filtros
   useMemo(() => {
@@ -225,33 +234,41 @@ export default function ResultadosScreen() {
 
   const handleDownload = (result: Result) => {
     if (!result.downloadable) {
-      Alert.alert('Resultado no disponible', 'Este resultado aún no está listo para descarga.');
+      setSelectedResult(result);
+      setShowDownloadModal(true);
       return;
     }
     
-    Alert.alert(
-      'Descargar Resultado',
-      `¿Deseas descargar el reporte de "${result.testName}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Descargar', onPress: () => {
-          // Aquí iría la lógica de descarga real
-          Alert.alert('Descarga iniciada', 'El archivo se está descargando...');
-        }}
-      ]
-    );
+    setSelectedResult(result);
+    setShowDownloadModal(true);
+  };
+
+  const confirmDownload = () => {
+    setShowDownloadModal(false);
+    // Simular descarga
+    setTimeout(() => {
+      setShowSuccessModal(true);
+      animateModal();
+    }, 300);
   };
 
   const handleShare = (result: Result) => {
-    Alert.alert(
-      'Compartir Resultado',
-      '¿Cómo deseas compartir este resultado?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Con mi médico', onPress: () => {/* Lógica de compartir con médico */} },
-        { text: 'Por email', onPress: () => {/* Lógica de compartir por email */} }
-      ]
-    );
+    setSelectedResult(result);
+    setShowShareModal(true);
+  };
+
+  const animateModal = () => {
+    Animated.spring(modalAnimation, {
+      toValue: 1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    modalAnimation.setValue(0);
   };
 
   const onRefresh = async () => {
@@ -308,282 +325,436 @@ export default function ResultadosScreen() {
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
-            
-            <View style={styles.greetingContainer}>
-              <ThemedText style={styles.greeting}>
-                Mis Resultados
-              </ThemedText>
-              <View style={styles.editProfileIndicator}>
-                <Ionicons name="document-text" size={14} color={Colors.light.primary} />
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Barra de búsqueda */}
-      <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
-        <View style={[styles.searchBar, { 
-          backgroundColor: isDarkMode ? Colors.dark.border : '#F8F9FA',
-          borderColor: colors.border 
-        }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
-          <TextInput 
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Buscar resultados..." 
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Filtros */}
-      {showFilters && (
-        <View style={[styles.filtersContainer, { 
-          backgroundColor: colors.background,
-          borderColor: colors.border 
-        }]}>
-          <View style={styles.filterSection}>
-            <ThemedText style={styles.filterLabel}>Estado:</ThemedText>
-            <View style={styles.statusFilters}>
-              {statusFilters.map(filter => (
-                <TouchableOpacity
-                  key={filter.key}
-                  style={[
-                    styles.statusFilter,
-                    { 
-                      backgroundColor: selectedStatus === filter.key ? colors.primary : 'transparent',
-                      borderColor: colors.border 
-                    }
-                  ]}
-                  onPress={() => setSelectedStatus(filter.key)}
-                >
-                  <ThemedText style={[
-                    styles.statusFilterText,
-                    { color: selectedStatus === filter.key ? '#fff' : colors.text }
-                  ]}>
-                    {filter.label} ({filter.count})
+            
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                   </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.filterSection}>
-            <ThemedText style={styles.filterLabel}>Período:</ThemedText>
-            <View style={styles.dateFilters}>
-              {[
-                { key: 'all', label: 'Todos' },
-                { key: 'week', label: 'Última semana' },
-                { key: 'month', label: 'Último mes' },
-                { key: 'quarter', label: 'Últimos 3 meses' }
-              ].map(filter => (
-                <TouchableOpacity
-                  key={filter.key}
-                  style={[
-                    styles.dateFilter,
-                    { 
-                      backgroundColor: dateFilter === filter.key ? colors.primary : 'transparent',
-                      borderColor: colors.border 
-                    }
-                  ]}
-                  onPress={() => setDateFilter(filter.key as any)}
-                >
-                  <ThemedText style={[
-                    styles.dateFilterText,
-                    { color: dateFilter === filter.key ? '#fff' : colors.text }
-                  ]}>
-                    {filter.label}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Estadísticas rápidas */}
-      <View style={[styles.statsContainer, { backgroundColor: colors.background }]}>
-        <View style={styles.statItem}>
-          <ThemedText style={[styles.statNumber, { color: colors.success }]}>
-            {results.filter(r => r.status === 'Normal').length}
-          </ThemedText>
-          <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Normales
-          </ThemedText>
-        </View>
-        <View style={styles.statItem}>
-          <ThemedText style={[styles.statNumber, { color: colors.error }]}>
-            {results.filter(r => r.status === 'Anormal' || r.status === 'Revisión Necesaria').length}
-          </ThemedText>
-          <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Requieren atención
-          </ThemedText>
-        </View>
-        <View style={styles.statItem}>
-          <ThemedText style={[styles.statNumber, { color: '#ffc107' }]}>
-            {results.filter(r => r.status === 'En Proceso' || r.status === 'Pendiente').length}
-          </ThemedText>
-          <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
-            Pendientes
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* Resultados */}
-      <View style={styles.resultsHeader}>
-        <ThemedText style={[styles.resultsCount, { color: colors.textSecondary }]}>
-          {filteredResults.length} resultado{filteredResults.length !== 1 ? 's' : ''} encontrado{filteredResults.length !== 1 ? 's' : ''}
-        </ThemedText>
-      </View>
-
-      <FlatList
-        data={filteredResults}
-        keyExtractor={item => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={[styles.resultCard, { 
-              backgroundColor: colors.background,
-              borderColor: colors.border 
-            }]}
-            onPress={() => handleResultPress(item)}
-          >
-            <View style={styles.resultHeader}>
-              <View style={styles.resultIcon}>
-                <Ionicons 
-                  name={item.resultType === 'imaging' ? 'image-outline' : 'document-text-outline'} 
-                  size={24} 
-                  color={colors.primary} 
-                />
+                </View>
               </View>
-              <View style={styles.resultInfo}>
-                <View style={styles.resultTitleRow}>
-                  <ThemedText style={styles.resultName} numberOfLines={2}>
-                    {item.testName}
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  Mis Resultados
+                </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="document-text" size={14} color={Colors.light.primary} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Barra de búsqueda */}
+        <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.searchBar, { 
+            backgroundColor: isDarkMode ? Colors.dark.border : '#F8F9FA',
+            borderColor: colors.border 
+          }]}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput 
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Buscar resultados..." 
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Filtros */}
+        {showFilters && (
+          <View style={[styles.filtersContainer, { 
+            backgroundColor: colors.background,
+            borderColor: colors.border 
+          }]}>
+            <View style={styles.filterSection}>
+              <ThemedText style={styles.filterLabel}>Estado:</ThemedText>
+              <View style={styles.statusFilters}>
+                {statusFilters.map(filter => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    style={[
+                      styles.statusFilter,
+                      { 
+                        backgroundColor: selectedStatus === filter.key ? colors.primary : 'transparent',
+                        borderColor: colors.border 
+                      }
+                    ]}
+                    onPress={() => setSelectedStatus(filter.key)}
+                  >
+                    <ThemedText style={[
+                      styles.statusFilterText,
+                      { color: selectedStatus === filter.key ? '#fff' : colors.text }
+                    ]}>
+                      {filter.label} ({filter.count})
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <ThemedText style={styles.filterLabel}>Período:</ThemedText>
+              <View style={styles.dateFilters}>
+                {[
+                  { key: 'all', label: 'Todos' },
+                  { key: 'week', label: 'Última semana' },
+                  { key: 'month', label: 'Último mes' },
+                  { key: 'quarter', label: 'Últimos 3 meses' }
+                ].map(filter => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    style={[
+                      styles.dateFilter,
+                      { 
+                        backgroundColor: dateFilter === filter.key ? colors.primary : 'transparent',
+                        borderColor: colors.border 
+                      }
+                    ]}
+                    onPress={() => setDateFilter(filter.key as any)}
+                  >
+                    <ThemedText style={[
+                      styles.dateFilterText,
+                      { color: dateFilter === filter.key ? '#fff' : colors.text }
+                    ]}>
+                      {filter.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Estadísticas rápidas */}
+        <View style={[styles.statsContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.statItem}>
+            <ThemedText style={[styles.statNumber, { color: colors.success }]}>
+              {results.filter(r => r.status === 'Normal').length}
+            </ThemedText>
+            <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Normales
+            </ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText style={[styles.statNumber, { color: colors.error }]}>
+              {results.filter(r => r.status === 'Anormal' || r.status === 'Revisión Necesaria').length}
+            </ThemedText>
+            <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Requieren atención
+            </ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText style={[styles.statNumber, { color: '#ffc107' }]}>
+              {results.filter(r => r.status === 'En Proceso' || r.status === 'Pendiente').length}
+            </ThemedText>
+            <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Pendientes
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Resultados */}
+        <View style={styles.resultsHeader}>
+          <ThemedText style={[styles.resultsCount, { color: colors.textSecondary }]}>
+            {filteredResults.length} resultado{filteredResults.length !== 1 ? 's' : ''} encontrado{filteredResults.length !== 1 ? 's' : ''}
+          </ThemedText>
+        </View>
+
+        <FlatList
+          data={filteredResults}
+          keyExtractor={item => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              style={[styles.resultCard, { 
+                backgroundColor: colors.background,
+                borderColor: colors.border 
+              }]}
+              onPress={() => handleResultPress(item)}
+            >
+              <View style={styles.resultHeader}>
+                <View style={styles.resultIcon}>
+                  <Ionicons 
+                    name={item.resultType === 'imaging' ? 'image-outline' : 'document-text-outline'} 
+                    size={24} 
+                    color={colors.primary} 
+                  />
+                </View>
+                <View style={styles.resultInfo}>
+                  <View style={styles.resultTitleRow}>
+                    <ThemedText style={styles.resultName} numberOfLines={2}>
+                      {item.testName}
+                    </ThemedText>
+                    {getPriorityBadge(item.priority) && (
+                      <View style={[styles.priorityBadge, { 
+                        backgroundColor: getPriorityBadge(item.priority)!.color 
+                      }]}>
+                        <ThemedText style={styles.priorityText}>
+                          {getPriorityBadge(item.priority)!.text}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                  <ThemedText style={[styles.resultLab, { color: colors.textSecondary }]}>
+                    {item.labName}
                   </ThemedText>
-                  {getPriorityBadge(item.priority) && (
-                    <View style={[styles.priorityBadge, { 
-                      backgroundColor: getPriorityBadge(item.priority)!.color 
-                    }]}>
-                      <ThemedText style={styles.priorityText}>
-                        {getPriorityBadge(item.priority)!.text}
-                      </ThemedText>
-                    </View>
+                  <ThemedText style={[styles.resultDate, { color: colors.textSecondary }]}>
+                    {new Date(item.date).toLocaleDateString('es-VE', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </ThemedText>
+                  {item.orderingPhysician && (
+                    <ThemedText style={[styles.physician, { color: colors.textSecondary }]}>
+                      Solicitado por: {item.orderingPhysician}
+                    </ThemedText>
                   )}
                 </View>
-                <ThemedText style={[styles.resultLab, { color: colors.textSecondary }]}>
-                  {item.labName}
-                </ThemedText>
-                <ThemedText style={[styles.resultDate, { color: colors.textSecondary }]}>
-                  {new Date(item.date).toLocaleDateString('es-VE', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </ThemedText>
-                {item.orderingPhysician && (
-                  <ThemedText style={[styles.physician, { color: colors.textSecondary }]}>
-                    Solicitado por: {item.orderingPhysician}
+              </View>
+
+              <View style={styles.resultFooter}>
+                <View style={styles.statusContainer}>
+                  <Ionicons 
+                    name={getStatusIcon(item.status) as any} 
+                    size={16} 
+                    color={getStatusColor(item.status)} 
+                  />
+                  <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                    {item.status}
                   </ThemedText>
-                )}
-              </View>
-            </View>
+                </View>
 
-            <View style={styles.resultFooter}>
-              <View style={styles.statusContainer}>
-                <Ionicons 
-                  name={getStatusIcon(item.status) as any} 
-                  size={16} 
-                  color={getStatusColor(item.status)} 
-                />
-                <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                  {item.status}
-                </ThemedText>
-              </View>
-
-              <View style={styles.actions}>
-                {item.downloadable && (
+                <View style={styles.actions}>
+                  {item.downloadable && (
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => handleDownload(item)}
+                    >
+                      <Ionicons name="download-outline" size={18} color={colors.primary} />
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity 
                     style={styles.actionButton}
-                    onPress={() => handleDownload(item)}
+                    onPress={() => handleShare(item)}
                   >
-                    <Ionicons name="download-outline" size={18} color={colors.primary} />
+                    <Ionicons name="share-social-outline" size={18} color={colors.primary} />
                   </TouchableOpacity>
-                )}
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => handleShare(item)}
-                >
-                  <Ionicons name="share-social-outline" size={18} color={colors.primary} />
-                </TouchableOpacity>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-              </View>
-            </View>
-
-            {item.criticalValues && item.criticalValues.length > 0 && (
-              <View style={[styles.criticalAlert, { backgroundColor: '#fef2f2', borderColor: colors.error }]}>
-                <Ionicons name="warning" size={16} color={colors.error} />
-                <View style={styles.criticalContent}>
-                  <ThemedText style={[styles.criticalTitle, { color: colors.error }]}>
-                    Valores que requieren atención:
-                  </ThemedText>
-                  {item.criticalValues.map((value, index) => (
-                    <ThemedText key={index} style={[styles.criticalValue, { color: colors.error }]}>
-                      • {value}
-                    </ThemedText>
-                  ))}
+                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
                 </View>
               </View>
-            )}
-          </TouchableOpacity>
-        )}
-        style={styles.resultsList}
-        contentContainerStyle={{ 
-          paddingHorizontal: 16, 
-          paddingBottom: insets.bottom + 20 
-        }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
-            <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>
-              No se encontraron resultados
-            </ThemedText>
-            <ThemedText style={[styles.emptyStateMessage, { color: colors.textSecondary }]}>
-              Ajusta tus filtros de búsqueda o verifica que tengas resultados disponibles
-            </ThemedText>
+
+              {item.criticalValues && item.criticalValues.length > 0 && (
+                <View style={[styles.criticalAlert, { backgroundColor: '#fef2f2', borderColor: colors.error }]}>
+                  <Ionicons name="warning" size={16} color={colors.error} />
+                  <View style={styles.criticalContent}>
+                    <ThemedText style={[styles.criticalTitle, { color: colors.error }]}>
+                      Valores que requieren atención:
+                    </ThemedText>
+                    {item.criticalValues.map((value, index) => (
+                      <ThemedText key={index} style={[styles.criticalValue, { color: colors.error }]}>
+                        • {value}
+                      </ThemedText>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+          style={styles.resultsList}
+          contentContainerStyle={{ 
+            paddingHorizontal: 16, 
+            paddingBottom: insets.bottom + 20 
+          }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
+              <ThemedText style={[styles.emptyStateTitle, { color: colors.text }]}>
+                No se encontraron resultados
+              </ThemedText>
+              <ThemedText style={[styles.emptyStateMessage, { color: colors.textSecondary }]}>
+                Ajusta tus filtros de búsqueda o verifica que tengas resultados disponibles
+              </ThemedText>
+            </View>
+          )}
+        />
+
+        {/* Modal de Descarga */}
+        <Modal
+          visible={showDownloadModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowDownloadModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              <View style={styles.modalHeader}>
+                <Ionicons name="cloud-download" size={48} color={Colors.light.primary} />
+                <ThemedText style={[styles.modalTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                  {selectedResult?.downloadable ? 'Descargar Resultado' : 'Resultado no disponible'}
+                </ThemedText>
+              </View>
+              
+              <ThemedText style={[styles.modalMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {selectedResult?.downloadable 
+                  ? `¿Deseas descargar el reporte de "${selectedResult?.testName}"?`
+                  : 'Este resultado aún no está listo para descarga.'
+                }
+              </ThemedText>
+              
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowDownloadModal(false)}
+                >
+                  <ThemedText style={[styles.cancelButtonText, { color: Colors.light.textSecondary }]}>
+                    Cancelar
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                {selectedResult?.downloadable && (
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.confirmButton, { backgroundColor: Colors.light.primary }]}
+                    onPress={confirmDownload}
+                  >
+                    <Ionicons name="download" size={16} color={Colors.light.white} />
+                    <ThemedText style={[styles.confirmButtonText, { color: Colors.light.white }]}>
+                      Descargar
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
           </View>
-        )}
-      />
-    </ThemedView>
+        </Modal>
+
+        {/* Modal de Compartir */}
+        <Modal
+          visible={showShareModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowShareModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              <View style={styles.modalHeader}>
+                <Ionicons name="share-social" size={48} color={Colors.light.primary} />
+                <ThemedText style={[styles.modalTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                  Compartir Resultado
+                </ThemedText>
+              </View>
+              
+              <ThemedText style={[styles.modalMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                ¿Cómo deseas compartir este resultado?
+              </ThemedText>
+              
+              <View style={styles.shareOptions}>
+                <TouchableOpacity 
+                  style={[styles.shareOption, { borderColor: Colors.light.border }]}
+                  onPress={() => {
+                    setShowShareModal(false);
+                    // Lógica de compartir con médico
+                  }}
+                >
+                  <Ionicons name="medical" size={24} color={Colors.light.primary} />
+                  <ThemedText style={[styles.shareOptionText, { color: isDarkMode ? Colors.dark.text : Colors.light.text }]}>
+                    Con mi médico
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.shareOption, { borderColor: Colors.light.border }]}
+                  onPress={() => {
+                    setShowShareModal(false);
+                    // Lógica de compartir por email
+                  }}
+                >
+                  <Ionicons name="mail" size={24} color={Colors.light.primary} />
+                  <ThemedText style={[styles.shareOptionText, { color: isDarkMode ? Colors.dark.text : Colors.light.text }]}>
+                    Por email
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowShareModal(false)}
+              >
+                <ThemedText style={[styles.cancelButtonText, { color: Colors.light.textSecondary }]}>
+                  Cancelar
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de Éxito */}
+        <Modal
+          visible={showSuccessModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeSuccessModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.successModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={64} color={Colors.light.success} />
+              </View>
+              
+              <ThemedText style={[styles.successTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                ¡Descarga exitosa!
+              </ThemedText>
+              
+              <ThemedText style={[styles.successMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                El resultado se ha descargado correctamente en tu dispositivo.
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.successButton, { backgroundColor: Colors.light.primary }]}
+                onPress={closeSuccessModal}
+              >
+                <ThemedText style={[styles.successButtonText, { color: Colors.light.white }]}>
+                  Entendido
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+      </ThemedView>
+    </>
   );
 }
 
@@ -604,8 +775,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
@@ -847,5 +1024,121 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    minWidth: 300,
+    maxWidth: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  confirmButton: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  shareOptions: {
+    width: '100%',
+    gap: 12,
+    marginBottom: 20,
+  },
+  shareOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  shareOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  successModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  successButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  successButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

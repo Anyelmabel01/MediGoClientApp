@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -5,11 +6,14 @@ import { useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { BottomNavbar } from '@/components/BottomNavbar';
+import { LocationSelector } from '@/components/LocationSelector';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { handleError } from '@/utils/errorHandler';
 import { useAuth } from '../../hooks/useAuth';
+import { useUser } from '../../hooks/useUser';
 
 type ServiceItem = {
   id: string;
@@ -66,8 +70,15 @@ const services: ServiceItem[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, session, isLoading } = useAuth();
+  const { session, isLoading } = useAuth();
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const { isDarkMode } = useTheme();
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  const handleLocationSelect = (location: any) => {
+    setCurrentLocation(location);
+  };
 
   const renderServiceItem = ({ item }: { item: ServiceItem }) => (
     <TouchableOpacity 
@@ -112,34 +123,42 @@ export default function HomeScreen() {
         <TouchableOpacity 
           style={styles.userInfoContainer}
           onPress={() => setShowUserProfile(true)}
+          activeOpacity={0.8}
         >
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, { backgroundColor: Colors.light.white }]}>
               <ThemedText style={styles.avatarText}>
-                {userName.charAt(0).toUpperCase()}{userName.split(' ').length > 1 ? userName.split(' ')[1].charAt(0).toUpperCase() : userName.charAt(1).toUpperCase()}
+                {user?.nombre?.charAt(0)?.toUpperCase() || 'U'}{user?.apellido?.charAt(0)?.toUpperCase() || 'S'}
               </ThemedText>
+            </View>
+            <View style={styles.editAvatarOverlay}>
+              <Ionicons name="create-outline" size={12} color={Colors.light.white} />
             </View>
           </View>
           
           <View style={styles.greetingContainer}>
             <ThemedText style={styles.greeting}>
-              ¡Hola, {userName}!
+              ¡Hola, {user?.nombre || 'Anvill'}!
             </ThemedText>
-            <View style={styles.editProfileIndicator}>
-              <Ionicons name="create-outline" size={14} color={Colors.light.primary} />
-            </View>
+            <ThemedText style={styles.subGreeting}>
+              Tu ubicación principal
+            </ThemedText>
           </View>
         </TouchableOpacity>
         
-        <View style={styles.locationContainer}>
+        <TouchableOpacity 
+          style={styles.locationContainer}
+          onPress={() => setShowLocationSelector(true)}
+          activeOpacity={0.7}
+        >
           <View style={styles.locationIcon}>
-            <Ionicons name="location" size={18} color={Colors.light.primary} />
+            <Ionicons name="location" size={16} color={Colors.light.white} />
           </View>
           <ThemedText style={styles.locationText} numberOfLines={1}>
-            Tu ubicación principal
+            {currentLocation?.direccion || 'Seleccionar ubicación'}
           </ThemedText>
-          <Ionicons name="chevron-down" size={16} color={Colors.light.textSecondary} />
-        </View>
+          <Ionicons name="chevron-down" size={14} color={Colors.light.white} />
+        </TouchableOpacity>
       </View>
       
       <View style={styles.servicesHeaderContainer}>
@@ -157,21 +176,16 @@ export default function HomeScreen() {
       
       <BottomNavbar />
       
-      {showUserProfile && (
-        <View style={styles.userProfileModal}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowUserProfile(false)}
-            >
-              <Ionicons name="close" size={24} color={Colors.light.text} />
-            </TouchableOpacity>
-            <ThemedText style={styles.modalTitle}>Perfil de Usuario</ThemedText>
-            <ThemedText style={styles.modalText}>Nombre: {userName}</ThemedText>
-            <ThemedText style={styles.modalText}>Email: {userEmail}</ThemedText>
-          </View>
-        </View>
-      )}
+      <UserProfile 
+        isVisible={showUserProfile} 
+        onClose={() => setShowUserProfile(false)}
+      />
+      
+      <LocationSelector 
+        isVisible={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </ThemedView>
   );
 }
@@ -203,6 +217,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginRight: 12,
+    position: 'relative',
   },
   avatar: {
     width: 48,
@@ -220,19 +235,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   greetingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flex: 1,
   },
   greeting: {
     fontSize: 20,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
-  editProfileIndicator: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 4,
-    marginLeft: 8,
+  subGreeting: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -241,6 +254,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
+    marginTop: 4,
   },
   locationIcon: {
     marginRight: 6,
@@ -248,7 +262,7 @@ const styles = StyleSheet.create({
   locationText: {
     flex: 1,
     color: Colors.light.white,
-    fontSize: 14,
+    fontSize: 13,
     marginRight: 4,
   },
   servicesHeaderContainer: {
@@ -316,35 +330,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  userProfileModal: {
+  editAvatarOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    bottom: -2,
+    right: -2,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: Colors.light.white,
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
-    minWidth: 300,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: Colors.light.white,
   },
 });

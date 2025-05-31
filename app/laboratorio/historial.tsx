@@ -2,9 +2,10 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+
 import { useState } from 'react';
-import { Alert, ScrollView, Share, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Modal, ScrollView, Share, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -30,6 +31,12 @@ export default function HistorialScreen() {
     'Mayo 2024': true,
     'Abril 2024': true
   });
+
+  // Estados para modales elegantes
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalAnimation] = useState(new Animated.Value(0));
+  const [modalMessage, setModalMessage] = useState('');
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
 
@@ -83,58 +90,177 @@ export default function HistorialScreen() {
     }
   };
 
+  const shareHistory = async () => {
+    try {
+      await Share.share({
+        message: 'Mi historial de pruebas médicas...',
+      });
+      // Mostrar modal de éxito
+      setModalMessage('Historial compartido exitosamente');
+      setShowSuccessModal(true);
+      animateModal();
+    } catch (error) {
+      // Mostrar modal de error
+      setModalMessage('No se pudo compartir el historial');
+      setShowErrorModal(true);
+      animateModal();
+    }
+  };
+
+  const animateModal = () => {
+    Animated.spring(modalAnimation, {
+      toValue: 1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeModal = () => {
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    modalAnimation.setValue(0);
+  };
+
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBackPress}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
             
-            <View style={styles.greetingContainer}>
-              <ThemedText style={styles.greeting}>
-                Historial de Pruebas
-              </ThemedText>
-              <View style={styles.editProfileIndicator}>
-                <Ionicons name="time" size={14} color={Colors.light.primary} />
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  Historial de Pruebas
+                </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="time" size={14} color={Colors.light.primary} />
+                </View>
               </View>
             </View>
           </View>
         </View>
-      </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        {groupedHistory.map(group => (
-          <View key={group.date} style={styles.groupBlock}>
-            <ThemedText style={styles.groupDate}>{group.date}</ThemedText>
-            {group.tests.map(test => (
+        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+          {groupedHistory.map(group => (
+            <View key={group.date} style={styles.groupBlock}>
+              <ThemedText style={styles.groupDate}>{group.date}</ThemedText>
+              {group.tests.map(test => (
+                <TouchableOpacity 
+                  key={test.id} 
+                  style={styles.testCard}
+                  onPress={() => handleTestPress(test.id, test.name)}
+                >
+                  <Ionicons name="flask-outline" size={22} color="#00A0B0" style={{marginRight:10}} />
+                  <ThemedText style={styles.testName}>{test.name}</ThemedText>
+                  <ThemedText style={[styles.statusBadge, {backgroundColor: test.status==='Normal'?'#28a745':'#dc3545'}]}>{test.status}</ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color="#6C757D" style={{marginLeft:10}} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Modal de Éxito */}
+        <Modal
+          visible={showSuccessModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.successModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={64} color={Colors.light.success} />
+              </View>
+              
+              <ThemedText style={[styles.successTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                ¡Éxito!
+              </ThemedText>
+              
+              <ThemedText style={[styles.successMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {modalMessage}
+              </ThemedText>
+              
               <TouchableOpacity 
-                key={test.id} 
-                style={styles.testCard}
-                onPress={() => handleTestPress(test.id, test.name)}
+                style={[styles.successButton, { backgroundColor: Colors.light.primary }]}
+                onPress={closeModal}
               >
-                <Ionicons name="flask-outline" size={22} color="#00A0B0" style={{marginRight:10}} />
-                <ThemedText style={styles.testName}>{test.name}</ThemedText>
-                <ThemedText style={[styles.statusBadge, {backgroundColor: test.status==='Normal'?'#28a745':'#dc3545'}]}>{test.status}</ThemedText>
-                <Ionicons name="chevron-forward" size={18} color="#6C757D" style={{marginLeft:10}} />
+                <ThemedText style={[styles.successButtonText, { color: Colors.light.white }]}>
+                  Entendido
+                </ThemedText>
               </TouchableOpacity>
-            ))}
+            </Animated.View>
           </View>
-        ))}
-      </ScrollView>
-    </ThemedView>
+        </Modal>
+
+        {/* Modal de Error */}
+        <Modal
+          visible={showErrorModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.errorModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.errorIconContainer}>
+                <Ionicons name="alert-circle" size={64} color={Colors.light.error} />
+              </View>
+              
+              <ThemedText style={[styles.errorTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                Error
+              </ThemedText>
+              
+              <ThemedText style={[styles.errorMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {modalMessage}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.errorButton, { backgroundColor: Colors.light.error }]}
+                onPress={closeModal}
+              >
+                <ThemedText style={[styles.errorButtonText, { color: Colors.light.white }]}>
+                  Cerrar
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+      </ThemedView>
+    </>
   );
 }
 
@@ -156,8 +282,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
@@ -209,5 +341,82 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+  },
+  // Nuevos estilos para modales
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  successModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  successButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  successButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  errorIconContainer: {
+    marginBottom: 20,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  errorButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

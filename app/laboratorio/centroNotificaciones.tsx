@@ -2,9 +2,9 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -14,6 +14,16 @@ export default function CentroNotificacionesScreen() {
   const { isDarkMode } = useTheme();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
+  
+  // Estados para modales elegantes
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [modalAnimation] = useState(new Animated.Value(0));
+  const [modalMessage, setModalMessage] = useState('');
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notificationToDelete, setNotificationToDelete] = useState(null);
+  
   const [notifications, setNotifications] = useState([
     { id: '1', title: 'Resultados Listos', message: 'Tus resultados para la prueba de Glucosa ya están disponibles.', date: 'Hace 2 horas', read: false, type: 'resultado' },
     { id: '2', title: 'Recordatorio de Cita', message: 'No olvides tu cita para Hemograma mañana a las 9:00 AM.', date: 'Ayer', read: true, type: 'cita' },
@@ -35,7 +45,9 @@ export default function CentroNotificacionesScreen() {
     setNotifications(
       notifications.map(item => ({ ...item, read: true }))
     );
-    Alert.alert('Notificaciones', 'Todas las notificaciones han sido marcadas como leídas');
+    setModalMessage('Todas las notificaciones han sido marcadas como leídas');
+    setShowSuccessModal(true);
+    animateModal();
   };
 
   const handleMarkAsRead = (id: string) => {
@@ -47,22 +59,20 @@ export default function CentroNotificacionesScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      'Eliminar notificación',
-      '¿Estás seguro que deseas eliminar esta notificación?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: () => {
-            setNotifications(
-              notifications.filter(item => item.id !== id)
-            );
-          }
-        }
-      ]
+    setNotificationToDelete(id);
+    setShowDeleteModal(true);
+    animateModal();
+  };
+
+  const confirmDelete = () => {
+    setNotifications(
+      notifications.filter(item => item.id !== notificationToDelete)
     );
+    setShowDeleteModal(false);
+    setModalMessage('Notificación eliminada correctamente');
+    setShowSuccessModal(true);
+    modalAnimation.setValue(0);
+    animateModal();
   };
 
   const handleNotificationPress = (item: any) => {
@@ -74,7 +84,9 @@ export default function CentroNotificacionesScreen() {
     } else if (item.type === 'cita') {
       router.push('/laboratorio/catalogo');
     } else {
-      Alert.alert(item.title, item.message);
+      setSelectedNotification(item);
+      setShowNotificationModal(true);
+      animateModal();
     }
   };
 
@@ -82,103 +94,262 @@ export default function CentroNotificacionesScreen() {
     router.push('/laboratorio');
   };
 
+  const animateModal = () => {
+    Animated.spring(modalAnimation, {
+      toValue: 1,
+      tension: 100,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeModal = () => {
+    setShowSuccessModal(false);
+    setShowDeleteModal(false);
+    setShowNotificationModal(false);
+    modalAnimation.setValue(0);
+  };
+
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBackPress}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={handleBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
+            
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  Centro de Notificaciones
                 </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="notifications" size={14} color={Colors.light.primary} />
+                </View>
               </View>
             </View>
             
-            <View style={styles.greetingContainer}>
-              <ThemedText style={styles.greeting}>
-                Centro de Notificaciones
-              </ThemedText>
-            </View>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.markAllButton}
-            onPress={handleMarkAllRead}
-          >
-            <Ionicons name="checkmark-done" size={20} color={Colors.light.white} />
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      {notifications.length > 0 ? (
-        <FlatList
-          data={notifications}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
             <TouchableOpacity 
-              style={[
-                styles.notificationCard, 
-                !item.read && styles.unreadCard,
-                { backgroundColor: isDarkMode ? 
-                  Colors.dark.background : 
-                  Colors.light.background }
-              ]}
-              onPress={() => handleNotificationPress(item)}
-              activeOpacity={0.7}
+              style={styles.markAllButton}
+              onPress={handleMarkAllRead}
             >
-              <Ionicons 
-                name={getIconForType(item.type) as any} 
-                size={28} 
-                color={isDarkMode ? Colors.dark.primary : '#00A0B0'} 
-                style={styles.icon} 
-              />
-              <View style={styles.content}>
-                <ThemedText style={styles.notificationTitle}>{item.title}</ThemedText>
-                <ThemedText style={styles.message}>{item.message}</ThemedText>
-                <ThemedText style={styles.date}>{item.date}</ThemedText>
-              </View>
-              {!item.read && (
-                <View style={[
-                  styles.unreadDot, 
-                  { backgroundColor: '#00A0B0' }
-                ]} />
-              )}
+              <Ionicons name="checkmark-done" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {notifications.length > 0 ? (
+          <FlatList
+            data={notifications}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => (
               <TouchableOpacity 
-                style={styles.deleteButton}
-                onPress={() => handleDelete(item.id)}
-                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                style={[
+                  styles.notificationCard, 
+                  !item.read && styles.unreadCard,
+                  { backgroundColor: isDarkMode ? 
+                    Colors.dark.background : 
+                    Colors.light.background }
+                ]}
+                onPress={() => handleNotificationPress(item)}
+                activeOpacity={0.7}
               >
                 <Ionicons 
-                  name="trash-outline" 
-                  size={20} 
-                  color={isDarkMode ? '#ff6b6b' : '#dc3545'} 
+                  name={getIconForType(item.type) as any} 
+                  size={28} 
+                  color={isDarkMode ? Colors.dark.primary : '#00A0B0'} 
+                  style={styles.icon} 
                 />
+                <View style={styles.content}>
+                  <ThemedText style={styles.notificationTitle}>{item.title}</ThemedText>
+                  <ThemedText style={styles.message}>{item.message}</ThemedText>
+                  <ThemedText style={styles.date}>{item.date}</ThemedText>
+                </View>
+                {!item.read && (
+                  <View style={[
+                    styles.unreadDot, 
+                    { backgroundColor: '#00A0B0' }
+                  ]} />
+                )}
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                  hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                >
+                  <Ionicons 
+                    name="trash-outline" 
+                    size={20} 
+                    color={isDarkMode ? '#ff6b6b' : '#dc3545'} 
+                  />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons 
-            name="notifications-off-outline" 
-            size={64} 
-            color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+            )}
           />
-          <ThemedText style={styles.emptyText}>
-            No tienes notificaciones
-          </ThemedText>
-        </View>
-      )}
-    </ThemedView>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons 
+              name="notifications-off-outline" 
+              size={64} 
+              color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+            />
+            <ThemedText style={styles.emptyText}>
+              No tienes notificaciones
+            </ThemedText>
+          </View>
+        )}
+
+        {/* Modal de Éxito */}
+        <Modal
+          visible={showSuccessModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.successModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={64} color={Colors.light.success} />
+              </View>
+              
+              <ThemedText style={[styles.successTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                ¡Éxito!
+              </ThemedText>
+              
+              <ThemedText style={[styles.successMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {modalMessage}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.successButton, { backgroundColor: Colors.light.primary }]}
+                onPress={closeModal}
+              >
+                <ThemedText style={[styles.successButtonText, { color: Colors.light.white }]}>
+                  Entendido
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+
+        {/* Modal de Confirmación de Eliminación */}
+        <Modal
+          visible={showDeleteModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.deleteModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.deleteIconContainer}>
+                <Ionicons name="trash" size={64} color={Colors.light.error} />
+              </View>
+              
+              <ThemedText style={[styles.deleteTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                Eliminar notificación
+              </ThemedText>
+              
+              <ThemedText style={[styles.deleteMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                ¿Estás seguro que deseas eliminar esta notificación?
+              </ThemedText>
+              
+              <View style={styles.deleteButtons}>
+                <TouchableOpacity 
+                  style={[styles.deleteButton, styles.cancelButton]}
+                  onPress={closeModal}
+                >
+                  <ThemedText style={[styles.cancelButtonText, { color: Colors.light.textSecondary }]}>
+                    Cancelar
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.deleteButton, styles.confirmDeleteButton, { backgroundColor: Colors.light.error }]}
+                  onPress={confirmDelete}
+                >
+                  <ThemedText style={[styles.confirmDeleteButtonText, { color: Colors.light.white }]}>
+                    Eliminar
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        </Modal>
+
+        {/* Modal de Detalle de Notificación */}
+        <Modal
+          visible={showNotificationModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.notificationModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.notificationIconContainer}>
+                <Ionicons name="information-circle" size={64} color={Colors.light.primary} />
+              </View>
+              
+              <ThemedText style={[styles.notificationTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                {selectedNotification?.title}
+              </ThemedText>
+              
+              <ThemedText style={[styles.notificationMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {selectedNotification?.message}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.notificationButton, { backgroundColor: Colors.light.primary }]}
+                onPress={closeModal}
+              >
+                <ThemedText style={[styles.notificationButtonText, { color: Colors.light.white }]}>
+                  Cerrar
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+      </ThemedView>
+    </>
   );
 }
 
@@ -188,7 +359,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 16,
+    paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
@@ -197,25 +368,29 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   backButton: {
-    padding: 6,
-    marginRight: 8,
+    padding: 8,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    maxWidth: '75%',
   },
   avatarContainer: {
     marginRight: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -224,28 +399,23 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   greeting: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: 'bold',
     color: Colors.light.white,
-    flexWrap: 'wrap',
-    maxWidth: '100%',
   },
   editProfileIndicator: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 4,
-    marginTop: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginLeft: 8,
   },
   list: {
     paddingVertical: 8,
@@ -317,5 +487,135 @@ const styles = StyleSheet.create({
     minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  successModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  successButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  successButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  deleteIconContainer: {
+    marginBottom: 20,
+  },
+  deleteTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  deleteMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  confirmDeleteButton: {
+    // backgroundColor set inline
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmDeleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  notificationModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  notificationIconContainer: {
+    marginBottom: 20,
+  },
+  notificationTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  notificationMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  notificationButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  notificationButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

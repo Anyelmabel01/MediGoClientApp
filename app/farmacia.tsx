@@ -8,7 +8,7 @@ import { UserLocation } from '@/constants/UserModel';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
-import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -468,22 +468,12 @@ export default function FarmaciaScreen() {
       onPress={() => handlePaymentSelect(item.id)}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
-      <View style={[styles.paymentMethodIconContainer, selectedPaymentMethod === item.id && styles.selectedPaymentMethodIcon]}>
-        {item.isIconMaterial ? (
-          <MaterialIcons name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
-        ) : item.isFontAwesome ? (
-          <FontAwesome name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
-        ) : (
-          <Ionicons name={item.icon as any} size={24} color={selectedPaymentMethod === item.id ? Colors.light.white : Colors.light.primary} />
-        )}
-      </View>
       <View style={styles.paymentMethodContent}>
         <ThemedText style={[styles.paymentMethodName, selectedPaymentMethod === item.id && styles.selectedPaymentMethodText]}>
           {item.name}
         </ThemedText>
         <ThemedText style={styles.paymentMethodDescription}>
-          {item.id === '1' ? 'Visa, Mastercard, American Express y otras tarjetas principales' :
-           'Transferencia inmediata desde tu cuenta bancaria'}
+          {item.id === '1' ? '**** **** **** 1234' : '**** **** **** 5678'}
         </ThemedText>
       </View>
       {selectedPaymentMethod === item.id && (
@@ -811,9 +801,9 @@ export default function FarmaciaScreen() {
                       <ThemedText style={styles.cardType}>Tarjeta {selectedPaymentMethod === '1' ? 'de Crédito' : 'de Débito'}</ThemedText>
                       <Ionicons name="card" size={24} color="#fff" />
                     </View>
-                    <ThemedText style={styles.cardNumberPreview}>
+                    <ThemedText style={styles.cardNumberPreview} numberOfLines={1}>
                       {cardInfo.cardNumber ? 
-                        cardInfo.cardNumber.replace(/(\d{4})/g, '$1 ').trim() : 
+                        cardInfo.cardNumber.replace(/(.{4})/g, '$1 ').trim() : 
                         '•••• •••• •••• ••••'
                       }
                     </ThemedText>
@@ -1497,9 +1487,10 @@ const styles = StyleSheet.create({
   },
   cardNumberPreview: {
     color: '#fff',
-    fontSize: 22,
-    letterSpacing: 2,
+    fontSize: 20,
+    letterSpacing: 1,
     marginBottom: 30,
+    fontFamily: 'monospace',
   },
   cardFooter: {
     flexDirection: 'row',

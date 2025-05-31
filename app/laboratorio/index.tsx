@@ -149,11 +149,18 @@ export default function LaboratorioScreen() {
       
       <View style={styles.header}>
         <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+          </TouchableOpacity>
+          
           <View style={styles.userInfoContainer}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                 </ThemedText>
               </View>
             </View>
@@ -172,22 +179,6 @@ export default function LaboratorioScreen() {
       
       <View style={styles.servicesHeaderContainer}>
         <ThemedText style={styles.subtitle}>Servicios de laboratorio y análisis</ThemedText>
-        
-        <TouchableOpacity 
-          style={styles.locationCard}
-          onPress={() => setShowLocationSelector(true)}
-        >
-          <View style={styles.locationIcon}>
-            <Ionicons name="location" size={20} color={Colors.light.primary} />
-          </View>
-          <View style={styles.locationTextContainer}>
-            <ThemedText style={styles.locationLabel}>Tu ubicación</ThemedText>
-            <ThemedText style={styles.locationText} numberOfLines={1}>
-              {currentLocation.direccion}
-            </ThemedText>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={Colors.light.textSecondary} />
-        </TouchableOpacity>
       </View>
       
       <ScrollView 
@@ -265,7 +256,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.light.primary,
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
@@ -273,19 +264,29 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
+    alignItems: 'center',
+    width: 40, 
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   avatarContainer: {
     marginRight: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.light.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: Colors.light.primary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   greetingContainer: {
@@ -302,15 +303,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: 'bold',
     color: Colors.light.white,
   },
   editProfileIndicator: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 6,
-    marginLeft: 10,
+    padding: 4,
+    marginLeft: 8,
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,
@@ -406,39 +407,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
     color: Colors.light.textSecondary,
-  },
-  locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.light.white,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  locationIcon: {
-    marginRight: 12,
-    backgroundColor: 'rgba(45, 127, 249, 0.1)',
-    padding: 8,
-    borderRadius: 10,
-  },
-  locationTextContainer: {
-    flex: 1,
-  },
-  locationLabel: {
-    fontSize: 12,
-    color: Colors.light.textSecondary,
-    marginBottom: 2,
-  },
-  locationText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.light.text,
   },
 }); 

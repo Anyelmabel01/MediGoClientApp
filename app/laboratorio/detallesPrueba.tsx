@@ -2,7 +2,8 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
@@ -40,99 +41,102 @@ export default function DetallesPruebaScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
             
-            <View style={styles.greetingContainer}>
-              <ThemedText style={styles.greeting}>
-                Detalles de Prueba
-              </ThemedText>
-              <View style={styles.editProfileIndicator}>
-                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  Detalles de Prueba
+                </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="flask" size={14} color={Colors.light.primary} />
+                </View>
               </View>
             </View>
           </View>
         </View>
-      </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <ThemedText style={styles.title}>{prueba.nombre}</ThemedText>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ThemedText style={styles.title}>{prueba.nombre}</ThemedText>
 
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Información General</ThemedText>
-          <ThemedText style={styles.label}>Descripción:</ThemedText>
-          <ThemedText style={styles.text}>{prueba.descripcionDetallada}</ThemedText>
-          <ThemedText style={styles.label}>¿Qué mide?</ThemedText>
-          <ThemedText style={styles.text}>{prueba.queMide}</ThemedText>
-          <ThemedText style={styles.label}>¿Por qué es importante?</ThemedText>
-          <ThemedText style={styles.text}>{prueba.porQueEsImportante}</ThemedText>
-          <ThemedText style={styles.label}>Rangos Normales Referenciales:</ThemedText>
-          <ThemedText style={styles.text}>{prueba.rangosNormales}</ThemedText>
-        </View>
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Información General</ThemedText>
+            <ThemedText style={styles.label}>Descripción:</ThemedText>
+            <ThemedText style={styles.text}>{prueba.descripcionDetallada}</ThemedText>
+            <ThemedText style={styles.label}>¿Qué mide?</ThemedText>
+            <ThemedText style={styles.text}>{prueba.queMide}</ThemedText>
+            <ThemedText style={styles.label}>¿Por qué es importante?</ThemedText>
+            <ThemedText style={styles.text}>{prueba.porQueEsImportante}</ThemedText>
+            <ThemedText style={styles.label}>Rangos Normales Referenciales:</ThemedText>
+            <ThemedText style={styles.text}>{prueba.rangosNormales}</ThemedText>
+          </View>
 
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Preparación</ThemedText>
-          {prueba.preparacion.map((item, index) => (
-            <View key={index} style={styles.listItem}>
-              <Ionicons name="checkmark-circle-outline" size={20} color="green" style={styles.listItemIcon} />
-              <ThemedText style={styles.text}>{item}</ThemedText>
-            </View>
-          ))}
-        </View>
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Preparación</ThemedText>
+            {prueba.preparacion.map((item, index) => (
+              <View key={index} style={styles.listItem}>
+                <Ionicons name="checkmark-circle-outline" size={20} color="green" style={styles.listItemIcon} />
+                <ThemedText style={styles.text}>{item}</ThemedText>
+              </View>
+            ))}
+          </View>
 
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Especificaciones de la Prueba</ThemedText>
-          <ThemedText style={styles.label}>Tipo de Muestra:</ThemedText>
-          <ThemedText style={styles.text}>{prueba.tipoMuestra}</ThemedText>
-          <ThemedText style={styles.label}>Tiempo de Entrega de Resultados:</ThemedText>
-          <ThemedText style={styles.text}>{prueba.tiempoResultados}</ThemedText>
-          <ThemedText style={styles.label}>Precio:</ThemedText>
-          <ThemedText style={styles.price}>Bs {prueba.precio} VED</ThemedText>
-        </View>
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Especificaciones de la Prueba</ThemedText>
+            <ThemedText style={styles.label}>Tipo de Muestra:</ThemedText>
+            <ThemedText style={styles.text}>{prueba.tipoMuestra}</ThemedText>
+            <ThemedText style={styles.label}>Tiempo de Entrega de Resultados:</ThemedText>
+            <ThemedText style={styles.text}>{prueba.tiempoResultados}</ThemedText>
+            <ThemedText style={styles.label}>Precio:</ThemedText>
+            <ThemedText style={styles.price}>Bs {prueba.precio} VED</ThemedText>
+          </View>
 
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Disponibilidad</ThemedText>
-          <ThemedText style={styles.label}>Laboratorios que la ofrecen:</ThemedText>
-          {prueba.labsDisponibles.map((lab, index) => (
-             <ThemedText key={index} style={styles.text}>- {lab}</ThemedText>
-          ))}
-          <ThemedText style={styles.label}>Toma a domicilio disponible:</ThemedText>
-          <ThemedText style={styles.text}>{prueba.tomaDomicilio ? 'Sí' : 'No'}</ThemedText>
-        </View>
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Disponibilidad</ThemedText>
+            <ThemedText style={styles.label}>Laboratorios que la ofrecen:</ThemedText>
+            {prueba.labsDisponibles.map((lab, index) => (
+               <ThemedText key={index} style={styles.text}>- {lab}</ThemedText>
+            ))}
+            <ThemedText style={styles.label}>Toma a domicilio disponible:</ThemedText>
+            <ThemedText style={styles.text}>{prueba.tomaDomicilio ? 'Sí' : 'No'}</ThemedText>
+          </View>
 
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={handleAgendar}>
-            <Ionicons name="calendar-outline" size={20} color="white" />
-            <ThemedText style={styles.primaryButtonText}>Agendar Prueba</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="heart-outline" size={20} color="#00A0B0" />
-            <ThemedText style={styles.buttonText}>Añadir a Favoritos</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="share-social-outline" size={20} color="#00A0B0" />
-            <ThemedText style={styles.buttonText}>Compartir</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </ThemedView>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={handleAgendar}>
+              <Ionicons name="calendar-outline" size={20} color="white" />
+              <ThemedText style={styles.primaryButtonText}>Agendar Prueba</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="heart-outline" size={20} color="#00A0B0" />
+              <ThemedText style={styles.buttonText}>Añadir a Favoritos</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="share-social-outline" size={20} color="#00A0B0" />
+              <ThemedText style={styles.buttonText}>Compartir</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    </>
   );
 }
 
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.light.primary,
-    paddingTop: 0,
+    paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
@@ -153,8 +157,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',

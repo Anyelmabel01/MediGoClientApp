@@ -1069,30 +1069,73 @@ export default function SolicitarScreen() {
         onRequestClose={() => setShowSuccessModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalIconContainer}>
-              <Ionicons name="checkmark-circle" size={48} color="#10b981" />
+          <View style={[styles.successModalContainer, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+            {/* Icono de éxito animado */}
+            <View style={styles.successIconContainer}>
+              <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
             </View>
-            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
-            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
-            <View style={styles.modalButtons}>
+            
+            {/* Título */}
+            <ThemedText style={[styles.successModalTitle, { 
+              color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary 
+            }]}>
+              ¡Cita agendada exitosamente!
+            </ThemedText>
+            
+            {/* Mensaje */}
+            <ThemedText style={[styles.successModalMessage, {
+              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+            }]}>
+              Tu cita para {nombrePrueba} ha sido programada para el {stepData.appointmentDate?.toLocaleDateString('es-VE')} a las {stepData.appointmentTime}.
+            </ThemedText>
+            
+            {/* Información adicional */}
+            <View style={[styles.appointmentInfoCard, { 
+              backgroundColor: isDarkMode ? Colors.dark.border : 'rgba(76, 175, 80, 0.1)',
+              borderColor: '#4CAF50'
+            }]}>
+              <View style={styles.appointmentInfoRow}>
+                <Ionicons name="location" size={16} color="#4CAF50" />
+                <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
+                  {stepData.selectedLab?.name}
+                </ThemedText>
+              </View>
+              <View style={styles.appointmentInfoRow}>
+                <Ionicons name="calendar" size={16} color="#4CAF50" />
+                <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
+                  {stepData.collectionMethod === 'home' ? 'Toma a domicilio' : 'En laboratorio'}
+                </ThemedText>
+              </View>
+            </View>
+            
+            {/* Botones */}
+            <View style={styles.successModalButtons}>
               <TouchableOpacity 
-                style={styles.modalButton}
-                onPress={() => {
-                  setShowSuccessModal(false);
-                  router.replace('/');
-                }}
-              >
-                <ThemedText style={styles.modalButtonText}>Ir al inicio</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.modalButton}
+                style={[styles.successModalButton, styles.secondaryButton, { borderColor: Colors.light.primary }]}
                 onPress={() => {
                   setShowSuccessModal(false);
                   router.replace('/laboratorio');
                 }}
+                activeOpacity={0.8}
               >
-                <ThemedText style={styles.modalButtonText}>Ver mis citas</ThemedText>
+                <Ionicons name="flask" size={18} color={Colors.light.primary} />
+                <ThemedText style={[styles.secondaryButtonText, { color: Colors.light.primary }]}>
+                  Ver mis citas
+                </ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.successModalButton, styles.primaryButton, { backgroundColor: Colors.light.primary }]}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/');
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="home" size={18} color={Colors.light.white} />
+                <ThemedText style={[styles.primaryButtonText, { color: Colors.light.white }]}>
+                  Ir al inicio
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -1119,8 +1162,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    padding: 6,
+    padding: 8,
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   userInfoContainer: {
     flexDirection: 'row',
@@ -1525,15 +1574,71 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.light.white,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  successModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successIconContainer: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: 40,
+    padding: 12,
+    marginBottom: 16,
+  },
+  successModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  successModalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  appointmentInfoCard: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
     marginTop: 16,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+  appointmentInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  appointmentInfoText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  successModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    gap: 12,
+  },
+  successModalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  secondaryButton: {
+    borderWidth: 2,
+    backgroundColor: 'transparent',
+  },
+  secondaryButtonText: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  primaryButton: {
+    borderWidth: 0,
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

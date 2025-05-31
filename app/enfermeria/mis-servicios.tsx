@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { FlatList, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
@@ -98,6 +98,9 @@ export default function MisServiciosScreen() {
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'scheduled' | 'history'>('scheduled');
+  const [refreshing, setRefreshing] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [selectedService, setSelectedService] = useState<NursingService | null>(null);
 
   const getStatusColor = (status: ServiceStatus) => {
     switch (status) {
@@ -128,12 +131,16 @@ export default function MisServiciosScreen() {
   };
 
   const handleServicePress = (service: NursingService) => {
-    // Navigate to service details or actions based on status
-    if (service.status === 'confirmed') {
-      // Show options to cancel or modify
-    } else if (service.status === 'completed' && !service.rating) {
-      // Navigate to rating screen
-    }
+    setSelectedService(service);
+    setShowServiceModal(true);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Simular carga de datos
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
   };
 
   const renderServiceItem = ({ item }: { item: NursingService }) => (
@@ -247,6 +254,167 @@ export default function MisServiciosScreen() {
 
   const currentData = activeTab === 'scheduled' ? scheduledServices : serviceHistory;
 
+  const renderServiceModal = () => {
+    if (!selectedService) return null;
+
+    const getStatusIcon = (status: ServiceStatus) => {
+      switch (status) {
+        case 'confirmed': return 'checkmark-circle';
+        case 'in-progress': return 'time';
+        case 'completed': return 'checkmark-done-circle';
+        case 'cancelled': return 'close-circle';
+      }
+    };
+
+    return (
+      <Modal
+        visible={showServiceModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowServiceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.serviceModalContent, {
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          }]}>
+            
+            {/* Close Button */}
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowServiceModal(false)}
+            >
+              <Ionicons name="close" size={24} color={isDarkMode ? Colors.dark.text : Colors.light.text} />
+            </TouchableOpacity>
+
+            {/* Status Header */}
+            <View style={[styles.statusHeader, { backgroundColor: getStatusColor(selectedService.status) }]}>
+              <Ionicons 
+                name={getStatusIcon(selectedService.status)} 
+                size={40} 
+                color="white" 
+              />
+              <ThemedText style={styles.statusTitle}>{getStatusLabel(selectedService.status)}</ThemedText>
+            </View>
+
+            {/* Service Title */}
+            <View style={styles.serviceTitleSection}>
+              <ThemedText style={styles.modalServiceTitle}>{selectedService.serviceName}</ThemedText>
+              <ThemedText style={[styles.modalServiceSubtitle, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>Servicio de enfermería a domicilio</ThemedText>
+            </View>
+
+            {/* Nurse Card */}
+            <View style={[styles.nurseCard, {
+              backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.background,
+            }]}>
+              <Image source={{ uri: selectedService.nursePhoto }} style={styles.nurseAvatar} />
+              <View style={styles.nurseInfo}>
+                <ThemedText style={styles.nurseNameText}>{selectedService.nurseName}</ThemedText>
+                <ThemedText style={[styles.nurseRoleText, {
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                }]}>Enfermera Profesional</ThemedText>
+              </View>
+            </View>
+
+            {/* Details Grid */}
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailCard}>
+                <View style={[styles.detailIconCircle, { backgroundColor: `${Colors.light.primary}20` }]}>
+                  <Ionicons name="calendar" size={20} color={Colors.light.primary} />
+                </View>
+                <ThemedText style={styles.detailCardLabel}>Fecha</ThemedText>
+                <ThemedText style={styles.detailCardValue}>
+                  {new Date(selectedService.date).toLocaleDateString('es-ES', { 
+                    day: 'numeric', 
+                    month: 'short' 
+                  })}
+                </ThemedText>
+              </View>
+
+              <View style={styles.detailCard}>
+                <View style={[styles.detailIconCircle, { backgroundColor: `${Colors.light.primary}20` }]}>
+                  <Ionicons name="time" size={20} color={Colors.light.primary} />
+                </View>
+                <ThemedText style={styles.detailCardLabel}>Hora</ThemedText>
+                <ThemedText style={styles.detailCardValue}>{selectedService.time}</ThemedText>
+              </View>
+
+              <View style={styles.detailCard}>
+                <View style={[styles.detailIconCircle, { backgroundColor: `${Colors.light.success}20` }]}>
+                  <Ionicons name="card" size={20} color={Colors.light.success} />
+                </View>
+                <ThemedText style={styles.detailCardLabel}>Costo</ThemedText>
+                <ThemedText style={[styles.detailCardValue, { color: Colors.light.success, fontWeight: 'bold' }]}>
+                  ${selectedService.totalCost}
+                </ThemedText>
+              </View>
+
+              {selectedService.rating && (
+                <View style={styles.detailCard}>
+                  <View style={[styles.detailIconCircle, { backgroundColor: '#FFD70020' }]}>
+                    <Ionicons name="star" size={20} color="#FFD700" />
+                  </View>
+                  <ThemedText style={styles.detailCardLabel}>Rating</ThemedText>
+                  <View style={styles.ratingStars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons
+                        key={star}
+                        name="star"
+                        size={14}
+                        color={star <= selectedService.rating! ? '#FFD700' : '#E0E0E0'}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Address Section */}
+            <View style={[styles.addressSection, {
+              backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.background,
+            }]}>
+              <Ionicons name="location" size={20} color={Colors.light.primary} />
+              <View style={styles.addressText}>
+                <ThemedText style={styles.addressLabel}>Dirección</ThemedText>
+                <ThemedText style={[styles.addressValue, {
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                }]}>{selectedService.address}</ThemedText>
+              </View>
+            </View>
+
+            {/* Notes Section */}
+            {selectedService.notes && (
+              <View style={[styles.notesCard, {
+                backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.background,
+              }]}>
+                <View style={styles.notesHeader}>
+                  <Ionicons name="document-text" size={20} color={Colors.light.primary} />
+                  <ThemedText style={styles.notesTitle}>
+                    {selectedService.status === 'cancelled' ? 'Motivo de Cancelación' : 'Notas del Servicio'}
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.notesContent, {
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                }]}>
+                  {selectedService.notes.replace(/"/g, '')}
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Action Button */}
+            <TouchableOpacity 
+              style={[styles.modalActionButton, { backgroundColor: getStatusColor(selectedService.status) }]}
+              onPress={() => setShowServiceModal(false)}
+            >
+              <ThemedText style={styles.modalActionText}>Cerrar</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style="auto" />
@@ -264,7 +432,7 @@ export default function MisServiciosScreen() {
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                 </ThemedText>
               </View>
             </View>
@@ -340,10 +508,14 @@ export default function MisServiciosScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.servicesList}
           showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       ) : (
         renderEmptyState()
       )}
+
+      {renderServiceModal()}
     </ThemedView>
   );
 }
@@ -498,7 +670,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   ratingContainer: {
-    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   rating: {
     flexDirection: 'row',
@@ -547,6 +720,143 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   ctaButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  serviceModalContent: {
+    width: '100%',
+    maxHeight: '90%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  statusTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  serviceTitleSection: {
+    marginBottom: 20,
+  },
+  modalServiceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  modalServiceSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  nurseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  nurseAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginRight: 16,
+  },
+  nurseInfo: {
+    flexDirection: 'column',
+  },
+  nurseNameText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.light.primary,
+  },
+  nurseRoleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  detailCard: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  detailIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailCardLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  detailCardValue: {
+    fontSize: 16,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addressSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  addressText: {
+    flexDirection: 'column',
+  },
+  addressLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  addressValue: {
+    fontSize: 16,
+  },
+  notesCard: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notesTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  notesContent: {
+    fontSize: 14,
+  },
+  modalActionButton: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  modalActionText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',

@@ -196,7 +196,7 @@ export default function EnfermeriaScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
               </ThemedText>
             </View>
           </View>
@@ -210,6 +210,15 @@ export default function EnfermeriaScreen() {
             </View>
           </View>
         </TouchableOpacity>
+        
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={handleMyServices}
+          >
+            <Ionicons name="calendar" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
         
         <TouchableOpacity 
           style={styles.locationContainer}
@@ -234,16 +243,6 @@ export default function EnfermeriaScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
       >
-        <View style={[styles.infoBox, { 
-          backgroundColor: isDarkMode ? 'rgba(45, 127, 249, 0.1)' : '#E3F2FD',
-          borderColor: isDarkMode ? 'rgba(45, 127, 249, 0.2)' : '#BBDEFB'
-        }]}>
-          <Ionicons name="information-circle" size={22} color={Colors.light.primary} />
-          <ThemedText style={[styles.infoText, { color: Colors.light.primary }]}>
-            Servicios profesionales en tu hogar
-          </ThemedText>
-        </View>
-
         {/* Search and Quick Actions Combined */}
         <View style={[styles.searchContainer, {
           backgroundColor: isDarkMode ? Colors.dark.border : Colors.light.border,
@@ -379,11 +378,11 @@ const styles = StyleSheet.create({
   },
   servicesHeaderContainer: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   subtitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.light.primary,
   },
@@ -392,21 +391,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 20,
-  },
-  infoBox: {
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  infoText: {
-    marginLeft: 10,
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -415,7 +401,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
       width: 0,
@@ -437,7 +423,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   nurseSearchText: {
     color: 'white',
@@ -447,7 +433,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   filtersContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   filtersContent: {
     paddingRight: 16,
@@ -475,7 +461,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 16,
     color: Colors.light.primary,
   },
   servicesList: {
@@ -483,11 +469,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
+    marginTop: 4,
   },
   serviceCard: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginBottom: 12,
     shadowColor: Colors.light.shadowColor,
     shadowOffset: {
@@ -504,19 +491,20 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     alignSelf: 'center',
   },
   serviceContent: {
     alignItems: 'center',
+    minHeight: 45,
   },
   serviceName: {
     fontSize: 13,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 8,
     color: Colors.light.primary,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   serviceDescription: {
     fontSize: 12,
@@ -566,5 +554,18 @@ const styles = StyleSheet.create({
   },
   servicesSection: {
     marginBottom: 16,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 16,
+    top: 64,
+  },
+  headerButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    padding: 8,
+    marginLeft: 8,
   },
 });

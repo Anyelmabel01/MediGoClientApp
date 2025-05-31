@@ -202,33 +202,30 @@ export default function AgendarServicioScreen() {
       style={[
         styles.paymentOption,
         {
-          backgroundColor: selectedPaymentMethod?.id === method.id 
+          backgroundColor: selectedPaymentMethod?.id === method.id
             ? (isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)')
             : (isDarkMode ? Colors.dark.background : Colors.light.background),
-          borderColor: selectedPaymentMethod?.id === method.id 
-            ? Colors.light.primary 
+          borderColor: selectedPaymentMethod?.id === method.id
+            ? Colors.light.primary
             : (isDarkMode ? Colors.dark.border : Colors.light.border),
         }
       ]}
       onPress={() => setSelectedPaymentMethod(method)}
     >
-      <View style={styles.paymentMethodIcon}>
-        <Ionicons 
-          name={method.type === 'card' ? 'card' : 'cash'} 
-          size={24} 
-          color={selectedPaymentMethod?.id === method.id ? Colors.light.primary : (isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary)}
-        />
-      </View>
       <View style={styles.paymentMethodContent}>
         <ThemedText style={[
           styles.paymentMethodName,
-          { color: selectedPaymentMethod?.id === method.id ? Colors.light.primary : (isDarkMode ? Colors.dark.text : Colors.light.text) }
+          { 
+            color: selectedPaymentMethod?.id === method.id 
+              ? Colors.light.primary 
+              : (isDarkMode ? Colors.dark.text : Colors.light.text) 
+          }
         ]} numberOfLines={1}>
           {method.name}
         </ThemedText>
         <ThemedText style={[styles.paymentMethodDetails, {
           color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-        }]} numberOfLines={2}>
+        }]} numberOfLines={1}>
           {method.details}
         </ThemedText>
       </View>
@@ -558,7 +555,7 @@ export default function AgendarServicioScreen() {
               <TouchableOpacity
                 key={method.id}
                 style={[
-                  styles.paymentMethodCard,
+                  styles.paymentOption,
                   {
                     backgroundColor: selectedPaymentMethod?.id === method.id
                       ? (isDarkMode ? 'rgba(45, 127, 249, 0.15)' : 'rgba(45, 127, 249, 0.1)')
@@ -571,28 +568,21 @@ export default function AgendarServicioScreen() {
                 onPress={() => setSelectedPaymentMethod(method)}
               >
                 <View style={styles.paymentMethodContent}>
-                  <Ionicons 
-                    name={method.type === 'card' ? 'card' : 'cash'} 
-                    size={24} 
-                    color={Colors.light.primary} 
-                  />
-                  <View style={styles.paymentMethodInfo}>
-                    <ThemedText style={[
-                      styles.paymentMethodName,
-                      { 
-                        color: selectedPaymentMethod?.id === method.id 
-                          ? Colors.light.primary 
-                          : (isDarkMode ? Colors.dark.text : Colors.light.text) 
-                      }
-                    ]}>
-                      {method.name}
-                    </ThemedText>
-                    <ThemedText style={[styles.paymentMethodDetails, {
-                      color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                    }]}>
-                      {method.details}
-                    </ThemedText>
-                  </View>
+                  <ThemedText style={[
+                    styles.paymentMethodName,
+                    { 
+                      color: selectedPaymentMethod?.id === method.id 
+                        ? Colors.light.primary 
+                        : (isDarkMode ? Colors.dark.text : Colors.light.text) 
+                    }
+                  ]} numberOfLines={1}>
+                    {method.name}
+                  </ThemedText>
+                  <ThemedText style={[styles.paymentMethodDetails, {
+                    color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+                  }]} numberOfLines={1}>
+                    {method.details}
+                  </ThemedText>
                 </View>
                 {selectedPaymentMethod?.id === method.id && (
                   <Ionicons name="checkmark-circle" size={24} color={Colors.light.primary} />
@@ -608,7 +598,7 @@ export default function AgendarServicioScreen() {
           borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
         }]}>
           <ThemedText style={styles.sectionTitle}>Información personal</ThemedText>
-          <View style={styles.userInfoContainer}>
+          <View style={styles.personalInfoContainer}>
             <View style={styles.infoRow}>
               <Ionicons name="person" size={18} color={Colors.light.primary} />
               <ThemedText style={styles.infoText}>
@@ -949,11 +939,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     backgroundColor: Colors.light.white,
-  },
-  paymentMethodIcon: {
-    marginRight: 12,
-    width: 32,
-    alignItems: 'center',
+    width: '100%',
   },
   paymentMethodContent: {
     flex: 1,
@@ -966,7 +952,7 @@ const styles = StyleSheet.create({
   },
   paymentMethodDetails: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   confirmSection: {
     padding: 16,
@@ -1179,31 +1165,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   paymentMethodsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  paymentMethodCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.white,
+    // Sin flexDirection row, esto hará que se muestren verticalmente
   },
   paymentMethodInfo: {
     flex: 1,
+    paddingLeft: 12,
     paddingRight: 12,
+  },
+  personalInfoContainer: {
+    flexDirection: 'column',
+    gap: 12,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 8,
   },
   infoText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
+    marginLeft: 12,
+    flex: 1,
+    flexWrap: 'wrap',
   },
 }); 

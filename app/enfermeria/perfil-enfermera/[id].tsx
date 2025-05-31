@@ -234,7 +234,7 @@ export default function PerfilEnfermeraScreen() {
               <View style={styles.avatarContainer}>
                 <View style={styles.avatar}>
                   <ThemedText style={styles.avatarText}>
-                    {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                   </ThemedText>
                 </View>
               </View>
@@ -369,7 +369,7 @@ export default function PerfilEnfermeraScreen() {
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                 </ThemedText>
               </View>
             </View>

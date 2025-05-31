@@ -200,27 +200,27 @@ export default function BuscarEnfermeraScreen() {
       <Image source={{ uri: item.photo }} style={styles.nursePhoto} />
       <View style={styles.nurseInfo}>
         <View style={styles.nurseHeader}>
-          <ThemedText style={styles.nurseName}>{item.name}</ThemedText>
+          <ThemedText style={styles.nurseName} numberOfLines={2}>{item.name}</ThemedText>
           <View style={styles.availabilityBadge}>
             <View style={[styles.availabilityDot, { 
               backgroundColor: item.isAvailable ? Colors.light.success : Colors.light.error 
             }]} />
             <ThemedText style={[styles.availabilityText, {
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>{item.nextAvailable}</ThemedText>
+            }]} numberOfLines={1}>{item.nextAvailable}</ThemedText>
           </View>
         </View>
         
-        <View style={styles.experienceRating}>
+        <View style={styles.experienceRatingContainer}>
           <ThemedText style={[styles.experience, {
             color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>{item.experience} años de experiencia</ThemedText>
+          }]} numberOfLines={1}>{item.experience} años de experiencia</ThemedText>
           <View style={styles.rating}>
             <Ionicons name="star" size={16} color="#FFD700" />
             <ThemedText style={styles.ratingText}>{item.rating}</ThemedText>
             <ThemedText style={[styles.reviewsCount, {
               color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>({item.reviewsCount})</ThemedText>
+            }]} numberOfLines={1}>({item.reviewsCount})</ThemedText>
           </View>
         </View>
 
@@ -275,7 +275,7 @@ export default function BuscarEnfermeraScreen() {
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
                 <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
                 </ThemedText>
               </View>
             </View>
@@ -516,16 +516,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   nurseName: {
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
+    marginRight: 8,
+    lineHeight: 20,
   },
   availabilityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   availabilityDot: {
     width: 8,
@@ -537,18 +540,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  experienceRating: {
+  experienceRatingContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   experience: {
-    fontSize: 14,
+    fontSize: 13,
+    flex: 1,
+    marginRight: 8,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   ratingText: {
     fontSize: 14,
@@ -560,28 +566,30 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   specialtiesContainer: {
-    marginBottom: 10,
+    marginBottom: 8,
+    maxHeight: 35,
   },
   specialtyTag: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    marginRight: 8,
+    marginRight: 6,
   },
   specialtyText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: 13,
     marginRight: 8,
   },
   price: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 }); 

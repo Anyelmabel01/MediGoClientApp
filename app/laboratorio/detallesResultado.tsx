@@ -1,16 +1,21 @@
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppContainer } from '../../components/AppContainer';
 import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 export default function DetallesResultadoScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
+  const { user } = useUser();
   const params = useLocalSearchParams();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -233,92 +238,191 @@ export default function DetallesResultadoScreen() {
   };
 
   return (
-    <AppContainer 
-      title={resultData.testName}
-      showBackButton={true}
-      onBackPress={handleBackPress}
-      decorative={false}
-    >
-      <View style={[styles.alternativeContainer, { marginBottom: insets.bottom || 20 }]}>
-        <View style={styles.alternativeView}>
-          <ThemedText style={styles.resultTitle}>{resultData.testName}</ThemedText>
-          
-          <View style={styles.resultSection}>
-            <ThemedText style={styles.sectionTitle}>Información General</ThemedText>
-            {/* Row layout adapts to screen width */}
-            <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
-              <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Paciente:</ThemedText>
-              <ThemedText style={styles.resultValue}>{resultData.patientName}</ThemedText>
-            </View>
-            <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
-              <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Fecha:</ThemedText>
-              <ThemedText style={styles.resultValue}>{resultData.date}</ThemedText>
-            </View>
-            <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
-              <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Médico:</ThemedText>
-              <ThemedText style={styles.resultValue}>{resultData.doctor}</ThemedText>
-            </View>
-          </View>
-          
-          <View style={styles.resultSection}>
-            <ThemedText style={styles.sectionTitle}>Valores</ThemedText>
-            {resultData.values.map((item, index) => (
-              <View key={index} style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
-                <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>{item.name}:</ThemedText>
-                <ThemedText 
-                  style={[
-                    styles.resultValue, 
-                    item.status === "Normal" ? styles.normalValue : styles.abnormalValue
-                  ]}
-                >
-                  {item.value}
-                </ThemedText>
-                <ThemedText style={[styles.normalRange, isSmallScreen && styles.normalRangeSmall]}>({item.normalRange})</ThemedText>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={handleBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
+            
+            <View style={styles.userInfoContainer}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <ThemedText style={styles.avatarText}>
+                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                  </ThemedText>
+                </View>
               </View>
-            ))}
-          </View>
-          
-          <View style={styles.labInfo}>
-            <ThemedText style={styles.labName}>{resultData.laboratory}</ThemedText>
-            <ThemedText style={styles.labAddress}>{resultData.labAddress}</ThemedText>
-            <ThemedText style={styles.labPhone}>Tel: {resultData.labPhone}</ThemedText>
+              
+              <View style={styles.greetingContainer}>
+                <ThemedText style={styles.greeting}>
+                  {resultData.testName}
+                </ThemedText>
+                <View style={styles.editProfileIndicator}>
+                  <Ionicons name="document-text" size={14} color={Colors.light.primary} />
+                </View>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom > 0 ? 0 : 20 }]}>
-        <TouchableOpacity 
-          style={styles.downloadButton}
-          onPress={handleGeneratePdf}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Ionicons name="cloud-download-outline" size={20} color="white" />
-          )}
-          <ThemedText style={styles.buttonText}>
-            {loading ? 'Generando PDF...' : 'Descargar PDF'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-    </AppContainer>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={[styles.resultContainer, { marginBottom: insets.bottom || 20 }]}>
+            <View style={styles.resultCard}>
+              <ThemedText style={styles.resultTitle}>{resultData.testName}</ThemedText>
+              
+              <View style={styles.resultSection}>
+                <ThemedText style={styles.sectionTitle}>Información General</ThemedText>
+                {/* Row layout adapts to screen width */}
+                <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
+                  <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Paciente:</ThemedText>
+                  <ThemedText style={styles.resultValue}>{resultData.patientName}</ThemedText>
+                </View>
+                <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
+                  <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Fecha:</ThemedText>
+                  <ThemedText style={styles.resultValue}>{resultData.date}</ThemedText>
+                </View>
+                <View style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
+                  <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>Médico:</ThemedText>
+                  <ThemedText style={styles.resultValue}>{resultData.doctor}</ThemedText>
+                </View>
+              </View>
+              
+              <View style={styles.resultSection}>
+                <ThemedText style={styles.sectionTitle}>Valores</ThemedText>
+                {resultData.values.map((item, index) => (
+                  <View key={index} style={[styles.resultRow, isSmallScreen && styles.resultRowSmall]}>
+                    <ThemedText style={[styles.resultLabel, isSmallScreen && styles.resultLabelSmall]}>{item.name}:</ThemedText>
+                    <ThemedText 
+                      style={[
+                        styles.resultValue, 
+                        item.status === "Normal" ? styles.normalValue : styles.abnormalValue
+                      ]}
+                    >
+                      {item.value}
+                    </ThemedText>
+                    <ThemedText style={[styles.normalRange, isSmallScreen && styles.normalRangeSmall]}>({item.normalRange})</ThemedText>
+                  </View>
+                ))}
+              </View>
+              
+              <View style={styles.labInfo}>
+                <ThemedText style={styles.labName}>{resultData.laboratory}</ThemedText>
+                <ThemedText style={styles.labAddress}>{resultData.labAddress}</ThemedText>
+                <ThemedText style={styles.labPhone}>Tel: {resultData.labPhone}</ThemedText>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.buttonContainer, { paddingBottom: insets.bottom > 0 ? 0 : 20 }]}>
+            <TouchableOpacity 
+              style={[styles.downloadButton, { backgroundColor: Colors.light.primary }]}
+              onPress={handleGeneratePdf}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="cloud-download-outline" size={20} color="white" />
+              )}
+              <ThemedText style={styles.buttonText}>
+                {loading ? 'Generando PDF...' : 'Descargar PDF'}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  alternativeContainer: {
+  container: {
     flex: 1,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    marginHorizontal: '2%',
   },
-  alternativeView: {
-    padding: '5%',
+  header: {
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: Colors.light.primary,
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  editProfileIndicator: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    marginLeft: 8,
+  },
+  content: {
+    flex: 1,
+  },
+  resultContainer: {
+    padding: 16,
+  },
+  resultCard: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   resultTitle: {
     fontSize: 18,
@@ -404,7 +508,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00A0B0',
     paddingVertical: 12,
     borderRadius: 10,
     marginBottom: 10,

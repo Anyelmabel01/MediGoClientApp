@@ -113,7 +113,7 @@ export default function PerfilScreen() {
           
           <TouchableOpacity 
             style={[styles.expedienteCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
-            onPress={() => router.push('/expediente')}
+            onPress={() => router.push('expediente')}
           >
             <View style={styles.expedienteIconContainer}>
               <Ionicons name="document-text" size={24} color={Colors.light.primary} />
