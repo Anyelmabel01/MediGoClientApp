@@ -59,6 +59,10 @@ type Provider = {
   total_consultations: number;
   response_time: string;
   available_today: boolean;
+  next_available_slot: string;
+  is_available_telemedicine: boolean;
+  is_available_office: boolean;
+  specialty: string;
 };
 
 type Review = {
@@ -88,144 +92,87 @@ const providerTypeLabels: Record<ProviderType, string> = {
 const mockProviders: Record<string, Provider> = {
   '1': {
     id: '1',
-    display_name: 'Dr. María González',
+    display_name: 'Dr. Carlos Mendoza',
     provider_type: 'CARDIOLOGIST',
-    organization_name: 'Centro Médico Integral',
-    avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-    license_number: 'CDL12345',
-    bio: 'Cardióloga con 15 años de experiencia en diagnóstico y tratamiento de enfermedades cardiovasculares. Especializada en ecocardiografía, cateterismo cardíaco y medicina preventiva. Comprometida con brindar atención médica de calidad y establecer relaciones de confianza con mis pacientes.',
-    rating: 4.9,
+    organization_name: 'Hospital San Rafael',
+    avatar_url: 'https://i.pravatar.cc/200?img=52',
+    license_number: 'MD-12345',
+    bio: 'Cardiólogo con más de 15 años de experiencia especializado en cardiología preventiva y tratamiento de enfermedades cardiovasculares complejas.',
+    rating: 4.8,
     total_reviews: 127,
-    consultation_fee: 280000,
-    location: 'Altamira, Caracas',
-    phone: '+58 212 9876 5432',
-    email: 'dra.gonzalez@centromedico.com',
+    specialty: 'Cardiología',
     years_experience: 15,
-    education: [
-      'Médico Cirujano - Universidad Central de Venezuela (2008)',
-      'Especialidad en Cardiología - Instituto Nacional de Cardiología de Venezuela (2012)',
-      'Maestría en Ciencias Médicas - UCV (2014)'
-    ],
-    specializations: [
-      'Ecocardiografía',
-      'Cateterismo Cardíaco',
-      'Medicina Preventiva',
-      'Hipertensión Arterial',
-      'Insuficiencia Cardíaca'
-    ],
-    languages: ['Español', 'Inglés'],
-    next_availability: 'Hoy, 2:00 PM',
-    certifications: [
-      'Certificación en Cardiología - Sociedad Venezolana de Cardiología',
-      'Certificación en Ecocardiografía - Federación Mundial del Corazón',
-      'Certificación en Medicina Interna - Colegio de Médicos de Venezuela'
-    ],
-    hospital_affiliations: [
-      'Hospital de Clínicas Caracas',
-      'Centro Médico Docente La Trinidad',
-      'Hospital Metropolitano'
-    ],
-    total_consultations: 1250,
-    response_time: '< 2 horas',
-    available_today: true
+    consultation_fee: 150,
+    is_available_telemedicine: true,
+    is_available_office: true,
+    location: 'Santa Cruz, Bolivia',
+    available_today: true,
+    next_available_slot: '2024-01-15 14:30',
+    certifications: ['Cardiólogo Clínico', 'Especialista en Ecocardiografía'],
+    hospital_affiliations: ['Hospital San Rafael', 'Clínica Foianini']
   },
   '2': {
     id: '2',
-    display_name: 'Dr. Carlos Ramírez',
+    display_name: 'Dra. Maria Elena Vargas',
     provider_type: 'GENERAL_DOCTOR',
-    organization_name: 'Clínica San Miguel',
-    avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face',
-    license_number: 'GDL67890',
-    bio: 'Médico general con amplia experiencia en medicina familiar y atención primaria. Me enfoco en brindar cuidado integral a pacientes de todas las edades, con énfasis en medicina preventiva y seguimiento de enfermedades crónicas.',
-    rating: 4.7,
+    organization_name: 'Centro Médico Boliviano',
+    avatar_url: 'https://i.pravatar.cc/200?img=49',
+    license_number: 'MD-67890',
+    bio: 'Médico general con enfoque en medicina familiar y preventiva. Especializada en atención integral de pacientes de todas las edades.',
+    rating: 4.9,
     total_reviews: 89,
-    consultation_fee: 210000,
-    location: 'Las Mercedes, Caracas',
-    phone: '+58 212 1234 5678',
-    email: 'dr.ramirez@clinicasanmiguel.com',
+    specialty: 'Medicina General',
     years_experience: 12,
-    education: [
-      'Médico Cirujano - Universidad Central de Venezuela (2011)',
-      'Especialidad en Medicina Familiar - Hospital Universitario de Caracas (2014)'
-    ],
-    specializations: [
-      'Medicina Familiar',
-      'Medicina Preventiva',
-      'Diabetes',
-      'Hipertensión',
-      'Medicina Geriátrica'
-    ],
-    languages: ['Español'],
-    next_availability: 'Mañana, 10:00 AM',
-    total_consultations: 1000,
-    response_time: '< 2 horas',
-    available_today: false
+    consultation_fee: 80,
+    is_available_telemedicine: true,
+    is_available_office: true,
+    location: 'La Paz, Bolivia',
+    available_today: false,
+    next_available_slot: '2024-01-16 09:00',
+    certifications: ['Medicina General', 'Medicina Familiar'],
+    hospital_affiliations: ['Centro Médico Boliviano', 'Hospital del Niño']
   },
   '3': {
     id: '3',
-    display_name: 'Dra. Ana Martínez',
+    display_name: 'Dr. Roberto Quiroga',
     provider_type: 'DERMATOLOGIST',
-    organization_name: 'Instituto Dermatológico',
-    avatar_url: 'https://img.freepik.com/foto-gratis/retrato-joven-doctora-bata-blanca_114579-13833.jpg?w=360',
-    license_number: 'DER54321',
-    bio: 'Dermatóloga especializada en dermatología clínica y cosmética con más de 10 años de experiencia. Experta en tratamiento de enfermedades de la piel, prevención del cáncer de piel y procedimientos estéticos mínimamente invasivos.',
-    rating: 4.8,
+    organization_name: 'Dermatología Integral',
+    avatar_url: 'https://i.pravatar.cc/200?img=33',
+    license_number: 'MD-54321',
+    bio: 'Dermatólogo especializado en dermatología cosmética y cirugía dermatológica. Tratamiento de enfermedades de la piel y procedimientos estéticos.',
+    rating: 4.7,
     total_reviews: 156,
-    consultation_fee: 250000,
-    location: 'Chacao, Caracas',
-    phone: '+58 212 1234 5678',
-    email: 'dra.martinez@institutoderma.com',
-    years_experience: 10,
-    education: [
-      'Médico Cirujano - UCV (2013)',
-      'Especialidad en Dermatología - Hospital Universitario de Caracas (2017)',
-      'Fellowship en Dermatología Cosmética - Universidad de Barcelona (2019)'
-    ],
-    specializations: [
-      'Dermatología Clínica',
-      'Dermatología Cosmética',
-      'Prevención de Cáncer de Piel',
-      'Tratamiento de Acné',
-      'Procedimientos Estéticos'
-    ],
-    languages: ['Español', 'Inglés', 'Francés'],
-    next_availability: 'Hoy, 10:00 AM',
-    total_consultations: 1000,
-    response_time: '< 2 horas',
-    available_today: true
+    specialty: 'Dermatología',
+    years_experience: 18,
+    consultation_fee: 120,
+    is_available_telemedicine: false,
+    is_available_office: true,
+    location: 'Cochabamba, Bolivia',
+    available_today: true,
+    next_available_slot: '2024-01-15 16:00',
+    certifications: ['Dermatología Clínica', 'Cirugía Dermatológica'],
+    hospital_affiliations: ['Dermatología Integral', 'Hospital Viedma']
   },
   '4': {
     id: '4',
-    display_name: 'Dr. Luis Hernández',
+    display_name: 'Dra. Ana Lucia Mamani',
     provider_type: 'PEDIATRICIAN',
-    organization_name: 'Hospital Infantil',
-    avatar_url: 'https://img.freepik.com/foto-gratis/doctor-masculino-feliz-sonriendo-brazos-cruzados_1298-10.jpg?w=360',
-    license_number: 'PED98765',
-    bio: 'Pediatra con 8 años de experiencia en el cuidado integral de niños y adolescentes. Especializado en medicina preventiva, desarrollo infantil y manejo de enfermedades comunes de la infancia. Comprometido con crear un ambiente cálido y confiable para los pequeños pacientes.',
-    rating: 4.6,
+    organization_name: 'Hospital del Niño Dr. Ovidio Aliaga Uría',
+    avatar_url: 'https://i.pravatar.cc/200?img=44',
+    license_number: 'MD-98765',
+    bio: 'Pediatra especializada en neonatología y cuidados intensivos pediátricos. Amplia experiencia en el tratamiento de enfermedades infantiles.',
+    rating: 4.9,
     total_reviews: 203,
-    consultation_fee: 180000,
-    location: 'El Valle, Caracas',
-    phone: '+58 212 9876 5432',
-    email: 'dr.hernandez@hospitalinfantil.com',
-    years_experience: 8,
-    education: [
-      'Médico Cirujano - Universidad Central de Venezuela (2015)',
-      'Especialidad en Pediatría - Hospital de Niños J.M. de los Ríos (2019)',
-      'Diplomado en Desarrollo Infantil - UCV (2021)'
-    ],
-    specializations: [
-      'Pediatría General',
-      'Medicina Preventiva Infantil',
-      'Desarrollo y Crecimiento',
-      'Vacunación',
-      'Enfermedades Respiratorias Infantiles'
-    ],
-    languages: ['Español', 'Inglés'],
-    next_availability: 'Mañana, 9:00 AM',
-    total_consultations: 800,
-    response_time: '< 2 horas',
-    available_today: true
+    specialty: 'Pediatría',
+    years_experience: 20,
+    consultation_fee: 100,
+    is_available_telemedicine: true,
+    is_available_office: true,
+    location: 'La Paz, Bolivia',
+    available_today: true,
+    next_available_slot: '2024-01-15 11:30',
+    certifications: ['Pediatría General', 'Neonatología'],
+    hospital_affiliations: ['Hospital del Niño Dr. Ovidio Aliaga Uría', 'Clínica del Sur']
   }
 };
 

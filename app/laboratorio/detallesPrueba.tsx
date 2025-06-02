@@ -43,7 +43,7 @@ export default function DetallesPruebaScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -54,24 +54,21 @@ export default function DetallesPruebaScreen() {
               <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.greetingContainer}>
-                <ThemedText style={styles.greeting}>
-                  Detalles de Prueba
-                </ThemedText>
-                <View style={styles.editProfileIndicator}>
-                  <Ionicons name="flask" size={14} color={Colors.light.primary} />
-                </View>
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Detalles de Prueba
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
               </View>
             </View>
+
+            <TouchableOpacity 
+              style={styles.favoriteButton}
+              onPress={() => console.log('Añadir a favoritos')}
+            >
+              <Ionicons name="heart-outline" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -166,32 +163,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
   },
   greeting: {
     fontSize: 19,
@@ -203,6 +179,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
+  },
+  favoriteButton: {
+    padding: 8,
+    marginLeft: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   content: {
     flex: 1,

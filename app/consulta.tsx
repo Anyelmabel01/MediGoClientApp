@@ -32,6 +32,8 @@ export default function ConsultaScreen() {
     router.push('/consulta/telemedicina' as any);
   };
 
+  if (!user) return null;
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />

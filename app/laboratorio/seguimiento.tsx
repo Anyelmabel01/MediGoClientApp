@@ -190,8 +190,20 @@ export default function LaboratorioSeguimientoScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Seguimiento de Resultado</ThemedText>
-          <View style={styles.headerSpacer} />
+          
+          <View style={styles.greetingContainer}>
+            <ThemedText style={styles.title}>Seguimiento de Resultado</ThemedText>
+            <View style={styles.editProfileIndicator}>
+              <Ionicons name="location" size={14} color={Colors.light.primary} />
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={() => console.log('Actualizar seguimiento')}
+          >
+            <Ionicons name="refresh" size={20} color="#fff" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
       
@@ -336,8 +348,6 @@ export default function LaboratorioSeguimientoScreen() {
             </View>
           </View>
         </View>
-
-
 
         {/* Progreso de Entrega */}
         <View style={[styles.infoCard, { 
@@ -632,5 +642,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
     fontSize: 16,
+  },
+  greetingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editProfileIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.light.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  refreshButton: {
+    padding: 5,
   },
 }); 

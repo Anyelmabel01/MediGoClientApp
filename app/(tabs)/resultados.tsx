@@ -43,6 +43,10 @@ export default function ResultadosScreen() {
     setCurrentLocation(location);
   };
 
+  if (!user) {
+    return null; // or loading spinner
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />

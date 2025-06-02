@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 13.2.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "pk.eyJ1IjoibWVkaWdvYXBwIiwiYSI6ImNtNWI5bnRrYTB3YjMya3NldGFjOGNwZ2oifQ.1YvQZLO-G7oPEZ3yxVQI7A"
+      },
+      "node": "18.18.0",
+      "resourceClass": "medium"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "pk.eyJ1IjoibWVkaWdvYXBwIiwiYSI6ImNtNWI5bnRrYTB3YjMya3NldGFjOGNwZ2oifQ.1YvQZLO-G7oPEZ3yxVQI7A"
+      },
+      "node": "18.18.0",
+      "resourceClass": "medium"
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "pk.eyJ1IjoibWVkaWdvYXBwIiwiYSI6ImNtNWI5bnRrYTB3YjMya3NldGFjOGNwZ2oifQ.1YvQZLO-G7oPEZ3yxVQI7A"
+      },
+      "node": "18.18.0",
+      "resourceClass": "medium"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+} 

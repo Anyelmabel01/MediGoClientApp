@@ -12,6 +12,7 @@ import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
 import { UserLocation } from '@/constants/UserModel';
 import { useUser } from '@/hooks/useUser';
+import { Prueba } from '@/types';
 
 const categorias = [
   { nombre: 'Pruebas de Sangre', icon: 'water' },
@@ -37,6 +38,10 @@ export default function PruebasScreen() {
   const handleLocationSelect = (location: UserLocation) => {
     setCurrentLocation(location);
   };
+
+  if (!user) {
+    return null; // or loading spinner
+  }
 
   return (
     <ThemedView style={styles.container}>

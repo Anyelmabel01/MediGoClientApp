@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
+import { Notification } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -21,10 +22,10 @@ export default function CentroNotificacionesScreen() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [modalAnimation] = useState(new Animated.Value(0));
   const [modalMessage, setModalMessage] = useState('');
-  const [selectedNotification, setSelectedNotification] = useState(null);
-  const [notificationToDelete, setNotificationToDelete] = useState(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
   
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useState<Notification[]>([
     { id: '1', title: 'Resultados Listos', message: 'Tus resultados para la prueba de Glucosa ya están disponibles.', date: 'Hace 2 horas', read: false, type: 'resultado' },
     { id: '2', title: 'Recordatorio de Cita', message: 'No olvides tu cita para Hemograma mañana a las 9:00 AM.', date: 'Ayer', read: true, type: 'cita' },
     { id: '3', title: 'Preparación Importante', message: 'Recuerda ayuno de 8 horas para tu Perfil Lipídico.', date: 'Hace 3 días', read: false, type: 'preparacion' },
@@ -58,10 +59,9 @@ export default function CentroNotificacionesScreen() {
     );
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteNotification = (id: string) => {
     setNotificationToDelete(id);
     setShowDeleteModal(true);
-    animateModal();
   };
 
   const confirmDelete = () => {
@@ -110,10 +110,14 @@ export default function CentroNotificacionesScreen() {
     modalAnimation.setValue(0);
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity 
@@ -123,22 +127,12 @@ export default function CentroNotificacionesScreen() {
               <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.greetingContainer}>
-                <ThemedText style={styles.greeting}>
-                  Centro de Notificaciones
-                </ThemedText>
-                <View style={styles.editProfileIndicator}>
-                  <Ionicons name="notifications" size={14} color={Colors.light.primary} />
-                </View>
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Centro de Notificaciones
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="notifications" size={14} color={Colors.light.primary} />
               </View>
             </View>
             
@@ -187,7 +181,7 @@ export default function CentroNotificacionesScreen() {
                 )}
                 <TouchableOpacity 
                   style={styles.deleteButton}
-                  onPress={() => handleDelete(item.id)}
+                  onPress={() => handleDeleteNotification(item.id)}
                   hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                 >
                   <Ionicons 
@@ -379,32 +373,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
   },
   greeting: {
     fontSize: 19,
@@ -423,9 +396,9 @@ const styles = StyleSheet.create({
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
@@ -442,16 +415,19 @@ const styles = StyleSheet.create({
     marginRight: 15 
   },
   content: { 
-    flex: 1 
+    flex: 1,
+    marginRight: 8,
   },
   notificationTitle: { 
     fontSize: 16, 
     fontWeight: 'bold', 
-    marginBottom: 4 
+    marginBottom: 4,
   },
   message: { 
     fontSize: 14, 
-    marginBottom: 6 
+    marginBottom: 6,
+    lineHeight: 18,
+    flexWrap: 'wrap',
   },
   date: { 
     fontSize: 12, 
@@ -559,14 +535,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  deleteButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   cancelButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -597,12 +565,6 @@ const styles = StyleSheet.create({
   notificationIconContainer: {
     marginBottom: 20,
   },
-  notificationTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
   notificationMessage: {
     fontSize: 16,
     textAlign: 'center',
@@ -617,5 +579,13 @@ const styles = StyleSheet.create({
   notificationButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  modalDeleteButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 

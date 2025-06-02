@@ -125,7 +125,7 @@ export default function HistorialScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity 
@@ -135,24 +135,21 @@ export default function HistorialScreen() {
               <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.greetingContainer}>
-                <ThemedText style={styles.greeting}>
-                  Historial de Pruebas
-                </ThemedText>
-                <View style={styles.editProfileIndicator}>
-                  <Ionicons name="time" size={14} color={Colors.light.primary} />
-                </View>
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Historial de Pruebas
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="time" size={14} color={Colors.light.primary} />
               </View>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.exportButton}
+              onPress={() => console.log('Exportar historial')}
+            >
+              <Ionicons name="download-outline" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -291,32 +288,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    flexWrap: 'nowrap',
   },
   greeting: {
     fontSize: 19,
@@ -328,6 +305,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
+  },
+  exportButton: {
+    padding: 8,
+    marginLeft: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   groupBlock: { marginBottom:18 },
   groupDate: { fontWeight:'bold', color:'#6C757D', marginBottom:6 },

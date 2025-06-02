@@ -325,6 +325,10 @@ export default function ConfiguracionScreen() {
     </TouchableOpacity>
   );
 
+  if (!user) {
+    return null; // or loading spinner
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />

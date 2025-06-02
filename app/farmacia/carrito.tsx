@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { UserProfile } from '@/components/UserProfile';
 import { Colors } from '@/constants/Colors';
+import { UserLocation } from '@/constants/UserModel';
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
@@ -22,10 +23,11 @@ const paymentMethods = [
 ];
 
 export default function CarritoScreen() {
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { user } = useUser();
-  const [showUserProfile, setShowUserProfile] = useState(false);
   const { cartItems, removeFromCart, setCartItems } = useCart();
   const [delivery, setDelivery] = useState('home');
   const [payment, setPayment] = useState('card');
@@ -52,7 +54,15 @@ export default function CarritoScreen() {
   const handleRemoveItem = (itemId: string) => {
     removeFromCart(itemId);
   };
-  
+
+  const handleLocationSelect = (location: UserLocation) => {
+    setCurrentLocation(location);
+  };
+
+  if (!user) {
+    return null; // or loading spinner
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />

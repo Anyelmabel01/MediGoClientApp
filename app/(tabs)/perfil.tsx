@@ -14,21 +14,32 @@ import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function PerfilScreen() {
-  const { user, currentLocation, setCurrentLocation } = useUser();
-  const { isDarkMode } = useTheme();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const { user, currentLocation, setCurrentLocation } = useUser();
+  const { isDarkMode } = useTheme();
   const router = useRouter();
 
   const handleLocationSelect = (location: UserLocation) => {
     setCurrentLocation(location);
   };
 
+  // Guard clause para verificar que user no sea null
+  if (!user) {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ThemedText>Cargando...</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header igual al diseño principal */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.userInfoContainer}
@@ -193,7 +204,7 @@ export default function PerfilScreen() {
           </ThemedText>
           <TouchableOpacity 
             style={[styles.actionCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
-            onPress={() => router.push('expediente')}
+            onPress={() => router.push('/expediente' as any)}
             activeOpacity={0.7}
           >
             <View style={[styles.actionCardIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
@@ -476,5 +487,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

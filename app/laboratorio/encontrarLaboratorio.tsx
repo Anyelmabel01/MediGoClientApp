@@ -105,7 +105,7 @@ export default function EncontrarLaboratorioScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.container}>
         <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         
         {/* Header */}
@@ -118,24 +118,21 @@ export default function EncontrarLaboratorioScreen() {
               <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.greetingContainer}>
-                <ThemedText style={styles.greeting}>
-                  Encontrar Laboratorio
-                </ThemedText>
-                <View style={styles.editProfileIndicator}>
-                  <Ionicons name="location" size={14} color={Colors.light.primary} />
-                </View>
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Encontrar Laboratorio
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="location" size={14} color={Colors.light.primary} />
               </View>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.locationButton}
+              onPress={() => console.log('Mi ubicación')}
+            >
+              <Ionicons name="navigate" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -158,9 +155,6 @@ export default function EncontrarLaboratorioScreen() {
                 onPress={() => setShowFullscreenMap(true)}
               >
                 <Ionicons name="expand" size={16} color={Colors.light.white} />
-                <ThemedText style={[styles.fullscreenButtonText, { color: Colors.light.white }]}>
-                  Pantalla completa
-                </ThemedText>
               </TouchableOpacity>
             </View>
             <View style={styles.mapWrapper}>
@@ -410,32 +404,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    flexWrap: 'nowrap',
   },
   greeting: {
     fontSize: 19,
@@ -447,6 +421,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
+  },
+  locationButton: {
+    padding: 8,
+    marginLeft: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   content: {
     flex: 1,
@@ -466,12 +450,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    paddingHorizontal: 16,
   },
   mapTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    padding: 16,
+    paddingVertical: 16,
     paddingBottom: 12,
+    flex: 1,
   },
   mapWrapper: {
     height: height * 0.4, // 40% de la altura de la pantalla
@@ -615,15 +601,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   fullscreenButton: {
-    flexDirection: 'row',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
   },
   fullscreenButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   fullscreenMapContainer: {

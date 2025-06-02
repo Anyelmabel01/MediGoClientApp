@@ -126,6 +126,10 @@ export default function ExpedienteScreen() {
     setCurrentLocation(location);
   };
 
+  if (!user) {
+    return null; // or loading spinner
+  }
+
   // Datos ficticios para historial y estudios
   const mockHistory = [
     {

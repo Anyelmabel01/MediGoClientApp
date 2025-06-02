@@ -3,22 +3,23 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    TextInput,
-    TouchableOpacity,
-    View
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+
 
 type StepData = {
   collectionMethod: 'laboratory' | 'home' | null;
@@ -559,9 +560,9 @@ export default function SolicitarScreen() {
                     Calle y número *
                   </ThemedText>
                   <TextInput
-                    style={[styles.input, { borderColor: colors.border, backgroundColor: colors.card, color: colors.text }]}
+                    style={[styles.formInput, { borderColor: colors.border, backgroundColor: colors.background, color: colors.text }]}
                     placeholder="Av. Insurgentes Sur 1234"
-                    placeholderTextColor={colors.text + '80'}
+                    placeholderTextColor={colors.textSecondary}
                     value={stepData.personalInfo.address?.street || ''}
                     onChangeText={(text) => setStepData(prev => ({
                       ...prev,
@@ -912,236 +913,240 @@ export default function SolicitarScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
-          </TouchableOpacity>
-          
-          <View style={styles.userInfoContainer}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <ThemedText style={styles.avatarText}>
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                </ThemedText>
-              </View>
-            </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ThemedView style={styles.container}>
+        {/* Header con formato actualizado */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
+            </TouchableOpacity>
             
             <View style={styles.greetingContainer}>
               <ThemedText style={styles.greeting}>
-                Agendar Prueba
+                Solicitar Prueba
               </ThemedText>
               <View style={styles.editProfileIndicator}>
-                <Ionicons name="flask" size={14} color={Colors.light.primary} />
+                <Ionicons name="clipboard" size={14} color={Colors.light.primary} />
               </View>
             </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Indicador de progreso */}
-      <View style={[styles.progressContainer, { backgroundColor: colors.background }]}>
-        <View style={styles.stepsIndicator}>
-          {steps.map((step, index) => (
-            <View key={index} style={styles.stepIndicator}>
-              <View style={[
-                styles.stepNumber,
-                { 
-                  backgroundColor: index <= currentStep ? colors.primary : colors.border,
-                  borderColor: index <= currentStep ? colors.primary : colors.border
-                }
-              ]}>
-                {index < currentStep ? (
-                  <Ionicons name="checkmark" size={14} color="#fff" />
-                ) : (
-                  <ThemedText style={[
-                    styles.stepNumberText,
-                    { color: index <= currentStep ? '#fff' : colors.textSecondary }
-                  ]}>
-                    {index + 1}
-                  </ThemedText>
-                )}
-              </View>
-              {index < steps.length - 1 && (
-                <View style={[
-                  styles.stepConnector,
-                  { backgroundColor: index < currentStep ? colors.primary : colors.border }
-                ]} />
-              )}
-            </View>
-          ))}
-        </View>
-        <ThemedText style={[styles.currentStepLabel, { color: colors.text }]}>
-          {steps[currentStep]}
-        </ThemedText>
-      </View>
-
-      <KeyboardAvoidingView 
-        style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-        >
-          {renderStepContent()}
-        </ScrollView>
-
-        {/* Botones de navegación */}
-        <View style={[styles.navigationContainer, { 
-          backgroundColor: colors.background,
-          borderTopColor: colors.border 
-        }]}>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              styles.prevButton,
-              { 
-                backgroundColor: currentStep > 0 ? colors.background : 'transparent',
-                borderColor: colors.border,
-                opacity: currentStep > 0 ? 1 : 0.5
-              }
-            ]}
-            onPress={handlePrevious}
-            disabled={currentStep === 0}
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
-            <ThemedText style={[styles.navButtonText, { color: colors.text }]}>
-              Anterior
-            </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              styles.nextButton,
-              { 
-                backgroundColor: validateCurrentStep() ? colors.primary : colors.border,
-                opacity: validateCurrentStep() ? 1 : 0.5
-              }
-            ]}
-            onPress={currentStep === steps.length - 1 ? handleSubmit : handleNext}
-            disabled={!validateCurrentStep() || isLoading}
-          >
-            <ThemedText style={[styles.navButtonText, { color: '#fff' }]}>
-              {currentStep === steps.length - 1 ? 'Confirmar' : 'Siguiente'}
-            </ThemedText>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* Modal de Error */}
-      <Modal
-        visible={showErrorModal}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setShowErrorModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalIconContainer}>
-              <Ionicons name="alert-circle" size={48} color="#ef4444" />
-            </View>
-            <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
-            <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
+            
             <TouchableOpacity 
-              style={styles.modalButton}
-              onPress={() => setShowErrorModal(false)}
+              style={styles.helpButton}
+              onPress={() => setModalConfig({
+                title: 'Ayuda',
+                message: 'Si necesitas ayuda durante el proceso, puedes contactarnos.',
+                type: 'info'
+              })}
             >
-              <ThemedText style={styles.modalButtonText}>Entendido</ThemedText>
+              <Ionicons name="help-circle-outline" size={20} color={Colors.light.white} />
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
 
-      {/* Modal de Éxito */}
-      <Modal
-        visible={showSuccessModal}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setShowSuccessModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.successModalContainer, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
-            {/* Icono de éxito animado */}
-            <View style={styles.successIconContainer}>
-              <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
-            </View>
-            
-            {/* Título */}
-            <ThemedText style={[styles.successModalTitle, { 
-              color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary 
-            }]}>
-              ¡Cita agendada exitosamente!
-            </ThemedText>
-            
-            {/* Mensaje */}
-            <ThemedText style={[styles.successModalMessage, {
-              color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-            }]}>
-              Tu cita para {nombrePrueba} ha sido programada para el {stepData.appointmentDate?.toLocaleDateString('es-VE')} a las {stepData.appointmentTime}.
-            </ThemedText>
-            
-            {/* Información adicional */}
-            <View style={[styles.appointmentInfoCard, { 
-              backgroundColor: isDarkMode ? Colors.dark.border : 'rgba(76, 175, 80, 0.1)',
-              borderColor: '#4CAF50'
-            }]}>
-              <View style={styles.appointmentInfoRow}>
-                <Ionicons name="location" size={16} color="#4CAF50" />
-                <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
-                  {stepData.selectedLab?.name}
-                </ThemedText>
+        {/* Indicador de progreso */}
+        <View style={[styles.progressContainer, { backgroundColor: colors.background }]}>
+          <View style={styles.stepsIndicator}>
+            {steps.map((step, index) => (
+              <View key={index} style={styles.stepIndicator}>
+                <View style={[
+                  styles.stepNumber,
+                  { 
+                    backgroundColor: index <= currentStep ? colors.primary : colors.border,
+                    borderColor: index <= currentStep ? colors.primary : colors.border
+                  }
+                ]}>
+                  {index < currentStep ? (
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                  ) : (
+                    <ThemedText style={[
+                      styles.stepNumberText,
+                      { color: index <= currentStep ? '#fff' : colors.textSecondary }
+                    ]}>
+                      {index + 1}
+                    </ThemedText>
+                  )}
+                </View>
+                {index < steps.length - 1 && (
+                  <View style={[
+                    styles.stepConnector,
+                    { backgroundColor: index < currentStep ? colors.primary : colors.border }
+                  ]} />
+                )}
               </View>
-              <View style={styles.appointmentInfoRow}>
-                <Ionicons name="calendar" size={16} color="#4CAF50" />
-                <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
-                  {stepData.collectionMethod === 'home' ? 'Toma a domicilio' : 'En laboratorio'}
-                </ThemedText>
+            ))}
+          </View>
+          <ThemedText style={[styles.currentStepLabel, { color: colors.text }]}>
+            {steps[currentStep]}
+          </ThemedText>
+        </View>
+
+        <KeyboardAvoidingView 
+          style={styles.content}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView 
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          >
+            {renderStepContent()}
+          </ScrollView>
+
+          {/* Botones de navegación */}
+          <View style={[styles.navigationContainer, { 
+            backgroundColor: colors.background,
+            borderTopColor: colors.border 
+          }]}>
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                styles.prevButton,
+                { 
+                  backgroundColor: currentStep > 0 ? colors.background : 'transparent',
+                  borderColor: colors.border,
+                  opacity: currentStep > 0 ? 1 : 0.5
+                }
+              ]}
+              onPress={handlePrevious}
+              disabled={currentStep === 0}
+            >
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
+              <ThemedText style={[styles.navButtonText, { color: colors.text }]}>
+                Anterior
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.navButton,
+                styles.nextButton,
+                { 
+                  backgroundColor: validateCurrentStep() ? colors.primary : colors.border,
+                  opacity: validateCurrentStep() ? 1 : 0.5
+                }
+              ]}
+              onPress={currentStep === steps.length - 1 ? handleSubmit : handleNext}
+              disabled={!validateCurrentStep() || isLoading}
+            >
+              <ThemedText style={[styles.navButtonText, { color: '#fff' }]}>
+                {currentStep === steps.length - 1 ? 'Confirmar' : 'Siguiente'}
+              </ThemedText>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+
+        {/* Modal de Error */}
+        <Modal
+          visible={showErrorModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowErrorModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalIconContainer}>
+                <Ionicons name="alert-circle" size={48} color="#ef4444" />
               </View>
-            </View>
-            
-            {/* Botones */}
-            <View style={styles.successModalButtons}>
+              <ThemedText style={styles.modalTitle}>{modalConfig.title}</ThemedText>
+              <ThemedText style={styles.modalMessage}>{modalConfig.message}</ThemedText>
               <TouchableOpacity 
-                style={[styles.successModalButton, styles.secondaryButton, { borderColor: Colors.light.primary }]}
-                onPress={() => {
-                  setShowSuccessModal(false);
-                  router.replace('/laboratorio');
-                }}
-                activeOpacity={0.8}
+                style={styles.modalButton}
+                onPress={() => setShowErrorModal(false)}
               >
-                <Ionicons name="flask" size={18} color={Colors.light.primary} />
-                <ThemedText style={[styles.secondaryButtonText, { color: Colors.light.primary }]}>
-                  Ver mis citas
-                </ThemedText>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.successModalButton, styles.primaryButton, { backgroundColor: Colors.light.primary }]}
-                onPress={() => {
-                  setShowSuccessModal(false);
-                  router.replace('/');
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="home" size={18} color={Colors.light.white} />
-                <ThemedText style={[styles.primaryButtonText, { color: Colors.light.white }]}>
-                  Ir al inicio
-                </ThemedText>
+                <ThemedText style={styles.modalButtonText}>Entendido</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-    </ThemedView>
+        </Modal>
+
+        {/* Modal de Éxito */}
+        <Modal
+          visible={showSuccessModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowSuccessModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.successModalContainer, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}>
+              {/* Icono de éxito animado */}
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
+              </View>
+              
+              {/* Título */}
+              <ThemedText style={[styles.successModalTitle, { 
+                color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary 
+              }]}>
+                ¡Cita agendada exitosamente!
+              </ThemedText>
+              
+              {/* Mensaje */}
+              <ThemedText style={[styles.successModalMessage, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                Tu cita para {nombrePrueba} ha sido programada para el {stepData.appointmentDate?.toLocaleDateString('es-VE')} a las {stepData.appointmentTime}.
+              </ThemedText>
+              
+              {/* Información adicional */}
+              <View style={[styles.appointmentInfoCard, { 
+                backgroundColor: isDarkMode ? Colors.dark.border : 'rgba(76, 175, 80, 0.1)',
+                borderColor: '#4CAF50'
+              }]}>
+                <View style={styles.appointmentInfoRow}>
+                  <Ionicons name="location" size={16} color="#4CAF50" />
+                  <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
+                    {stepData.selectedLab?.name}
+                  </ThemedText>
+                </View>
+                <View style={styles.appointmentInfoRow}>
+                  <Ionicons name="calendar" size={16} color="#4CAF50" />
+                  <ThemedText style={[styles.appointmentInfoText, { color: '#4CAF50' }]}>
+                    {stepData.collectionMethod === 'home' ? 'Toma a domicilio' : 'En laboratorio'}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              {/* Botones */}
+              <View style={styles.successModalButtons}>
+                <TouchableOpacity 
+                  style={[styles.successModalButton, styles.secondaryButton, { borderColor: Colors.light.primary }]}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.replace('/laboratorio');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="flask" size={18} color={Colors.light.primary} />
+                  <ThemedText style={[styles.secondaryButtonText, { color: Colors.light.primary }]}>
+                    Ver mis citas
+                  </ThemedText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.successModalButton, styles.primaryButton, { backgroundColor: Colors.light.primary }]}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.replace('/');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="home" size={18} color={Colors.light.white} />
+                  <ThemedText style={[styles.primaryButtonText, { color: Colors.light.white }]}>
+                    Ir al inicio
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ThemedView>
+    </>
   );
 }
 
@@ -1171,32 +1176,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    flexWrap: 'nowrap',
   },
   greeting: {
     fontSize: 19,
@@ -1208,6 +1193,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
+  },
+  helpButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   progressContainer: {
     padding: 16,

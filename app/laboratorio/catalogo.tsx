@@ -4,11 +4,10 @@ import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Dimensions,
     FlatList,
-    ScrollView,
     StyleSheet,
     TextInput,
     TouchableOpacity,
@@ -44,11 +43,11 @@ type Test = {
 
 const categories: Category[] = [
   { id: 'all', name: 'Todos', icon: 'apps', color: '#00A0B0', count: 0 },
-  { id: 'blood', name: 'Sangre', icon: 'water', color: '#dc3545', count: 25 },
-  { id: 'urine', name: 'Orina', icon: 'flask', color: '#ffc107', count: 8 },
-  { id: 'imaging', name: 'Imagen', icon: 'scan', color: '#6f42c1', count: 12 },
-  { id: 'special', name: 'Especiales', icon: 'star', color: '#e83e8c', count: 15 },
-  { id: 'packages', name: 'Paquetes', icon: 'albums', color: '#20c997', count: 6 },
+  { id: 'blood', name: 'Sangre', icon: 'water', color: '#e74c3c', count: 25 },
+  { id: 'urine', name: 'Orina', icon: 'flask', color: '#f39c12', count: 8 },
+  { id: 'imaging', name: 'Imagen', icon: 'scan', color: '#9b59b6', count: 12 },
+  { id: 'special', name: 'Especiales', icon: 'star', color: '#e91e63', count: 15 },
+  { id: 'packages', name: 'Paquetes', icon: 'albums', color: '#27ae60', count: 6 },
 ];
 
 const allTests: Test[] = [
@@ -236,62 +235,54 @@ export default function CatalogoScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState<'popularity' | 'price-low' | 'price-high' | 'name'>('popularity');
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'popularity'>('popularity');
   const [showFilters, setShowFilters] = useState(false);
-  const [priceFilter, setPriceFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
-  const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
 
-  // Actualizar conteo de categorías
-  useEffect(() => {
-    categories[0].count = allTests.length;
+  // Actualizar conteos por categoría
+  const categoriesWithCounts = useMemo(() => {
+    return categories.map(category => ({
+      ...category,
+      count: category.id === 'all' 
+        ? allTests.length 
+        : allTests.filter(test => test.category === category.id).length
+    }));
   }, []);
 
-  const filteredAndSortedTests = useMemo(() => {
+  const filteredTests = useMemo(() => {
     let filtered = allTests.filter(test => {
+      // Filtro por categoría
+      const matchesCategory = selectedCategory === 'all' || test.category === selectedCategory;
+      
       // Filtro por búsqueda
       const matchesSearch = searchQuery === '' || 
         test.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         test.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         test.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      // Filtro por categoría
-      const matchesCategory = selectedCategory === 'all' || test.category === selectedCategory;
-
-      // Filtro por precio
-      let matchesPrice = true;
-      if (priceFilter === 'low') matchesPrice = test.price <= 150;
-      else if (priceFilter === 'medium') matchesPrice = test.price > 150 && test.price <= 400;
-      else if (priceFilter === 'high') matchesPrice = test.price > 400;
-
-      // Filtro por toma a domicilio
-      const matchesHomeCollection = !homeCollectionOnly || test.homeCollection;
-
-      return matchesSearch && matchesCategory && matchesPrice && matchesHomeCollection;
+      return matchesCategory && matchesSearch;
     });
 
     // Ordenamiento
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'popularity':
-          return b.popularityScore - a.popularityScore;
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
         case 'name':
           return a.name.localeCompare(b.name);
+        case 'price':
+          return a.price - b.price;
+        case 'popularity':
+          return b.popularityScore - a.popularityScore;
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [searchQuery, selectedCategory, sortBy, priceFilter, homeCollectionOnly]);
+  }, [searchQuery, selectedCategory, sortBy]);
 
   const handleTestPress = (test: Test) => {
     router.push({
       pathname: '/laboratorio/detallesPrueba',
-      params: { testId: test.id, testName: test.name }
+      params: { testId: test.id, nombrePrueba: test.name }
     });
   };
 
@@ -306,8 +297,6 @@ export default function CatalogoScreen() {
     setSearchQuery('');
     setSelectedCategory('all');
     setSortBy('popularity');
-    setPriceFilter('all');
-    setHomeCollectionOnly(false);
   };
 
   const handleBackPress = () => {
@@ -319,7 +308,7 @@ export default function CatalogoScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity 
@@ -329,24 +318,21 @@ export default function CatalogoScreen() {
               <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContainer}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <View style={styles.greetingContainer}>
-                <ThemedText style={styles.greeting}>
-                  Catálogo de Pruebas
-                </ThemedText>
-                <View style={styles.editProfileIndicator}>
-                  <Ionicons name="flask" size={14} color={Colors.light.primary} />
-                </View>
+            <View style={styles.greetingContainer}>
+              <ThemedText style={styles.greeting}>
+                Catálogo de Pruebas
+              </ThemedText>
+              <View style={styles.editProfileIndicator}>
+                <Ionicons name="flask" size={14} color={Colors.light.primary} />
               </View>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setShowFilters(!showFilters)}
+            >
+              <Ionicons name="filter" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -373,88 +359,10 @@ export default function CatalogoScreen() {
           </View>
         </View>
 
-        {/* Filtros expandibles */}
-        {showFilters && (
-          <View style={[styles.filtersContainer, { 
-            backgroundColor: colors.background,
-            borderColor: colors.border 
-          }]}>
-            {/* Ordenamiento */}
-            <View style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Ordenar por:</ThemedText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {[
-                  { key: 'popularity', label: 'Popularidad' },
-                  { key: 'price-low', label: 'Precio menor' },
-                  { key: 'price-high', label: 'Precio mayor' },
-                  { key: 'name', label: 'Nombre A-Z' }
-                ].map(option => (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[
-                      styles.sortOption,
-                      { 
-                        backgroundColor: sortBy === option.key ? colors.primary : 'transparent',
-                        borderColor: colors.border 
-                      }
-                    ]}
-                    onPress={() => setSortBy(option.key as any)}
-                  >
-                    <ThemedText style={[
-                      styles.sortOptionText,
-                      { color: sortBy === option.key ? '#fff' : colors.text }
-                    ]}>
-                      {option.label}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Filtros adicionales */}
-            <View style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Filtros:</ThemedText>
-              <View style={styles.filterOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    { 
-                      backgroundColor: homeCollectionOnly ? colors.primary : 'transparent',
-                      borderColor: colors.border 
-                    }
-                  ]}
-                  onPress={() => setHomeCollectionOnly(!homeCollectionOnly)}
-                >
-                  <Ionicons 
-                    name="home-outline" 
-                    size={16} 
-                    color={homeCollectionOnly ? '#fff' : colors.text} 
-                  />
-                  <ThemedText style={[
-                    styles.filterChipText,
-                    { color: homeCollectionOnly ? '#fff' : colors.text }
-                  ]}>
-                    Toma a domicilio
-                  </ThemedText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.clearFiltersButton, { borderColor: colors.error }]}
-                  onPress={clearFilters}
-                >
-                  <ThemedText style={[styles.clearFiltersText, { color: colors.error }]}>
-                    Limpiar filtros
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
-
         {/* Categorías en grid */}
         <View style={styles.categoriesContainer}>
           <View style={styles.categoriesGrid}>
-            {categories.map(category => (
+            {categoriesWithCounts.map(category => (
               <TouchableOpacity
                 key={category.id}
                 style={[
@@ -472,7 +380,7 @@ export default function CatalogoScreen() {
                 ]}>
                   <Ionicons 
                     name={category.icon} 
-                    size={24} 
+                    size={20} 
                     color={selectedCategory === category.id ? '#fff' : category.color} 
                   />
                 </View>
@@ -498,24 +406,24 @@ export default function CatalogoScreen() {
         {/* Resultados */}
         <View style={styles.resultsHeader}>
           <ThemedText style={styles.resultsCount}>
-            {filteredAndSortedTests.length} prueba{filteredAndSortedTests.length !== 1 ? 's' : ''} encontrada{filteredAndSortedTests.length !== 1 ? 's' : ''}
+            {filteredTests.length} prueba{filteredTests.length !== 1 ? 's' : ''} encontrada{filteredTests.length !== 1 ? 's' : ''}
           </ThemedText>
         </View>
 
         {/* Lista de pruebas */}
         <FlatList
-          data={filteredAndSortedTests}
-          keyExtractor={item => item.id}
+          data={filteredTests}
+          keyExtractor={(item: Test) => item.id}
           contentContainerStyle={{ 
             paddingHorizontal: 16, 
             paddingBottom: insets.bottom + 20,
-            flexGrow: filteredAndSortedTests.length === 0 ? 1 : undefined
+            flexGrow: filteredTests.length === 0 ? 1 : undefined
           }}
           initialNumToRender={6}
           maxToRenderPerBatch={10}
           windowSize={5}
           removeClippedSubviews={true}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: Test }) => (
             <TouchableOpacity 
               style={[styles.testCard, { 
                 backgroundColor: colors.background,
@@ -526,7 +434,20 @@ export default function CatalogoScreen() {
             >
               <View style={styles.testCardHeader}>
                 <View style={styles.testInfo}>
-                  <ThemedText style={styles.testName}>{item.name}</ThemedText>
+                  <View style={styles.testTitleRow}>
+                    <View style={styles.testIconContainer}>
+                      <Ionicons 
+                        name={item.category === 'blood' ? 'water' : 
+                              item.category === 'urine' ? 'flask' :
+                              item.category === 'imaging' ? 'scan' :
+                              item.category === 'special' ? 'star' :
+                              item.category === 'packages' ? 'albums' : 'medical'} 
+                        size={18} 
+                        color={Colors.light.primary} 
+                      />
+                    </View>
+                    <ThemedText style={styles.testName}>{item.name}</ThemedText>
+                  </View>
                   <ThemedText style={[styles.testDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                     {item.description}
                   </ThemedText>
@@ -537,8 +458,8 @@ export default function CatalogoScreen() {
                   </ThemedText>
                   {item.preparationRequired && (
                     <View style={styles.preparationIndicator}>
-                      <Ionicons name="alert-circle-outline" size={14} color="#ffc107" />
-                      <ThemedText style={[styles.preparationText, { color: '#ffc107' }]}>
+                      <Ionicons name="alert-circle-outline" size={12} color="#f39c12" />
+                      <ThemedText style={[styles.preparationText, { color: '#f39c12' }]}>
                         Preparación
                       </ThemedText>
                     </View>
@@ -549,20 +470,20 @@ export default function CatalogoScreen() {
               <View style={styles.testCardDetails}>
                 <View style={styles.testAttributes}>
                   <View style={styles.testAttribute}>
-                    <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                    <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
                     <ThemedText style={[styles.attributeText, { color: colors.textSecondary }]}>
                       {item.resultTime}
                     </ThemedText>
                   </View>
                   <View style={styles.testAttribute}>
-                    <Ionicons name="flask-outline" size={14} color={colors.textSecondary} />
+                    <Ionicons name="flask-outline" size={12} color={colors.textSecondary} />
                     <ThemedText style={[styles.attributeText, { color: colors.textSecondary }]}>
                       {item.sampleType}
                     </ThemedText>
                   </View>
                   {item.homeCollection && (
                     <View style={styles.testAttribute}>
-                      <Ionicons name="home-outline" size={14} color={colors.success} />
+                      <Ionicons name="home-outline" size={12} color={colors.success} />
                       <ThemedText style={[styles.attributeText, { color: colors.success }]}>
                         A domicilio
                       </ThemedText>
@@ -574,7 +495,7 @@ export default function CatalogoScreen() {
                   style={[styles.bookButton, { backgroundColor: colors.primary }]}
                   onPress={() => handleBookTest(item)}
                 >
-                  <Ionicons name="calendar-outline" size={16} color="#fff" />
+                  <Ionicons name="calendar-outline" size={14} color="#fff" />
                   <ThemedText style={styles.bookButtonText}>Agendar</ThemedText>
                 </TouchableOpacity>
               </View>
@@ -631,32 +552,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.light.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: Colors.light.primary,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    flexWrap: 'nowrap',
   },
   greeting: {
     fontSize: 19,
@@ -668,6 +569,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     marginLeft: 8,
+  },
+  filterButton: {
+    padding: 8,
+    marginLeft: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -688,57 +599,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 0,
   },
-  filtersContainer: {
-    padding: 12,
-    borderBottomWidth: 1,
-  },
-  filterSection: {
-    marginBottom: 12,
-  },
-  filterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  sortOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-  },
-  sortOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  filterOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: 12,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  clearFiltersButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  clearFiltersText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
   categoriesContainer: {
     paddingHorizontal: 16,
     marginTop: 2,
@@ -752,25 +612,25 @@ const styles = StyleSheet.create({
   categoryCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 8,
     borderRadius: 12,
-    marginBottom: 8,
+    marginBottom: 6,
     borderWidth: 1,
     width: '48%',
-    minHeight: 90,
+    minHeight: 70,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   categoryIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   categoryLabel: {
     fontSize: 12,
@@ -795,9 +655,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   testCard: {
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 6,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
     borderWidth: 1,
     elevation: 1,
     shadowColor: '#000',
@@ -808,16 +668,32 @@ const styles = StyleSheet.create({
   testCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
   testInfo: {
     flex: 1,
+    marginRight: 12,
+  },
+  testTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  testIconContainer: {
     marginRight: 8,
+    backgroundColor: 'rgba(45, 127, 249, 0.1)',
+    padding: 4,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
   },
   testName: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 2,
+    flex: 1,
   },
   testDescription: {
     fontSize: 11,
@@ -825,19 +701,21 @@ const styles = StyleSheet.create({
   },
   testMeta: {
     alignItems: 'flex-end',
+    minWidth: 80,
   },
   testPrice: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 2,
+    textAlign: 'right',
   },
   preparationIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   preparationText: {
-    fontSize: 10,
-    marginLeft: 3,
+    fontSize: 9,
+    marginLeft: 2,
     fontWeight: '500',
   },
   testCardDetails: {
@@ -856,23 +734,20 @@ const styles = StyleSheet.create({
   },
   attributeText: {
     fontSize: 10,
-    marginLeft: 4,
-  },
-  testActions: {
-    marginLeft: 8,
+    marginLeft: 3,
   },
   bookButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
   bookButtonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    marginLeft: 3,
+    marginLeft: 2,
   },
   emptyState: {
     alignItems: 'center',

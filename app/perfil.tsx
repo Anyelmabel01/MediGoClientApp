@@ -19,6 +19,10 @@ export default function PerfilScreen() {
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const router = useRouter();
 
+  if (!user) {
+    return null; // or loading spinner
+  }
+
   return (
     <ThemedView style={styles.container}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
@@ -113,7 +117,7 @@ export default function PerfilScreen() {
           
           <TouchableOpacity 
             style={[styles.expedienteCard, { backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white }]}
-            onPress={() => router.push('expediente')}
+            onPress={() => router.push('/expediente' as any)}
           >
             <View style={styles.expedienteIconContainer}>
               <Ionicons name="document-text" size={24} color={Colors.light.primary} />
