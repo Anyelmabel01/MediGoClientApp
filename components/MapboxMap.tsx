@@ -71,18 +71,24 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
           
           // Añadir nuevos marcadores
           ${markers.map(marker => `
-            const marker_${marker.id} = new mapboxgl.Marker({ 
-              color: '${marker.color || '#3887BE'}',
-              scale: 0.8
+            // MARCADOR SIMPLE PERO MUY VISIBLE
+            const marker_${marker.id} = new mapboxgl.Marker({
+              color: '${marker.color || '#FF0000'}',
+              scale: 2.0
             })
               .setLngLat([${marker.longitude}, ${marker.latitude}])
-              .setPopup(new mapboxgl.Popup({ 
-                offset: 25,
-                closeButton: false,
-                closeOnClick: false
-              }).setHTML('<div style="padding: 8px; font-size: 14px; font-weight: bold;">${marker.title || ''}</div>'))
               .addTo(map);
+            
             window.currentMarkers.push(marker_${marker.id});
+            
+            // FORZAR que sea SUPER visible
+            const markerElement = marker_${marker.id}.getElement();
+            markerElement.style.transform = 'scale(2)';
+            markerElement.style.zIndex = '999999';
+            markerElement.style.filter = 'drop-shadow(0 0 20px rgba(255,0,0,1))';
+            markerElement.style.position = 'relative';
+            
+            console.log('MARCADOR CREADO:', marker_${marker.id}, 'en:', [${marker.longitude}, ${marker.latitude}]);
           `).join('')}
           
           return true;
@@ -272,6 +278,8 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
                     type: 'mapReady'
                   }));
                 }
+
+                console.log('MAPA CARGADO - Centro:', [${longitude}, ${latitude}], 'Zoom:', ${zoom});
 
                 // Agregar ubicación actual si está habilitada
                 ${showCurrentLocation ? `

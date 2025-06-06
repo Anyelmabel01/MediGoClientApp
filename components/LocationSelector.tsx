@@ -2,12 +2,25 @@ import { Colors } from '@/constants/Colors';
 import { UserLocation, mockLocations } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Modal,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { MapboxMap } from './MapboxMap';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
+
+const { width } = Dimensions.get('window');
 
 interface LocationSelectorProps {
   isVisible: boolean;
@@ -29,6 +42,12 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
   });
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isGettingCurrentLocation, setIsGettingCurrentLocation] = useState(false);
+  const [selectedLocationAddress, setSelectedLocationAddress] = useState('');
 
   // Cargar ubicaciones (en una app real vendría de una API)
   useEffect(() => {
@@ -43,8 +62,121 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
         latitude: editingLocation.latitud,
         longitude: editingLocation.longitud,
       });
+      setEditingAddress(editingLocation.direccion);
+      setSelectedLocationAddress(editingLocation.direccion);
+    } else if (isAddingNew) {
+      // Para nuevas ubicaciones, centrar en Panama
+      setSelectedCoords({
+        latitude: 8.9673,
+        longitude: -79.5314,
+      });
+      setSelectedLocationAddress('');
     }
-  }, [editingLocation]);
+  }, [editingLocation, isAddingNew]);
+
+  // Función para obtener la ubicación actual del usuario
+  const getCurrentLocation = async () => {
+    setIsGettingCurrentLocation(true);
+    try {
+      // Solicitar permisos si no los tenemos
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos necesarios',
+          'Necesitamos acceso a tu ubicación para usar esta función',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Obtener ubicación actual
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const { latitude, longitude } = currentLocation.coords;
+      setSelectedCoords({ latitude, longitude });
+      
+      // Obtener dirección usando geocodificación inversa
+      await reverseGeocode(latitude, longitude);
+      
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      Alert.alert(
+        'Error',
+        'No pudimos obtener tu ubicación actual. Intenta nuevamente.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsGettingCurrentLocation(false);
+    }
+  };
+
+  // Función para geocodificación inversa (obtener dirección de coordenadas)
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xobXljODM0MiJ9.48MFADtQhp_sFuQjewLFeA&language=es`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const address = data.features[0].place_name;
+        setSelectedLocationAddress(address);
+        // Siempre actualizar el campo de dirección cuando se selecciona en el mapa
+        setEditingAddress(address);
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+    }
+  };
+
+  // Función para buscar direcciones
+  const searchAddresses = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xobXljODM0MiJ9.48MFADtQhp_sFuQjewLFeA&country=PA&language=es&limit=5`
+      );
+      const data = await response.json();
+      
+      if (data.features) {
+        setSearchResults(data.features);
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error('Error searching addresses:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Manejar selección de resultado de búsqueda
+  const handleSearchResultSelect = (feature: any) => {
+    const [longitude, latitude] = feature.center;
+    setSelectedCoords({ latitude, longitude });
+    setEditingAddress(feature.place_name);
+    setSelectedLocationAddress(feature.place_name);
+    setSearchText('');
+    setShowSearchResults(false);
+  };
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchText) {
+        searchAddresses(searchText);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   const handleSaveLocation = () => {
     if (isAddingNew) {
@@ -107,16 +239,21 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setIsAddingNew(false);
     setMapLoading(false);
     setMapError(false);
+    setSearchText('');
+    setShowSearchResults(false);
   };
 
   const handleAddNewLocation = () => {
     setEditingLocation(null);
     setEditingName('');
     setEditingAddress('');
+    setSelectedLocationAddress('');
     setIsEditing(true);
     setIsAddingNew(true);
     setMapLoading(false);
     setMapError(false);
+    setSearchText('');
+    setShowSearchResults(false);
   };
 
   const resetEditState = () => {
@@ -124,15 +261,24 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
     setEditingLocation(null);
     setEditingName('');
     setEditingAddress('');
+    setSelectedLocationAddress('');
     setIsAddingNew(false);
+    setSearchText('');
+    setShowSearchResults(false);
   };
 
   // Manejar la selección de ubicación en el mapa de Mapbox
   const handleMapLocationSelect = (latitude: number, longitude: number) => {
+    console.log('🎯 NUEVA UBICACIÓN SELECCIONADA:', { latitude, longitude });
     setSelectedCoords({
       latitude,
       longitude
     });
+    // Obtener dirección automáticamente
+    reverseGeocode(latitude, longitude);
+    
+    // Pequeña animación de feedback para indicar que se seleccionó una ubicación
+    // Esto ayuda al usuario a entender que su acción fue registrada
   };
 
   const renderLocationItem = ({ item }: { item: UserLocation }) => (
@@ -199,6 +345,17 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
 
   // Renderizar el contenido del mapa con Mapbox
   const renderMapContent = () => {
+    // Debug logging
+    console.log('🗺️ RENDERIZANDO MAPA:', {
+      center: { lat: selectedCoords.latitude, lng: selectedCoords.longitude },
+      markers: [{
+        id: 'selected-location',
+        latitude: selectedCoords.latitude,
+        longitude: selectedCoords.longitude,
+        color: '#FF0000'
+      }]
+    });
+
     return (
       <View style={styles.mapContainer}>
         <ThemedText style={[styles.fieldLabel, { 
@@ -206,6 +363,79 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
         }]}>
           Selecciona la ubicación en el mapa
         </ThemedText>
+        
+        {/* Buscador de direcciones */}
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchInputContainer, { 
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          }]}>
+            <Ionicons 
+              name="search" 
+              size={20} 
+              color={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary} 
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={[styles.searchInput, { 
+                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary 
+              }]}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Buscar dirección..."
+              placeholderTextColor={isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary}
+            />
+            {isSearching && (
+              <ActivityIndicator size="small" color={Colors.light.primary} style={styles.searchLoader} />
+            )}
+            {searchText.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => {
+                  setSearchText('');
+                  setShowSearchResults(false);
+                }}
+                style={styles.clearSearchButton}
+              >
+                <Ionicons name="close-circle" size={20} color={Colors.light.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {/* Resultados de búsqueda */}
+          {showSearchResults && searchResults.length > 0 && (
+            <View style={[styles.searchResults, { 
+              backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+              borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            }]}>
+              {searchResults.map((result, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.searchResultItem, { 
+                    borderBottomColor: isDarkMode ? Colors.dark.border : Colors.light.border 
+                  }]}
+                  onPress={() => handleSearchResultSelect(result)}
+                >
+                  <Ionicons 
+                    name="location-outline" 
+                    size={16} 
+                    color={Colors.light.primary} 
+                    style={styles.searchResultIcon}
+                  />
+                  <View style={styles.searchResultText}>
+                    <ThemedText style={styles.searchResultTitle} numberOfLines={1}>
+                      {result.text}
+                    </ThemedText>
+                    <ThemedText style={[styles.searchResultSubtitle, { 
+                      color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                    }]} numberOfLines={1}>
+                      {result.place_name}
+                    </ThemedText>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
         
         <View style={[styles.mapWrapper, { 
           borderColor: isDarkMode ? Colors.dark.border : Colors.light.border 
@@ -218,14 +448,38 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
             showCurrentLocation={false}
             interactive={true}
             style={styles.map}
-            markers={[{
-              id: 'selected-location',
-              latitude: selectedCoords.latitude,
-              longitude: selectedCoords.longitude,
-              color: Colors.light.primary,
-              title: 'Ubicación seleccionada'
-            }]}
+            markers={[]}
           />
+          
+          {/* MARCADOR VISUAL ENCIMA DEL MAPA */}
+          <View style={styles.mapMarkerOverlay}>
+            <View style={styles.mapMarker}>
+              <View style={styles.markerPin}>
+                <Ionicons name="location" size={20} color="white" />
+              </View>
+              <View style={styles.markerPoint} />
+            </View>
+          </View>
+          
+          {/* Botón de ubicación actual */}
+          <TouchableOpacity
+            style={[styles.currentLocationButton, { 
+              backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+              borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+            }]}
+            onPress={getCurrentLocation}
+            disabled={isGettingCurrentLocation}
+          >
+            {isGettingCurrentLocation ? (
+              <ActivityIndicator size="small" color={Colors.light.primary} />
+            ) : (
+              <Ionicons 
+                name="locate" 
+                size={20} 
+                color={Colors.light.primary} 
+              />
+            )}
+          </TouchableOpacity>
           
           {mapLoading && (
             <View style={styles.mapLoadingOverlay}>
@@ -247,7 +501,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
         <ThemedText style={[styles.mapInstructions, { 
           color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
         }]}>
-          Toca en el mapa para seleccionar la ubicación exacta
+          Toca en el mapa para seleccionar la ubicación exacta o usa el buscador
         </ThemedText>
       </View>
     );
@@ -555,5 +809,145 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  searchLoader: {
+    marginLeft: 8,
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+  searchResults: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  searchResultItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  searchResultIcon: {
+    marginRight: 10,
+  },
+  searchResultText: {
+    flex: 1,
+  },
+  searchResultTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  searchResultSubtitle: {
+    fontSize: 12,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedLocationInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  selectedLocationText: {
+    flex: 1,
+    fontSize: 12,
+    marginLeft: 8,
+    lineHeight: 16,
+  },
+  mapMarkerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  mapMarker: {
+    width: 35,
+    height: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  markerPin: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF0000',
+    borderWidth: 3,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  markerPoint: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#FF0000',
+    marginTop: -3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
 }); 
