@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { zoomService } from '../utils/zoomService';
 
 // Tipos para citas de consultorio
 export type ConsultorioAppointment = {
@@ -34,6 +35,12 @@ export type TelemedicineAppointment = {
   notes?: string;
   specialist_id?: string;
   created_at?: string;
+  // Campos de Zoom
+  zoom_meeting_id?: string;
+  zoom_join_url?: string;
+  zoom_start_url?: string;
+  zoom_password?: string;
+  zoom_meeting_created?: boolean;
 };
 
 export type Appointment = ConsultorioAppointment | TelemedicineAppointment;
@@ -48,6 +55,7 @@ interface AppointmentsContextType {
   deleteAppointment: (id: string) => void;
   getUpcomingAppointments: () => Appointment[];
   getPastAppointments: () => Appointment[];
+  createZoomMeeting: (appointmentId: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -84,8 +92,13 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         status: 'CONFIRMED',
         consultation_fee: 750,
         type: 'telemedicine',
-        can_join: false,
+        can_join: true,
         created_at: new Date().toISOString(),
+        zoom_meeting_created: true,
+        zoom_meeting_id: '789123456',
+        zoom_join_url: 'https://zoom.us/test',
+        zoom_start_url: 'https://zoom.us/test',
+        zoom_password: 'MediGo2024',
       }
     ];
     setAppointments(initialData);
@@ -102,14 +115,74 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     setAppointments(prev => [...prev, newAppointment]);
   };
 
-  const addTelemedicineAppointment = (appointmentData: Omit<TelemedicineAppointment, 'id' | 'created_at'>) => {
+  const addTelemedicineAppointment = async (appointmentData: Omit<TelemedicineAppointment, 'id' | 'created_at'>) => {
     const newAppointment: TelemedicineAppointment = {
       ...appointmentData,
       id: `tele_${Date.now()}`,
       created_at: new Date().toISOString(),
+      zoom_meeting_created: false,
     };
     
+    // Agregar la cita al estado
     setAppointments(prev => [...prev, newAppointment]);
+
+    // Crear automáticamente la reunión de Zoom usando la cita recién creada
+    try {
+      // Usar setTimeout para asegurar que el estado se actualice antes de crear la reunión
+      setTimeout(async () => {
+        await createZoomMeetingForAppointment(newAppointment);
+      }, 100);
+    } catch (error) {
+      console.error('Error creando reunión de Zoom automáticamente:', error);
+    }
+  };
+
+  const createZoomMeetingForAppointment = async (appointment: TelemedicineAppointment): Promise<void> => {
+    try {
+      // Formatear fecha para Zoom (ISO format)
+      const appointmentDateTime = new Date(`${appointment.date} ${appointment.time}`);
+      const isoDateTime = appointmentDateTime.toISOString();
+
+      // Crear reunión de Zoom
+      const zoomMeeting = await zoomService.createTelemedicineMeeting(
+        appointment.specialist_name,
+        'Paciente', // Aquí podrías obtener el nombre del paciente del contexto de auth
+        isoDateTime
+      );
+
+      // Actualizar la cita con información de Zoom
+      setAppointments(prev => 
+        prev.map(apt => 
+          apt.id === appointment.id ? {
+            ...apt,
+            zoom_meeting_id: zoomMeeting.id.toString(),
+            zoom_join_url: zoomMeeting.join_url,
+            zoom_start_url: zoomMeeting.start_url,
+            zoom_password: zoomMeeting.password,
+            zoom_meeting_created: true
+          } : apt
+        )
+      );
+
+      console.log('Reunión de Zoom creada exitosamente:', zoomMeeting.id);
+    } catch (error) {
+      console.error('Error creando reunión de Zoom:', error);
+      throw error;
+    }
+  };
+
+  const createZoomMeeting = async (appointmentId: string): Promise<void> => {
+    try {
+      const appointment = appointments.find(apt => apt.id === appointmentId);
+      if (!appointment || appointment.type !== 'telemedicine') {
+        throw new Error('Cita no encontrada o no es de telemedicina');
+      }
+
+      await createZoomMeetingForAppointment(appointment);
+    } catch (error) {
+      console.error('Error creando reunión de Zoom:', error);
+      throw error;
+    }
   };
 
   const updateAppointmentStatus = (id: string, status: string) => {
@@ -120,8 +193,29 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const deleteAppointment = (id: string) => {
-    setAppointments(prev => prev.filter(apt => apt.id !== id));
+  const deleteAppointment = async (id: string) => {
+    try {
+      const appointment = appointments.find(apt => apt.id === id);
+      
+      // Si es una cita de telemedicina con reunión de Zoom, eliminar la reunión
+      if (appointment && 
+          appointment.type === 'telemedicine' && 
+          appointment.zoom_meeting_id && 
+          appointment.zoom_meeting_created) {
+        try {
+          await zoomService.deleteMeeting(appointment.zoom_meeting_id);
+          console.log('Reunión de Zoom eliminada exitosamente');
+        } catch (error) {
+          console.error('Error eliminando reunión de Zoom:', error);
+          // Continuar con la eliminación de la cita aunque falle la eliminación de Zoom
+        }
+      }
+
+      setAppointments(prev => prev.filter(apt => apt.id !== id));
+    } catch (error) {
+      console.error('Error eliminando cita:', error);
+      throw error;
+    }
   };
 
   const getUpcomingAppointments = () => {
@@ -154,6 +248,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
     deleteAppointment,
     getUpcomingAppointments,
     getPastAppointments,
+    createZoomMeeting,
     loading,
   };
 

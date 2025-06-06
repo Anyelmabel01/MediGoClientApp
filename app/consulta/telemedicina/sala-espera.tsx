@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { useAppointments } from '@/context/AppointmentsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,6 +8,8 @@ import { useEffect, useState } from 'react';
 import {
     Alert,
     Dimensions,
+    Linking,
+    Modal,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -23,175 +26,104 @@ const PRIMARY_LIGHT = '#33b5c2';
 const PRIMARY_DARK = '#006070';
 const ACCENT_COLOR = '#70D0E0';
 
-type ChecklistItem = {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  required: boolean;
-};
-
-type TechnicalCheck = {
-  id: string;
-  name: string;
-  status: 'checking' | 'success' | 'error';
-  icon: string;
-};
-
 export default function SalaEsperaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
+  const { appointments } = useAppointments();
   const { consultationId, specialistId, appointmentTime, specialistName, specialty } = useLocalSearchParams();
   
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    {
-      id: '1',
-      title: 'Documento de identidad listo',
-      description: 'Ten tu cédula o pasaporte a la mano para verificación',
-      completed: false,
-      required: true
-    },
-    {
-      id: '2',
-      title: 'Lista de medicamentos actuales',
-      description: 'Prepara una lista de medicamentos que estás tomando',
-      completed: false,
-      required: true
-    },
-    {
-      id: '3',
-      title: 'Síntomas o molestias a consultar',
-      description: 'Ten claros los síntomas que quieres consultar',
-      completed: false,
-      required: true
-    },
-    {
-      id: '4',
-      title: 'Historial médico relevante',
-      description: 'Información sobre cirugías, alergias o condiciones previas',
-      completed: false,
-      required: false
-    },
-    {
-      id: '5',
-      title: 'Ambiente tranquilo',
-      description: 'Asegúrate de estar en un lugar privado y sin ruido',
-      completed: false,
-      required: true
-    },
-    {
-      id: '6',
-      title: 'Buena iluminación',
-      description: 'Ubícate en un lugar con buena luz para que el doctor pueda verte',
-      completed: false,
-      required: false
-    }
-  ]);
-
-  const [technicalChecks, setTechnicalChecks] = useState<TechnicalCheck[]>([
-    { id: '1', name: 'Conexión a internet', status: 'checking', icon: 'wifi' },
-    { id: '2', name: 'Cámara', status: 'checking', icon: 'camera' },
-    { id: '3', name: 'Micrófono', status: 'checking', icon: 'mic' },
-    { id: '4', name: 'Altavoces', status: 'checking', icon: 'volume-high' }
-  ]);
-
-  const [waitingTime, setWaitingTime] = useState(0);
-  const [canJoinCall, setCanJoinCall] = useState(false);
+  const [appointment, setAppointment] = useState<any>(null);
+  const [zoomUrl, setZoomUrl] = useState<string>('');
+  const [isReady, setIsReady] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   useEffect(() => {
-    // Simulate technical checks - always successful
-    const checkInterval = setInterval(() => {
-      setTechnicalChecks(prev => prev.map(check => {
-        if (check.status === 'checking') {
-          // Always set to success - everything works properly
-          return { ...check, status: 'success' };
-        }
-        return check;
-      }));
-    }, 1000);
+    // Buscar la cita para obtener información de Zoom
+    const findAppointment = appointments.find(apt => 
+      apt.type === 'telemedicine' && 
+      (apt.id === consultationId || apt.specialist_id === specialistId)
+    );
 
-    // Simulate waiting time countdown
-    const waitInterval = setInterval(() => {
-      setWaitingTime(prev => {
-        if (prev <= 0) {
-          setCanJoinCall(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (findAppointment && findAppointment.type === 'telemedicine') {
+      setAppointment(findAppointment);
+      
+      if (findAppointment.zoom_join_url) {
+        setZoomUrl(findAppointment.zoom_join_url);
+        console.log('URL de Zoom encontrada:', findAppointment.zoom_join_url);
+      }
+    }
 
-    // Initialize waiting time (simulated)
-    setWaitingTime(120); // 2 minutes
+    // Auto-habilitar después de 3 segundos
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 3000);
 
-    return () => {
-      clearInterval(checkInterval);
-      clearInterval(waitInterval);
-    };
-  }, []);
+    return () => clearTimeout(timer);
+  }, [consultationId, specialistId, appointments]);
 
-  const toggleChecklistItem = (id: string) => {
-    setChecklist(prev => prev.map(item => 
-      item.id === id ? { ...item, completed: !item.completed } : item
-    ));
-  };
-
-  const requiredItemsCompleted = checklist.filter(item => item.required && item.completed).length;
-  const totalRequiredItems = checklist.filter(item => item.required).length;
-  const allTechnicalChecksPass = technicalChecks.every(check => check.status === 'success');
-  const readyToJoin = requiredItemsCompleted === totalRequiredItems && allTechnicalChecksPass && canJoinCall;
-
-  const handleJoinCall = () => {
-    if (!readyToJoin) {
+  const handleJoinCall = async () => {
+    if (!zoomUrl) {
       Alert.alert(
-        'No estás listo aún',
-        'Por favor completa todos los elementos requeridos y espera a que las pruebas técnicas terminen.'
+        'Error',
+        'No se encontró el enlace de la reunión de Zoom para esta consulta.',
+        [
+          { text: 'Volver', onPress: () => router.back() }
+        ]
       );
       return;
     }
 
-    router.push({
-      pathname: '/consulta/telemedicina/videollamada',
-      params: { 
-        consultationId, 
-        specialistId, 
-        appointmentTime,
-        specialistName,
-        specialty
+    try {
+      // Verificar si es una URL de prueba (desarrollo)
+      if (zoomUrl.includes('zoom.us/test')) {
+        setShowModal(true);
+        return;
       }
-    });
-  };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'checking':
-        return 'time-outline';
-      case 'success':
-        return 'checkmark-circle';
-      case 'error':
-        return 'close-circle';
-      default:
-        return 'time-outline';
+      // Intentar abrir directamente en la app de Zoom (para reuniones reales)
+      const canOpen = await Linking.canOpenURL(zoomUrl);
+      
+      if (canOpen) {
+        setShowModal(true);
+      } else {
+        setShowDownloadModal(true);
+      }
+    } catch (error) {
+      console.error('Error verificando Zoom:', error);
+      Alert.alert('Error', 'Hubo un problema al intentar conectar con Zoom');
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'checking':
-        return '#fbbf24';
-      case 'success':
-        return '#10b981';
-      case 'error':
-        return '#ef4444';
-      default:
-        return '#fbbf24';
+  const handleInstallZoom = () => {
+    setShowDownloadModal(true);
+  };
+
+  const handleModalCancel = () => {
+    setShowModal(false);
+  };
+
+  const handleModalContinue = async () => {
+    setShowModal(false);
+    try {
+      await Linking.openURL(zoomUrl);
+      // Volver a la pantalla principal después de abrir Zoom
+      setTimeout(() => {
+        router.push('/consulta/telemedicina');
+      }, 2000);
+    } catch (error) {
+      console.error('Error abriendo Zoom:', error);
+      Alert.alert('Error', 'No se pudo abrir la aplicación de Zoom');
     }
+  };
+
+  const handleDownloadModalCancel = () => {
+    setShowDownloadModal(false);
+  };
+
+  const handleDownloadModalContinue = () => {
+    setShowDownloadModal(false);
+    Linking.openURL('https://zoom.us/download');
   };
 
   return (
@@ -206,7 +138,7 @@ export default function SalaEsperaScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.light.white} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Sala de Espera</ThemedText>
+        <ThemedText style={styles.headerTitle}>Videoconsulta</ThemedText>
       </View>
 
       <ScrollView 
@@ -214,186 +146,118 @@ export default function SalaEsperaScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Waiting Status */}
+        {/* Información de la Consulta */}
         <View style={[styles.section, {
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
           borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
         }]}>
-          <View style={styles.waitingHeader}>
-            <View style={[styles.waitingIcon, { backgroundColor: PRIMARY_COLOR + '20' }]}>
-              <Ionicons name="medical" size={32} color={PRIMARY_COLOR} />
+          <View style={styles.consultationHeader}>
+            <View style={[styles.doctorIcon, { backgroundColor: PRIMARY_COLOR + '20' }]}>
+              <Ionicons name="person" size={32} color={PRIMARY_COLOR} />
             </View>
-            <View style={styles.waitingInfo}>
-              <ThemedText style={styles.waitingTitle}>
-                {specialistName ? `Consulta con ${specialistName}` : 'Tu consulta comenzará pronto'}
+            <View style={styles.consultationInfo}>
+              <ThemedText style={styles.doctorName}>
+                {specialistName ? `Dr. ${specialistName}` : 'Consulta Médica'}
               </ThemedText>
-              <ThemedText style={[styles.waitingSubtitle, {
+              <ThemedText style={[styles.specialty, {
                 color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
               }]}>
-                {specialty ? `${specialty} - ` : ''}Consulta virtual programada {appointmentTime ? `a las ${appointmentTime}` : ''}
+                {specialty || 'Consulta Virtual'}
               </ThemedText>
-              {waitingTime > 0 ? (
-                <ThemedText style={[styles.waitingTime, { color: PRIMARY_COLOR }]}>
-                  Tiempo estimado: {formatTime(waitingTime)}
-                </ThemedText>
-              ) : (
-                <ThemedText style={[styles.waitingTime, { color: '#10b981' }]}>
-                  ¡Ya puedes ingresar a la consulta!
-                </ThemedText>
-              )}
+              <ThemedText style={[styles.appointmentTime, { color: PRIMARY_COLOR }]}>
+                {appointmentTime ? `Programada: ${appointmentTime}` : 'Disponible ahora'}
+              </ThemedText>
             </View>
           </View>
-        </View>
 
-        {/* Technical Checks */}
-        <View style={[styles.section, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-        }]}>
-          <ThemedText style={styles.sectionTitle}>Verificación Técnica</ThemedText>
-          <ThemedText style={[styles.sectionDescription, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-          }]}>
-            Verificando que tu dispositivo esté listo para la videollamada
-          </ThemedText>
-          
-          <View style={styles.technicalChecks}>
-            {technicalChecks.map((check) => (
-              <View key={check.id} style={styles.technicalCheck}>
-                <Ionicons 
-                  name={check.icon as any} 
-                  size={20} 
-                  color={getStatusColor(check.status)} 
-                />
-                <ThemedText style={styles.technicalCheckName}>{check.name}</ThemedText>
-                <Ionicons 
-                  name={getStatusIcon(check.status) as any} 
-                  size={20} 
-                  color={getStatusColor(check.status)} 
-                />
+          {/* Código de Zoom */}
+          {appointment?.zoom_password && (
+            <View style={[styles.zoomCodeContainer, { backgroundColor: PRIMARY_COLOR + '10' }]}>
+              <Ionicons name="key" size={20} color={PRIMARY_COLOR} />
+              <View style={styles.zoomCodeInfo}>
+                <ThemedText style={[styles.zoomCodeLabel, { color: PRIMARY_COLOR }]}>
+                  Código de reunión
+                </ThemedText>
+                <ThemedText style={styles.zoomCode}>
+                  {appointment.zoom_password}
+                </ThemedText>
               </View>
-            ))}
-          </View>
+            </View>
+          )}
         </View>
 
-        {/* Pre-Consultation Checklist */}
+        {/* Instrucciones Rápidas */}
         <View style={[styles.section, {
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
           borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
         }]}>
-          <View style={styles.checklistHeader}>
-            <ThemedText style={styles.sectionTitle}>Lista de Verificación</ThemedText>
-            <View style={[styles.progressBadge, { backgroundColor: PRIMARY_COLOR + '20' }]}>
-              <ThemedText style={[styles.progressText, { color: PRIMARY_COLOR }]}>
-                {requiredItemsCompleted}/{totalRequiredItems}
+          <ThemedText style={styles.sectionTitle}>Antes de unirte</ThemedText>
+          
+          <View style={styles.quickTips}>
+            <View style={styles.tip}>
+              <Ionicons name="document-text" size={18} color={PRIMARY_COLOR} />
+              <ThemedText style={[styles.tipText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                Ten a mano tu documento de identidad
+              </ThemedText>
+            </View>
+            
+            <View style={styles.tip}>
+              <Ionicons name="medical" size={18} color={PRIMARY_COLOR} />
+              <ThemedText style={[styles.tipText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                Lista de medicamentos que tomas
+              </ThemedText>
+            </View>
+            
+            <View style={styles.tip}>
+              <Ionicons name="bulb" size={18} color={PRIMARY_COLOR} />
+              <ThemedText style={[styles.tipText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                Busca un lugar tranquilo y bien iluminado
               </ThemedText>
             </View>
           </View>
-          <ThemedText style={[styles.sectionDescription, {
-            color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+        </View>
+
+        {/* Información de Zoom */}
+        <View style={[styles.section, {
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
+        }]}>
+          <View style={styles.zoomInfo}>
+            <Ionicons name="videocam" size={24} color={PRIMARY_COLOR} />
+            <View style={styles.zoomInfoText}>
+              <ThemedText style={styles.zoomInfoTitle}>Videollamada con Zoom</ThemedText>
+              <ThemedText style={[styles.zoomInfoDescription, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>
+                Se abrirá automáticamente la aplicación de Zoom
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+
+        {/* Estado de preparación */}
+        {!isReady && (
+          <View style={[styles.section, {
+            backgroundColor: '#fbbf24' + '20',
+            borderColor: '#fbbf24',
           }]}>
-            Prepara todo lo necesario para una consulta exitosa
-          </ThemedText>
-
-          <View style={styles.checklist}>
-            {checklist.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.checklistItem, {
-                  borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-                }]}
-                onPress={() => toggleChecklistItem(item.id)}
-              >
-                <View style={styles.checklistItemHeader}>
-                  <Ionicons 
-                    name={item.completed ? "checkbox" : "square-outline"} 
-                    size={24} 
-                    color={item.completed ? '#10b981' : Colors.light.textSecondary} 
-                  />
-                  <View style={styles.checklistItemInfo}>
-                    <View style={styles.checklistItemTitleRow}>
-                      <ThemedText style={[
-                        styles.checklistItemTitle,
-                        item.completed && styles.checklistItemTitleCompleted
-                      ]}>
-                        {item.title}
-                      </ThemedText>
-                      {item.required && (
-                        <View style={[styles.requiredBadge, { backgroundColor: '#ef4444' }]}>
-                          <ThemedText style={styles.requiredText}>Requerido</ThemedText>
-                        </View>
-                      )}
-                    </View>
-                    <ThemedText style={[
-                      styles.checklistItemDescription,
-                      {
-                        color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                      },
-                      item.completed && styles.checklistItemDescriptionCompleted
-                    ]}>
-                      {item.description}
-                    </ThemedText>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Instructions */}
-        <View style={[styles.section, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-          borderColor: isDarkMode ? Colors.dark.border : Colors.light.border,
-        }]}>
-          <ThemedText style={styles.sectionTitle}>Instrucciones Importantes</ThemedText>
-          <View style={styles.instructions}>
-            <View style={styles.instruction}>
-              <Ionicons name="shield-checkmark" size={20} color={PRIMARY_COLOR} />
-              <ThemedText style={[styles.instructionText, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Tu consulta es privada y confidencial
+            <View style={styles.preparingContainer}>
+              <Ionicons name="hourglass" size={20} color="#fbbf24" />
+              <ThemedText style={[styles.preparingText, { color: '#d97706' }]}>
+                Preparando consulta...
               </ThemedText>
             </View>
-            <View style={styles.instruction}>
-              <Ionicons name="time" size={20} color={PRIMARY_COLOR} />
-              <ThemedText style={[styles.instructionText, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                La consulta puede durar entre 15-30 minutos
-              </ThemedText>
-            </View>
-            <View style={styles.instruction}>
-              <Ionicons name="help-circle" size={20} color={PRIMARY_COLOR} />
-              <ThemedText style={[styles.instructionText, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Si tienes problemas técnicos, usa el chat de soporte
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {/* Botón de entrada inmediata */}
-        {technicalChecks.every(check => check.status === 'success') && waitingTime > 0 && (
-          <View style={styles.quickJoinContainer}>
-            <TouchableOpacity 
-              style={styles.quickJoinButton}
-              onPress={() => {
-                setWaitingTime(0);
-                setCanJoinCall(true);
-              }}
-            >
-              <Ionicons name="flash" size={20} color="white" />
-              <ThemedText style={styles.quickJoinText}>
-                Entrar ahora (verificación completa)
-              </ThemedText>
-            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
 
-      {/* Join Call Button */}
+      {/* Botón principal */}
       <View style={[styles.joinContainer, {
         backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
         borderTopColor: isDarkMode ? Colors.dark.border : Colors.light.border,
@@ -402,29 +266,153 @@ export default function SalaEsperaScreen() {
           style={[
             styles.joinButton,
             { 
-              backgroundColor: canJoinCall ? Colors.light.primary : Colors.light.textSecondary,
-              opacity: canJoinCall ? 1 : 0.6
+              backgroundColor: isReady ? PRIMARY_COLOR : Colors.light.textSecondary,
+              opacity: isReady ? 1 : 0.7
             }
           ]}
           onPress={handleJoinCall}
-          disabled={!canJoinCall}
+          disabled={!isReady}
         >
           <Ionicons name="videocam" size={20} color="white" />
           <ThemedText style={styles.joinButtonText}>
-            {canJoinCall ? 'Ingresar a la Consulta' : 'Completar preparación'}
+            {isReady ? 'Iniciar Videoconsulta' : 'Preparando...'}
           </ThemedText>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.supportButton}
-          onPress={() => Alert.alert('Soporte', 'Función de soporte en desarrollo')}
+          onPress={handleInstallZoom}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={16} color={PRIMARY_COLOR} />
+          <Ionicons name="download-outline" size={16} color={PRIMARY_COLOR} />
           <ThemedText style={[styles.supportButtonText, { color: PRIMARY_COLOR }]}>
-            ¿Necesitas ayuda?
+            ¿No tienes Zoom? Descárgalo aquí
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Modal personalizado para confirmación */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={handleModalCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Header del modal */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIcon}>
+                <Ionicons name="videocam" size={32} color={PRIMARY_COLOR} />
+              </View>
+              <ThemedText style={styles.modalTitle}>Videoconsulta</ThemedText>
+            </View>
+
+            {/* Contenido del modal */}
+            <View style={styles.modalContent}>
+              <ThemedText style={styles.modalMessage}>
+                Se abrirá la aplicación de Zoom para iniciar tu consulta médica con{' '}
+                {specialistName ? `Dr. ${specialistName}` : 'el especialista'}.
+              </ThemedText>
+
+              {appointment?.zoom_password && (
+                <View style={styles.modalCodeContainer}>
+                  <Ionicons name="key" size={16} color={PRIMARY_COLOR} />
+                  <ThemedText style={styles.modalCodeText}>
+                    Código: {appointment.zoom_password}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+
+            {/* Botones del modal */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButtonCancel}
+                onPress={handleModalCancel}
+              >
+                <ThemedText style={styles.modalButtonCancelText}>
+                  Cancelar
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.modalButtonContinue}
+                onPress={handleModalContinue}
+              >
+                <ThemedText style={styles.modalButtonContinueText}>
+                  Iniciar Consulta
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal personalizado para descarga de Zoom */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showDownloadModal}
+        onRequestClose={handleDownloadModalCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Header del modal */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconDownload}>
+                <Ionicons name="download" size={32} color="#f59e0b" />
+              </View>
+              <ThemedText style={styles.modalTitleDownload}>Descargar Zoom</ThemedText>
+            </View>
+
+            {/* Contenido del modal */}
+            <View style={styles.modalContent}>
+              <ThemedText style={styles.modalMessage}>
+                Zoom es necesario para las videoconsultas médicas. Es una aplicación gratuita y segura.
+              </ThemedText>
+
+              <View style={styles.downloadFeatures}>
+                <View style={styles.downloadFeature}>
+                  <Ionicons name="shield-checkmark" size={16} color="#10b981" />
+                  <ThemedText style={styles.featureText}>Videollamadas de alta calidad</ThemedText>
+                </View>
+                
+                <View style={styles.downloadFeature}>
+                  <Ionicons name="lock-closed" size={16} color="#10b981" />
+                  <ThemedText style={styles.featureText}>Conexión segura y privada</ThemedText>
+                </View>
+                
+                <View style={styles.downloadFeature}>
+                  <Ionicons name="download" size={16} color="#10b981" />
+                  <ThemedText style={styles.featureText}>Descarga gratuita</ThemedText>
+                </View>
+              </View>
+            </View>
+
+            {/* Botones del modal */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButtonCancel}
+                onPress={handleDownloadModalCancel}
+              >
+                <ThemedText style={styles.modalButtonCancelText}>
+                  Cancelar
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.modalButtonDownload}
+                onPress={handleDownloadModalContinue}
+              >
+                <Ionicons name="download" size={16} color="white" />
+                <ThemedText style={styles.modalButtonDownloadText}>
+                  Ir a Descargar
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -435,7 +423,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   header: {
-    backgroundColor: Colors.light.primary,
+    backgroundColor: PRIMARY_COLOR,
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 16,
@@ -472,11 +460,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  waitingHeader: {
+  consultationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  waitingIcon: {
+  doctorIcon: {
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -484,121 +473,86 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
   },
-  waitingInfo: {
+  consultationInfo: {
     flex: 1,
   },
-  waitingTitle: {
-    fontSize: 18,
+  doctorName: {
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  waitingSubtitle: {
+  specialty: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  waitingTime: {
-    fontSize: 16,
+  appointmentTime: {
+    fontSize: 14,
     fontWeight: '600',
+  },
+  zoomCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 12,
+  },
+  zoomCodeInfo: {
+    flex: 1,
+  },
+  zoomCodeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  zoomCode: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  sectionDescription: {
-    fontSize: 14,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  technicalChecks: {
+  quickTips: {
     gap: 12,
   },
-  technicalCheck: {
+  tip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
     gap: 12,
   },
-  technicalCheckName: {
+  tipText: {
+    fontSize: 14,
     flex: 1,
-    fontSize: 14,
+    lineHeight: 18,
   },
-  checklistHeader: {
+  zoomInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  checklist: {
     gap: 12,
   },
-  checklistItem: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-  },
-  checklistItemHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  checklistItemInfo: {
+  zoomInfoText: {
     flex: 1,
   },
-  checklistItemTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  checklistItemTitle: {
-    fontSize: 14,
+  zoomInfoTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    flex: 1,
+    marginBottom: 2,
   },
-  checklistItemTitleCompleted: {
-    textDecorationLine: 'line-through',
-    opacity: 0.7,
+  zoomInfoDescription: {
+    fontSize: 14,
+    lineHeight: 18,
   },
-  requiredBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  requiredText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  checklistItemDescription: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  checklistItemDescriptionCompleted: {
-    textDecorationLine: 'line-through',
-    opacity: 0.7,
-  },
-  instructions: {
-    gap: 12,
-  },
-  instruction: {
+  preparingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 8,
   },
-  instructionText: {
+  preparingText: {
     fontSize: 14,
-    flex: 1,
-    lineHeight: 20,
+    fontWeight: '500',
   },
   joinContainer: {
     position: 'absolute',
@@ -620,7 +574,7 @@ const styles = StyleSheet.create({
   },
   joinButtonText: {
     color: 'white',
-    fontSize: width < 400 ? 14 : 16,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -630,29 +584,163 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
-    flexWrap: 'wrap',
   },
   supportButtonText: {
-    fontSize: width < 400 ? 12 : 14,
+    fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
   },
-  quickJoinContainer: {
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
-  quickJoinButton: {
-    backgroundColor: PRIMARY_COLOR,
-    padding: 16,
-    borderRadius: 12,
+  modalContainer: {
+    backgroundColor: Colors.light.background,
+    padding: 24,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 25,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    backgroundColor: PRIMARY_COLOR + '20',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: PRIMARY_COLOR,
+    textAlign: 'center',
+  },
+  modalContent: {
+    marginBottom: 24,
+  },
+  modalMessage: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 16,
+    color: Colors.light.textSecondary,
+  },
+  modalCodeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
     gap: 8,
+    backgroundColor: PRIMARY_COLOR + '10',
   },
-  quickJoinText: {
+  modalCodeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    color: PRIMARY_COLOR,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButtonCancel: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    borderRadius: 12,
+    borderColor: Colors.light.border,
+  },
+  modalButtonCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+  },
+  modalButtonContinue: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+    backgroundColor: PRIMARY_COLOR,
+    shadowColor: PRIMARY_COLOR,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalButtonContinueText: {
     color: 'white',
-    fontSize: width < 400 ? 14 : 16,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalIconDownload: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    backgroundColor: '#f59e0b' + '20',
+  },
+  modalTitleDownload: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#f59e0b',
+    textAlign: 'center',
+  },
+  downloadFeatures: {
+    gap: 12,
+  },
+  downloadFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featureText: {
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 18,
+  },
+  modalButtonDownload: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+    backgroundColor: '#f59e0b',
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalButtonDownloadText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 }); 

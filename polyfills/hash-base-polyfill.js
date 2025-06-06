@@ -1,9 +1,9 @@
 // Hash-base polyfill for React Native
-const stream = require('stream');
+const { Transform } = require('stream-browserify');
 const { Buffer } = require('buffer');
 
 // Create a simple Transform stream for hash-base compatibility
-class HashBase extends stream.Transform {
+class HashBase extends Transform {
   constructor(blockSize, finalSize) {
     super();
     this._blockSize = blockSize;
