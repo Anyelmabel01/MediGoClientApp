@@ -20,7 +20,8 @@ export default {
       infoPlist: {
         NSCameraUsageDescription: "Esta aplicación necesita acceso a la cámara para realizar videollamadas médicas.",
         NSMicrophoneUsageDescription: "Esta aplicación necesita acceso al micrófono para realizar videollamadas médicas.",
-        NSLocationWhenInUseUsageDescription: "Esta aplicación necesita acceso a tu ubicación para seleccionar la dirección del servicio médico."
+        NSLocationWhenInUseUsageDescription: "MediGo necesita acceso a tu ubicación para servicios de emergencia, encontrar farmacias cercanas y proporcionar servicios médicos a domicilio con precisión.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "MediGo necesita acceso a tu ubicación para servicios de emergencia en tiempo real y seguimiento de paramédicos."
       }
     },
     android: {
@@ -36,7 +37,9 @@ export default {
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
       ],
       package: "com.anonymous.anyel"
     },
@@ -63,6 +66,17 @@ export default {
           cameraPermission: "Permitir a $(PRODUCT_NAME) acceder a tu cámara para videollamadas médicas.",
           microphonePermission: "Permitir a $(PRODUCT_NAME) acceder a tu micrófono para videollamadas médicas.",
           recordAudioAndroid: true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission: "MediGo necesita acceso a tu ubicación para servicios de emergencia, encontrar farmacias cercanas y proporcionar servicios médicos a domicilio con precisión.",
+          locationAlwaysPermission: "MediGo necesita acceso continuo a tu ubicación para el seguimiento en tiempo real durante emergencias médicas.",
+          locationWhenInUsePermission: "MediGo necesita acceso a tu ubicación para servicios de emergencia y encontrar proveedores médicos cercanos.",
+          isIosBackgroundLocationEnabled: true,
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true
         }
       ],
       [
