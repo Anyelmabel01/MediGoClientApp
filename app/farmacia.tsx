@@ -55,7 +55,6 @@ type PaymentMethod = {
   icon: string;
   isIconMaterial?: boolean;
   isFontAwesome?: boolean;
-  requiresCardInfo?: boolean;
 };
 
 type DeliveryMethod = {
@@ -63,13 +62,6 @@ type DeliveryMethod = {
   name: string;
   icon: keyof typeof Ionicons.glyphMap;
   price: number;
-};
-
-type CardInfo = {
-  cardNumber: string;
-  cardHolder: string;
-  expiryDate: string;
-  cvv: string;
 };
 
 const categories: MedicineCategory[] = [
@@ -82,13 +74,12 @@ const categories: MedicineCategory[] = [
 ];
 
 const paymentMethods: PaymentMethod[] = [
-  { id: '1', name: 'Tarjeta de crédito', icon: 'credit-card', isIconMaterial: true, requiresCardInfo: true },
-  { id: '2', name: 'Tarjeta de débito', icon: 'card', isIconMaterial: false, requiresCardInfo: true },
+  { id: '1', name: 'Tarjeta de crédito', icon: 'credit-card', isIconMaterial: true },
+  { id: '2', name: 'Tarjeta de débito', icon: 'card', isIconMaterial: false },
 ];
 
 const deliveryMethods: DeliveryMethod[] = [
   { id: '1', name: 'A domicilio', icon: 'home', price: 50 },
-  { id: '2', name: 'Recoger en farmacia', icon: 'storefront-outline', price: 0 },
 ];
 
 const featuredMedicines: Medicine[] = [
@@ -136,6 +127,138 @@ const featuredMedicines: Medicine[] = [
     available: true,
     pharmacy: 'Farmacia Salud',
   },
+  {
+    id: '9',
+    name: 'Amoxicilina 500mg',
+    presentation: 'Caja con 21 cápsulas',
+    price: 250,
+    description: 'Antibiótico de amplio espectro',
+    category: '2',
+    prescription: true,
+    available: true,
+    pharmacy: 'Farmacia Central',
+  },
+  {
+    id: '14',
+    name: 'Dipirona 500mg',
+    presentation: 'Caja con 20 tabletas',
+    price: 95,
+    description: 'Analgésico y antipirético potente',
+    category: '1',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '18',
+    name: 'Vitamina D3 2000 UI',
+    presentation: 'Frasco con 60 cápsulas',
+    price: 240,
+    description: 'Suplemento de vitamina D para huesos fuertes',
+    category: '5',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '21',
+    name: 'Crema Hidrocortisona 1%',
+    presentation: 'Tubo de 30g',
+    price: 85,
+    description: 'Crema antiinflamatoria para piel',
+    category: '6',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Central',
+  },
+  {
+    id: '26',
+    name: 'Suero Oral Electrolitos',
+    presentation: 'Caja con 4 sobres',
+    price: 45,
+    description: 'Rehidratante oral para diarrea y vómitos',
+    category: '5',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '28',
+    name: 'Ibuprofeno Gel 5%',
+    presentation: 'Tubo de 50g',
+    price: 135,
+    description: 'Gel antiinflamatorio de uso tópico',
+    category: '3',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '19',
+    name: 'Omega 3 1000mg',
+    presentation: 'Frasco con 30 cápsulas',
+    price: 320,
+    description: 'Suplemento de ácidos grasos esenciales',
+    category: '5',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Central',
+  },
+  {
+    id: '12',
+    name: 'Diclofenaco 50mg',
+    presentation: 'Caja con 20 tabletas',
+    price: 140,
+    description: 'Antiinflamatorio no esteroideo potente',
+    category: '3',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '25',
+    name: 'Protector Solar FPS 50+',
+    presentation: 'Frasco de 60ml',
+    price: 280,
+    description: 'Protección solar de amplio espectro',
+    category: '6',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Central',
+  },
+  {
+    id: '16',
+    name: 'Fexofenadina 120mg',
+    presentation: 'Caja con 10 tabletas',
+    price: 160,
+    description: 'Antihistamínico no sedante',
+    category: '4',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
+  {
+    id: '27',
+    name: 'Probióticos Multicepa',
+    presentation: 'Frasco con 30 cápsulas',
+    price: 350,
+    description: 'Suplemento de bacterias beneficiosas',
+    category: '5',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Central',
+  },
+  {
+    id: '30',
+    name: 'Ranitidina 150mg',
+    presentation: 'Caja con 20 tabletas',
+    price: 120,
+    description: 'Antiácido para úlceras y gastritis',
+    category: '1',
+    prescription: false,
+    available: true,
+    pharmacy: 'Farmacia Salud',
+  },
 ];
 
 export default function FarmaciaScreen() {
@@ -145,16 +268,14 @@ export default function FarmaciaScreen() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState('todos');
   const { cartItems, addToCart, removeFromCart, setCartItems } = useCart();
   const [showCart, setShowCart] = useState(false);
   const [availability, setAvailability] = useState<'all' | 'available'>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
-  const [cardInfo, setCardInfo] = useState<CardInfo>({ cardNumber: '', cardHolder: '', expiryDate: '', cvv: '' });
-  const [showCardInfo, setShowCardInfo] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('home');
   
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(selectedCategory === categoryId ? '' : categoryId);
@@ -193,26 +314,10 @@ export default function FarmaciaScreen() {
   
   const handlePaymentSelect = (paymentId: string) => {
     setSelectedPaymentMethod(paymentId);
-    
-    // Check if the selected payment method requires card info
-    const selectedMethod = paymentMethods.find(method => method.id === paymentId);
-    setShowCardInfo(!!selectedMethod?.requiresCardInfo);
-  };
-  
-  const handleCardInfoChange = (field: keyof CardInfo, value: string) => {
-    setCardInfo(prev => ({ ...prev, [field]: value }));
   };
   
   const isPaymentFormValid = () => {
     if (cartItems.length === 0) return false;
-    const selectedMethod = paymentMethods.find(method => method.id === selectedPaymentMethod);
-    if (selectedMethod?.requiresCardInfo) {
-      return cardInfo.cardNumber.length >= 16 && 
-             cardInfo.cardHolder.trim() !== '' &&
-             cardInfo.expiryDate.length >= 5 &&
-             cardInfo.cvv.length >= 3 &&
-             !!selectedDeliveryMethod;
-    }
     return !!selectedPaymentMethod && !!selectedDeliveryMethod;
   };
   
@@ -221,10 +326,8 @@ export default function FarmaciaScreen() {
   };
   
   const handlePaymentConfirm = () => {
-    if (selectedDeliveryMethod === '1') { // A domicilio
-      // Navegar a la pantalla de seguimiento en lugar del modal
-      router.push('/farmacia/seguimiento' as any);
-    }
+    // Navegar a la pantalla de seguimiento ya que siempre es entrega a domicilio
+    router.push('/farmacia/seguimiento' as any);
     setShowPaymentModal(false);
     setCartItems([]); // Limpiar carrito global
   };
@@ -334,7 +437,7 @@ export default function FarmaciaScreen() {
   };
   
   const getDeliveryFee = () => {
-    return selectedDeliveryMethod === '1' ? deliveryMethods[0].price : 0;
+    return deliveryMethods[0].price; // Siempre hay tarifa de entrega a domicilio
   };
   
   const getCartTotal = () => {
@@ -623,101 +726,6 @@ export default function FarmaciaScreen() {
               {paymentMethods.map(item => (
                 <View key={item.id} style={styles.paymentMethodWrapper}>
                   {renderPaymentMethodItem({ item })}
-                </View>
-              ))}
-              
-              {/* Credit Card Info Form */}
-              {showCardInfo && (
-                <View style={styles.cardInfoContainer}>
-                  <View style={styles.cardPreview}>
-                    <View style={styles.cardHeader}>
-                      <ThemedText style={styles.cardType}>Tarjeta {selectedPaymentMethod === '1' ? 'de Crédito' : 'de Débito'}</ThemedText>
-                      <Ionicons name="card" size={24} color="#fff" />
-                    </View>
-                    <ThemedText style={styles.cardNumberPreview} numberOfLines={1}>
-                      {cardInfo.cardNumber ? 
-                        cardInfo.cardNumber.replace(/(.{4})/g, '$1 ').trim() : 
-                        '•••• •••• •••• ••••'
-                      }
-                    </ThemedText>
-                    <View style={styles.cardFooter}>
-                      <View>
-                        <ThemedText style={styles.cardLabel}>TITULAR</ThemedText>
-                        <ThemedText style={styles.cardValue}>
-                          {cardInfo.cardHolder || 'NOMBRE APELLIDO'}
-                        </ThemedText>
-                      </View>
-                      <View>
-                        <ThemedText style={styles.cardLabel}>VENCE</ThemedText>
-                        <ThemedText style={styles.cardValue}>
-                          {cardInfo.expiryDate || 'MM/AA'}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.formGroup}>
-                    <ThemedText style={styles.inputLabel}>Número de tarjeta</ThemedText>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="1234 5678 9012 3456"
-                      value={cardInfo.cardNumber}
-                      onChangeText={(text) => handleCardInfoChange('cardNumber', text.replace(/\D/g, '').slice(0, 16))}
-                      keyboardType="numeric"
-                      maxLength={16}
-                    />
-                  </View>
-                  
-                  <View style={styles.formGroup}>
-                    <ThemedText style={styles.inputLabel}>Titular de la tarjeta</ThemedText>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="Nombre como aparece en la tarjeta"
-                      value={cardInfo.cardHolder}
-                      onChangeText={(text) => handleCardInfoChange('cardHolder', text.toUpperCase())}
-                      autoCapitalize="characters"
-                    />
-                  </View>
-                  
-                  <View style={styles.formRow}>
-                    <View style={[styles.formGroup, { width: '48%' }]}>
-                      <ThemedText style={styles.inputLabel}>Fecha de vencimiento</ThemedText>
-                      <TextInput
-                        style={styles.textInput}
-                        placeholder="MM/AA"
-                        value={cardInfo.expiryDate}
-                        onChangeText={(text) => {
-                          let formatted = text.replace(/\D/g, '');
-                          if (formatted.length > 2) {
-                            formatted = formatted.slice(0, 2) + '/' + formatted.slice(2, 4);
-                          }
-                          handleCardInfoChange('expiryDate', formatted);
-                        }}
-                        keyboardType="numeric"
-                        maxLength={5}
-                      />
-                    </View>
-                    
-                    <View style={[styles.formGroup, { width: '48%' }]}>
-                      <ThemedText style={styles.inputLabel}>CVV</ThemedText>
-                      <TextInput
-                        style={styles.textInput}
-                        placeholder="123"
-                        value={cardInfo.cvv}
-                        onChangeText={(text) => handleCardInfoChange('cvv', text.replace(/\D/g, '').slice(0, 3))}
-                        keyboardType="numeric"
-                        maxLength={3}
-                        secureTextEntry
-                      />
-                    </View>
-                  </View>
-                </View>
-              )}
-              
-              <ThemedText style={styles.sectionTitle}>Método de entrega</ThemedText>
-              {deliveryMethods.map(item => (
-                <View key={item.id} style={styles.deliveryMethodWrapper}>
-                  {renderDeliveryMethodItem({ item })}
                 </View>
               ))}
               
@@ -1114,77 +1122,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#eee',
     marginVertical: 8,
-  },
-  
-  // Credit Card Form Styles
-  cardInfoContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: 'rgba(45, 127, 249, 0.05)',
-    borderRadius: 10,
-  },
-  cardPreview: {
-    height: 180,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    backgroundColor: Colors.light.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  cardType: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cardNumberPreview: {
-    color: '#fff',
-    fontSize: 20,
-    letterSpacing: 1,
-    marginBottom: 30,
-    fontFamily: 'monospace',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cardLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  cardValue: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  formGroup: {
-    marginBottom: 16,
-  },
-  formRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  inputLabel: {
-    marginBottom: 8,
-    fontSize: 14,
-  },
-  textInput: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    fontSize: 16,
   },
   
   // Order Summary

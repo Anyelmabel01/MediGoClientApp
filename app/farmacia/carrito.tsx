@@ -15,7 +15,6 @@ import { FlatList, Platform, ScrollView, StyleSheet, TouchableOpacity, View } fr
 
 const deliveryMethods = [
   { id: 'home', label: 'Entrega a domicilio' },
-  { id: 'pickup', label: 'Recoger en farmacia' },
 ];
 
 const paymentMethods = [
@@ -177,33 +176,6 @@ export default function CarritoScreen() {
               )}
               scrollEnabled={false}
             />
-          </View>
-          
-          <View style={styles.deliverySection}>
-            <ThemedText style={styles.sectionTitle}>Método de entrega</ThemedText>
-            <View style={styles.optionsContainer}>
-              {deliveryMethods.map(m => (
-                <TouchableOpacity 
-                  key={m.id} 
-                  style={[styles.optionCard, delivery === m.id && styles.selectedOptionCard, {
-                    backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white
-                  }]} 
-                  onPress={() => setDelivery(m.id)}
-                >
-                  <Ionicons 
-                    name={m.id === 'home' ? 'home' : 'storefront'} 
-                    size={24} 
-                    color={delivery === m.id ? Colors.light.primary : (isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary)} 
-                  />
-                  <ThemedText style={[styles.optionText, delivery === m.id && styles.selectedOptionText]}>
-                    {m.label}
-                  </ThemedText>
-                  {delivery === m.id && (
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.light.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
           
           <View style={styles.paymentSection}>
@@ -492,9 +464,6 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: 'rgba(255, 59, 48, 0.1)',
     borderRadius: 8,
-  },
-  deliverySection: {
-    marginBottom: 24,
   },
   paymentSection: {
     marginBottom: 24,

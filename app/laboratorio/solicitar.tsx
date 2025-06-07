@@ -6,15 +6,15 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/ThemedText';
@@ -128,25 +128,25 @@ export default function SolicitarScreen() {
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'error' });
 
   const [stepData, setStepData] = useState<StepData>({
-    collectionMethod: null,
-    appointmentDate: null,
-    appointmentTime: null,
+    collectionMethod: 'home', // Pre-seleccionar servicio a domicilio
     personalInfo: {
       phone: '',
       email: '',
       emergencyContact: '',
-      notes: ''
+      notes: '',
     },
     medicalInfo: {
       hasRecipe: false,
       allergies: '',
-      medications: ''
+      medications: '',
     },
     payment: {
       method: null,
       promoCode: '',
-      discount: 0
-    }
+      discount: 0,
+    },
+    appointmentDate: null,
+    appointmentTime: null,
   });
 
   const colors = isDarkMode ? Colors.dark : Colors.light;
@@ -164,7 +164,7 @@ export default function SolicitarScreen() {
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 0: // Método de toma
-        return stepData.collectionMethod !== null;
+        return true; // Ya está pre-seleccionado el servicio a domicilio
       case 1: // Selección de laboratorio
         return stepData.selectedLab !== undefined;
       case 2: // Fecha y hora
@@ -173,8 +173,8 @@ export default function SolicitarScreen() {
         const { phone, email } = stepData.personalInfo;
         const validPhone = phone.length >= 10;
         const validEmail = email.includes('@') && email.includes('.');
-        const validAddress = stepData.collectionMethod === 'laboratory' || 
-          (stepData.personalInfo.address?.street && stepData.personalInfo.address?.city);
+        // Para servicio a domicilio siempre requerimos dirección
+        const validAddress = stepData.personalInfo.address?.street && stepData.personalInfo.address?.city;
         return validPhone && validEmail && validAddress;
       case 4: // Información médica
         return true; // Este paso es opcional pero se puede validar
@@ -262,96 +262,64 @@ export default function SolicitarScreen() {
         return (
           <View style={styles.stepContent}>
             <ThemedText style={[styles.stepQuestion, { color: colors.text }]}>
-              ¿Dónde deseas realizar la prueba?
+              Servicio de toma de muestras a domicilio
             </ThemedText>
             
+            {/* Solo mostrar opción a domicilio */}
             <TouchableOpacity
               style={[
                 styles.methodCard,
                 { 
-                  backgroundColor: stepData.collectionMethod === 'laboratory' ? colors.primary : colors.background,
-                  borderColor: stepData.collectionMethod === 'laboratory' ? colors.primary : colors.border
+                  backgroundColor: colors.primary,
+                  borderColor: colors.primary
                 }
               ]}
-              onPress={() => setStepData(prev => ({ ...prev, collectionMethod: 'laboratory' }))}
-            >
-              <Ionicons 
-                name="business-outline" 
-                size={32} 
-                color={stepData.collectionMethod === 'laboratory' ? '#fff' : colors.primary} 
-              />
-              <View style={styles.methodInfo}>
-                <ThemedText style={[
-                  styles.methodTitle,
-                  { color: stepData.collectionMethod === 'laboratory' ? '#fff' : colors.text }
-                ]}>
-                  En Laboratorio
-                </ThemedText>
-                <ThemedText style={[
-                  styles.methodDescription,
-                  { color: stepData.collectionMethod === 'laboratory' ? 'rgba(255,255,255,0.8)' : colors.textSecondary }
-                ]}>
-                  Acude directamente al laboratorio de tu elección
-                </ThemedText>
-                <ThemedText style={[
-                  styles.methodPrice,
-                  { color: stepData.collectionMethod === 'laboratory' ? '#fff' : colors.success }
-                ]}>
-                  Sin costo adicional
-                </ThemedText>
-              </View>
-              {stepData.collectionMethod === 'laboratory' && (
-                <Ionicons name="checkmark-circle" size={24} color="#fff" />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.methodCard,
-                { 
-                  backgroundColor: stepData.collectionMethod === 'home' ? colors.primary : colors.background,
-                  borderColor: stepData.collectionMethod === 'home' ? colors.primary : colors.border
-                }
-              ]}
-              onPress={() => setStepData(prev => ({ ...prev, collectionMethod: 'home' }))}
+              disabled={true}
             >
               <Ionicons 
                 name="home-outline" 
                 size={32} 
-                color={stepData.collectionMethod === 'home' ? '#fff' : colors.primary} 
+                color="#fff"
               />
               <View style={styles.methodInfo}>
                 <ThemedText style={[
                   styles.methodTitle,
-                  { color: stepData.collectionMethod === 'home' ? '#fff' : colors.text }
+                  { color: '#fff' }
                 ]}>
                   A Domicilio
                 </ThemedText>
                 <ThemedText style={[
                   styles.methodDescription,
-                  { color: stepData.collectionMethod === 'home' ? 'rgba(255,255,255,0.8)' : colors.textSecondary }
+                  { color: 'rgba(255,255,255,0.8)' }
                 ]}>
-                  Un técnico visitará tu domicilio para la toma de muestra
+                  Un técnico especializado visitará tu domicilio para la toma de muestra
                 </ThemedText>
                 <ThemedText style={[
                   styles.methodPrice,
-                  { color: stepData.collectionMethod === 'home' ? '#fff' : colors.accent }
+                  { color: '#fff' }
                 ]}>
                   + Bs 100 VED
                 </ThemedText>
               </View>
-              {stepData.collectionMethod === 'home' && (
-                <Ionicons name="checkmark-circle" size={24} color="#fff" />
-              )}
+              <Ionicons name="checkmark-circle" size={24} color="#fff" />
             </TouchableOpacity>
+            
+            <View style={[styles.infoCard, { 
+              backgroundColor: colors.primaryLight,
+              borderColor: colors.primary 
+            }]}>
+              <Ionicons name="information-circle" size={20} color={colors.primary} />
+              <ThemedText style={[styles.infoText, { color: colors.text }]}>
+                Nuestro servicio incluye toma de muestras a domicilio con técnicos certificados y entrega de resultados también a domicilio.
+              </ThemedText>
+            </View>
           </View>
         );
 
       case 1: // Selección de laboratorio
-        const filteredLabs = stepData.collectionMethod === 'home' 
-          ? mockLaboratories.filter(lab => lab.homeCollection)
-          : mockLaboratories;
-          
+        // Filtrar solo laboratorios que ofrecen servicio a domicilio
+        const filteredLabs = mockLaboratories.filter(lab => lab.homeCollection);
+        
         return (
           <View style={styles.stepContent}>
             <ThemedText style={[styles.stepQuestion, { color: colors.text }]}>
@@ -1415,6 +1383,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
@@ -1634,5 +1603,11 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  infoText: {
+    fontSize: 14,
+    flex: 1,
+    marginLeft: 12,
+    lineHeight: 20,
   },
 }); 

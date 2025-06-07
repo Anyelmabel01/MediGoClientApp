@@ -170,20 +170,35 @@ export function getOptimalMapView(
     });
   }
   
+  // Agregar padding para que la ruta no esté en los bordes (20% extra)
+  const latPadding = (maxLat - minLat) * 0.2;
+  const lngPadding = (maxLng - minLng) * 0.2;
+  
+  minLat -= latPadding;
+  maxLat += latPadding;
+  minLng -= lngPadding;
+  maxLng += lngPadding;
+  
   // Calcular el centro
   const centerLat = (minLat + maxLat) / 2;
   const centerLng = (minLng + maxLng) / 2;
   
-  // Calcular un zoom apropiado basado en la distancia
+  // Calcular un zoom apropiado basado en la distancia - más agresivo para mostrar rutas
   const latDiff = maxLat - minLat;
   const lngDiff = maxLng - minLng;
   const maxDiff = Math.max(latDiff, lngDiff);
   
-  let zoom = 15; // zoom por defecto
-  if (maxDiff > 0.1) zoom = 10;
-  else if (maxDiff > 0.05) zoom = 12;
+  let zoom = 14; // zoom por defecto más alto
+  if (maxDiff > 0.15) zoom = 9;
+  else if (maxDiff > 0.1) zoom = 10;
+  else if (maxDiff > 0.06) zoom = 11;
+  else if (maxDiff > 0.04) zoom = 12;
   else if (maxDiff > 0.02) zoom = 13;
-  else if (maxDiff > 0.01) zoom = 14;
+  else if (maxDiff > 0.015) zoom = 14;
+  else zoom = 15;
+  
+  // Asegurar zoom mínimo para que la ruta sea visible
+  zoom = Math.max(zoom, 12); // Zoom mínimo de 12
   
   return {
     center: { lat: centerLat, lng: centerLng },

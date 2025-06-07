@@ -54,90 +54,83 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
 
   // Función optimizada para actualizar marcadores sin recargar
   const updateMarkers = useCallback(() => {
-    if (!mapReady || !webViewRef.current || markers.length === 0) return;
+    if (!mapReady || !webViewRef.current) {
+      console.log('🔍 MAPA NO LISTO O SIN WEBVIEW REF - Mapready:', mapReady);
+      return;
+    }
+    
+    if (markers.length === 0) {
+      console.log('🔍 NO HAY MARCADORES PARA MOSTRAR');
+      return;
+    }
     
     const markersString = JSON.stringify(markers);
-    if (lastMarkersRef.current === markersString) return;
+    if (lastMarkersRef.current === markersString) {
+      console.log('🔍 MARCADORES YA ESTÁN ACTUALIZADOS');
+      return;
+    }
     
+    console.log('🔍 ACTUALIZANDO MARCADORES:', markers);
     lastMarkersRef.current = markersString;
+    
+    // Crear el script JavaScript más simple y seguro
+    let markersScript = '';
+    markers.forEach((marker, index) => {
+      const safeTitle = marker.title ? marker.title.replace(/'/g, "\\'").replace(/"/g, '\\"') : '';
+      markersScript += `
+        try {
+          console.log('Creando marcador ${marker.id}');
+          var marker_${marker.id} = new mapboxgl.Marker({
+            color: '${marker.color || '#FF0000'}',
+            scale: 1.2
+          })
+          .setLngLat([${marker.longitude}, ${marker.latitude}])
+          .addTo(window.map);
+          
+          window.currentMarkers.push(marker_${marker.id});
+          
+          ${marker.title ? `
+            marker_${marker.id}.setPopup(
+              new mapboxgl.Popup({ 
+                offset: 25,
+                closeButton: false
+              }).setHTML('<div style="padding: 8px; font-weight: bold; text-align: center;">${safeTitle}</div>')
+            );
+          ` : ''}
+          
+          console.log('Marcador ${marker.id} creado');
+        } catch(e) {
+          console.error('Error creando marcador ${marker.id}:', e);
+        }
+      `;
+    });
     
     const updateScript = `
       (function() {
         try {
-          // Verificar que el mapa esté completamente listo
-          if (!window.map || !window.mapFullyReady) {
-            console.log('Mapa no está completamente listo, esperando...');
-            setTimeout(arguments.callee, 500);
+          if (!window.map || !window.map.loaded()) {
+            console.log('Mapa no listo, reintentando...');
+            setTimeout(arguments.callee, 200);
             return false;
           }
           
-          // Eliminar solo marcadores existentes, no todos los elementos
+          // Limpiar marcadores existentes
           window.currentMarkers = window.currentMarkers || [];
-          window.currentMarkers.forEach(marker => marker.remove());
+          console.log('Eliminando', window.currentMarkers.length, 'marcadores existentes');
+          window.currentMarkers.forEach(function(marker) {
+            if (marker && marker.remove) {
+              marker.remove();
+            }
+          });
           window.currentMarkers = [];
           
-          console.log('ACTUALIZANDO MARCADORES:', ${JSON.stringify(markers)});
+          console.log('Creando', ${markers.length}, 'nuevos marcadores');
+          ${markersScript}
           
-          // Añadir nuevos marcadores con verificación de coordenadas
-          ${markers.map(marker => `
-            console.log('Creando marcador ${marker.id} en:', [${marker.longitude}, ${marker.latitude}]);
-            
-            // Verificar que las coordenadas sean válidas
-            if (isNaN(${marker.longitude}) || isNaN(${marker.latitude})) {
-              console.error('Coordenadas inválidas para marcador ${marker.id}');
-              return;
-            }
-            
-            // MARCADOR CON MÁXIMA VISIBILIDAD
-            const marker_${marker.id} = new mapboxgl.Marker({
-              color: '${marker.color || '#FF0000'}',
-              scale: 2.5,
-              draggable: false
-            })
-              .setLngLat([${marker.longitude}, ${marker.latitude}])
-              .addTo(map);
-            
-            window.currentMarkers.push(marker_${marker.id});
-            
-            // ASEGURAR MÁXIMA VISIBILIDAD
-            const markerElement = marker_${marker.id}.getElement();
-            if (markerElement) {
-              markerElement.style.transform = 'scale(2.5)';
-              markerElement.style.zIndex = '999999 !important';
-              markerElement.style.position = 'absolute !important';
-              markerElement.style.pointerEvents = 'none';
-              markerElement.style.filter = 'drop-shadow(0 0 20px ${marker.color || '#FF0000'})';
-              markerElement.style.border = '3px solid white';
-              markerElement.style.borderRadius = '50%';
-              
-              // Forzar que se vea
-              setTimeout(() => {
-                markerElement.style.display = 'block';
-                markerElement.style.visibility = 'visible';
-                markerElement.style.opacity = '1';
-              }, 100);
-            }
-            
-            // Agregar popup si hay título
-            ${marker.title ? `
-              marker_${marker.id}.setPopup(
-                new mapboxgl.Popup({ 
-                  offset: 25,
-                  closeButton: false,
-                  className: 'custom-popup'
-                }).setHTML('<div style="padding: 8px; font-size: 14px; font-weight: bold; text-align: center;">${marker.title}</div>')
-              );
-            ` : ''}
-            
-            console.log('MARCADOR ${marker.id} CREADO EXITOSAMENTE');
-          `).join('')}
-          
-          // Verificar que los marcadores están en el mapa
-          console.log('TOTAL MARCADORES CREADOS:', window.currentMarkers.length);
-          
+          console.log('Total marcadores creados:', window.currentMarkers.length);
           return true;
         } catch(e) {
-          console.error('Error updating markers:', e);
+          console.error('Error actualizando marcadores:', e);
           return false;
         }
       })();
@@ -148,70 +141,79 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
 
   // Función optimizada para actualizar rutas sin recargar
   const updateRoute = useCallback(() => {
-    if (!mapReady || !webViewRef.current) return;
+    if (!mapReady || !webViewRef.current) {
+      console.log('🔍 RUTA: Mapa no listo para actualizar ruta');
+      return;
+    }
     
     const routeString = JSON.stringify(route);
-    if (lastRouteRef.current === routeString) return;
+    if (lastRouteRef.current === routeString) {
+      console.log('🔍 RUTA: Ruta ya está actualizada');
+      return;
+    }
     
+    console.log('🛣️ ACTUALIZANDO RUTA:', route ? route.length + ' puntos' : 'Sin ruta');
     lastRouteRef.current = routeString;
     
     const updateRouteScript = `
       (function() {
         try {
-          if (!window.map) return false;
+          if (!window.map || !window.map.loaded()) {
+            console.log('⏳ RUTA: Mapa no existe o no está cargado');
+            setTimeout(arguments.callee, 200);
+            return false;
+          }
+          
+          // Remover ruta existente si existe
+          if (window.map.getLayer && window.map.getLayer('route')) {
+            window.map.removeLayer('route');
+            console.log('🗑️ Ruta anterior removida');
+          }
+          if (window.map.getSource && window.map.getSource('route')) {
+            window.map.removeSource('route');
+            console.log('🗑️ Fuente de ruta anterior removida');
+          }
           
           ${route && route.length > 0 ? `
-            // Actualizar o crear la ruta
-            if (window.map.getSource('route')) {
-              window.map.getSource('route').setData({
+            console.log('🛣️ AGREGANDO RUTA con ${route.length} puntos');
+            
+            // Crear nueva fuente de ruta
+            window.map.addSource('route', {
+              'type': 'geojson',
+              'data': {
                 'type': 'Feature',
                 'properties': {},
                 'geometry': {
                   'type': 'LineString',
                   'coordinates': ${JSON.stringify(route)}
                 }
-              });
-            } else {
-              window.map.addSource('route', {
-                'type': 'geojson',
-                'data': {
-                  'type': 'Feature',
-                  'properties': {},
-                  'geometry': {
-                    'type': 'LineString',
-                    'coordinates': ${JSON.stringify(route)}
-                  }
-                }
-              });
-              
-              window.map.addLayer({
-                'id': 'route',
-                'type': 'line',
-                'source': 'route',
-                'layout': {
-                  'line-join': 'round',
-                  'line-cap': 'round'
-                },
-                'paint': {
-                  'line-color': '${routeColor}',
-                  'line-width': ${routeWidth},
-                  'line-opacity': 0.8
-                }
-              });
-            }
+              }
+            });
+            
+            // Agregar capa de ruta
+            window.map.addLayer({
+              'id': 'route',
+              'type': 'line',
+              'source': 'route',
+              'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              'paint': {
+                'line-color': '${routeColor}',
+                'line-width': ${routeWidth},
+                'line-opacity': 1.0
+              }
+            });
+            
+            console.log('✅ RUTA AGREGADA EXITOSAMENTE');
           ` : `
-            // Remover la ruta si no hay datos
-            if (window.map.getLayer('route')) {
-              window.map.removeLayer('route');
-            }
-            if (window.map.getSource('route')) {
-              window.map.removeSource('route');
-            }
+            console.log('🗑️ REMOVIENDO RUTA - No hay datos');
           `}
           
           return true;
         } catch(e) {
-          console.error('Error updating route:', e);
+          console.error('💥 Error actualizando ruta:', e);
           return false;
         }
       })();
@@ -254,14 +256,24 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
 
   // Efectos optimizados
   useEffect(() => {
-    updateMarkers();
-  }, [updateMarkers]);
+    if (mapReady) {
+      const timer = setTimeout(() => {
+        updateRoute();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [updateRoute, mapReady]);
 
   useEffect(() => {
-    updateRoute();
-  }, [updateRoute]);
+    if (mapReady) {
+      const timer = setTimeout(() => {
+        updateMarkers();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [updateMarkers, mapReady]);
 
-  // Actualizar centro solo cuando cambien significativamente las coordenadas
+  // Actualizar centro cuando cambien las coordenadas
   useEffect(() => {
     if (mapReady) {
       updateCenter(latitude, longitude, zoom);
@@ -288,29 +300,26 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
             width: 100vw; 
             height: 100vh; 
           }
-          .mapboxgl-popup-content {
-            padding: 8px 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          }
-          /* ESTILOS ESPECÍFICOS PARA MARCADORES */
+          
           .mapboxgl-marker {
             z-index: 999999 !important;
-            position: absolute !important;
-            pointer-events: auto !important;
+            cursor: pointer !important;
           }
+          
           .mapboxgl-marker svg {
             display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)) !important;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)) !important;
           }
-          .custom-popup .mapboxgl-popup-content {
-            background: white;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          
+          .mapboxgl-popup-content {
+            background: white !important;
+            border-radius: 8px !important;
+            padding: 8px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+          }
+          
+          .mapboxgl-popup-tip {
+            border-top-color: white !important;
           }
         </style>
       </head>
@@ -319,58 +328,84 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
         <script>
           (function() {
             try {
-              mapboxgl.accessToken = '${MAPBOX_API_KEY}';
+              const accessToken = '${MAPBOX_API_KEY}';
+              if (!accessToken || accessToken.length < 20) {
+                console.error('Token de Mapbox inválido');
+                if (window.ReactNativeWebView) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'error',
+                    message: 'Error de configuración del mapa'
+                  }));
+                }
+                return;
+              }
+              
+              mapboxgl.accessToken = accessToken;
               
               window.map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v12',
+                style: 'mapbox://styles/mapbox/streets-v11',
                 center: [${longitude}, ${latitude}],
                 zoom: ${zoom},
                 interactive: ${interactive},
                 attributionControl: false,
-                logoPosition: 'bottom-right'
+                logoPosition: 'bottom-right',
+                maxBounds: [[-85, -10], [-75, 15]],
+                minZoom: 10,
+                maxZoom: 18
               });
 
-              // Variables globales para el manejo de marcadores
               window.currentMarkers = [];
 
               window.map.on('load', function() {
-                // Notificar que el mapa está listo
+                console.log('MAPA CARGADO - Centro: [${longitude}, ${latitude}], Zoom: ${zoom}');
+                
+                window.mapFullyReady = true;
+                console.log('✅ MAPA LISTO');
+                
                 if (window.ReactNativeWebView) {
                   window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'mapReady'
                   }));
                 }
-
-                console.log('MAPA CARGADO - Centro:', [${longitude}, ${latitude}], 'Zoom:', ${zoom});
-
-                // Agregar ubicación actual si está habilitada
-                ${showCurrentLocation ? `
-                  if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(function(position) {
-                      const currentLocationMarker = new mapboxgl.Marker({ 
-                        color: '#FF0000',
-                        scale: 0.8
-                      })
-                        .setLngLat([position.coords.longitude, position.coords.latitude])
-                        .setPopup(new mapboxgl.Popup({ 
-                          offset: 25,
-                          closeButton: false 
-                        }).setHTML('<div style="padding: 8px; font-size: 14px; font-weight: bold;">Tu ubicación</div>'))
-                        .addTo(window.map);
-                      window.currentMarkers.push(currentLocationMarker);
-                    }, function(error) {
-                      console.warn('Error getting current location:', error);
-                    });
-                  }
-                ` : ''}
                 
-                // Marcar que el mapa está completamente inicializado
-                window.mapFullyReady = true;
-                console.log('MAPA COMPLETAMENTE LISTO PARA MARCADORES');
+                setTimeout(() => {
+                  try {
+                    window.map.addSource('tracking-background', {
+                      'type': 'geojson',
+                      'data': {
+                        'type': 'FeatureCollection',
+                        'features': []
+                      }
+                    });
+
+                    ${showCurrentLocation ? `
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                          const currentLocationMarker = new mapboxgl.Marker({ 
+                            color: '#007AFF',
+                            scale: 1.2
+                          })
+                            .setLngLat([position.coords.longitude, position.coords.latitude])
+                            .setPopup(new mapboxgl.Popup({ 
+                              offset: 30,
+                              closeButton: false
+                            }).setHTML('<div style="padding: 12px 16px; font-size: 16px; font-weight: bold; text-align: center; color: #007AFF;">📍 Tu ubicación actual</div>'))
+                            .addTo(window.map);
+                          window.currentMarkers.push(currentLocationMarker);
+                        }, function(error) {
+                          console.warn('Error getting location:', error);
+                        });
+                      }
+                    ` : ''}
+                    
+                    console.log('✅ CONFIGURACIÓN COMPLETADA');
+                  } catch (error) {
+                    console.error('Error en configuración:', error);
+                  }
+                }, 500);
               });
 
-              // Manejar clics en el mapa
               ${onLocationSelect ? `
                 window.map.on('click', function(e) {
                   const coords = e.lngLat;
@@ -385,21 +420,65 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
               ` : ''}
 
               window.map.on('error', function(e) {
-                console.error('Mapbox error:', e);
-                if (window.ReactNativeWebView) {
+                console.error('Error en mapa:', e);
+                
+                // Ignorar errores comunes que no son críticos
+                if (e.error && (
+                  e.error.message.includes('fetch') || 
+                  e.error.message.includes('network') || 
+                  e.error.message.includes('style') ||
+                  e.error.message.includes('load') ||
+                  e.error.message.includes('request') ||
+                  e.error.message.includes('timeout')
+                )) {
+                  console.warn('Error no crítico ignorado:', e.error.message);
+                  return;
+                }
+                
+                // Solo notificar errores realmente críticos
+                if (window.ReactNativeWebView && e.error && !e.error.message.includes('style')) {
+                  console.warn('Error notificado al usuario:', e.error.message);
                   window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'error',
-                    message: 'Error de Mapbox: ' + (e.error ? e.error.message : 'Error desconocido')
+                    message: 'Error en el mapa: ' + e.error.message
                   }));
                 }
               });
 
+              // Silenciar errores globales de Mapbox
+              window.addEventListener('error', function(e) {
+                if (e.message && (
+                  e.message.includes('mapbox') || 
+                  e.message.includes('style') ||
+                  e.message.includes('webgl') ||
+                  e.message.includes('fetch')
+                )) {
+                  console.warn('Error global silenciado:', e.message);
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return false;
+                }
+              });
+
+              // Silenciar promesas rechazadas de Mapbox
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && (
+                  e.reason.toString().includes('mapbox') ||
+                  e.reason.toString().includes('style') ||
+                  e.reason.toString().includes('fetch')
+                )) {
+                  console.warn('Promesa rechazada silenciada:', e.reason);
+                  e.preventDefault();
+                  return false;
+                }
+              });
+
             } catch (error) {
-              console.error('Init error:', error);
+              console.error('Error al inicializar mapa:', error);
               if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                   type: 'error',
-                  message: 'Error de inicialización: ' + error.message
+                  message: 'Error al inicializar el mapa: ' + error.message
                 }));
               }
             }
@@ -408,24 +487,19 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
       </body>
       </html>
     `;
-  }, [
-    // Solo regenerar HTML si cambian estos valores fundamentales
-    interactive, 
-    showCurrentLocation,
-    !!onLocationSelect,
-    // NO incluir latitude, longitude, zoom, markers, route aquí
-    // porque se actualizan por JavaScript injection
-  ]);
+  }, [latitude, longitude, zoom, interactive, showCurrentLocation, onLocationSelect]);
 
   const handleMessage = useCallback((event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       
       if (data.type === 'mapReady') {
+        console.log('✅ MENSAJE MAPREADY RECIBIDO');
         setLoading(false);
         setError(null);
         setMapReady(true);
       } else if (data.type === 'error') {
+        console.log('❌ ERROR DEL MAPA:', data.message);
         setError(data.message);
         setLoading(false);
         setMapReady(false);
@@ -438,6 +512,20 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
       setLoading(false);
     }
   }, [onLocationSelect]);
+
+  // NUEVO: Verificación de emergencia para inicialización del mapa
+  useEffect(() => {
+    // Si después de 3 segundos el mapa no está listo, forzar inicialización
+    const emergencyTimer = setTimeout(() => {
+      if (!mapReady && !error) {
+        console.log('🚨 MAPA NO SE INICIALIZÓ - FORZANDO INICIALIZACIÓN');
+        setMapReady(true);
+        setLoading(false);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(emergencyTimer);
+  }, [mapReady, error]);
 
   const handleError = useCallback(() => {
     setError('Error cargando el mapa');
@@ -541,6 +629,4 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-});
-
-export default MapboxMap; 
+}); 

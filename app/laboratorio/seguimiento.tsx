@@ -9,6 +9,7 @@ import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'reac
 import { MapboxMap } from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+import { RouteInfo } from '../../utils/mapboxDirections';
 
 const { height } = Dimensions.get('window');
 
@@ -53,8 +54,9 @@ export default function LaboratorioSeguimientoScreen() {
   const [currentStatus, setCurrentStatus] = useState<DeliveryStatus>('PROCESSING');
   const [estimatedTime, setEstimatedTime] = useState(45);
   const [orderId] = useState('LAB-' + Date.now().toString().slice(-6));
-  const [deliveryLocation, setDeliveryLocation] = useState({ lat: 8.9700, lng: -79.5200 }); // Laboratorio
+  const [deliveryLocation, setDeliveryLocation] = useState({ lat: 8.9831, lng: -79.5175 }); // Laboratorio en tierra
   const [userLocation] = useState({ lat: 8.9824, lng: -79.5199 }); // Ubicación del usuario
+  const [route, setRoute] = useState<RouteInfo | null>(null);
   
   // Simular progreso de estados y movimiento del repartidor
   useEffect(() => {
@@ -161,15 +163,22 @@ export default function LaboratorioSeguimientoScreen() {
       id: 'user',
       latitude: userLocation.lat,
       longitude: userLocation.lng,
-      color: Colors.light.error,
-      title: 'Tu Ubicación'
+      color: '#FF4444', // Rojo vibrante
+      title: '📍 Tu Ubicación'
     },
     {
       id: 'delivery',
       latitude: deliveryLocation.lat,
       longitude: deliveryLocation.lng,
-      color: Colors.light.primary,
-      title: 'Repartidor'
+      color: '#00DD00', // Verde vibrante
+      title: `🚴‍♂️ Repartidor (${estimatedTime}min)`
+    },
+    {
+      id: 'laboratory',
+      latitude: 8.9831, // Ubicación del laboratorio en tierra
+      longitude: -79.5175,
+      color: '#2196F3', // Azul vibrante
+      title: `🏥 ${testData.laboratory}`
     }
   ];
 
@@ -253,8 +262,11 @@ export default function LaboratorioSeguimientoScreen() {
             <MapboxMap
               latitude={(deliveryLocation.lat + userLocation.lat) / 2}
               longitude={(deliveryLocation.lng + userLocation.lng) / 2}
-              zoom={14}
+              zoom={16}
               markers={mapMarkers}
+              route={route?.coordinates}
+              routeColor="#FF0000"
+              routeWidth={6}
               showCurrentLocation={false}
               interactive={true}
               style={styles.map}
@@ -262,16 +274,22 @@ export default function LaboratorioSeguimientoScreen() {
           </View>
           <View style={styles.mapLegend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendMarker, { backgroundColor: Colors.light.primary }]} />
+              <View style={[styles.legendMarker, { backgroundColor: '#00DD00' }]} />
               <ThemedText style={[styles.legendText, {
                 color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
               }]}>Repartidor</ThemedText>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendMarker, { backgroundColor: Colors.light.error }]} />
+              <View style={[styles.legendMarker, { backgroundColor: '#FF4444' }]} />
               <ThemedText style={[styles.legendText, {
                 color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
               }]}>Tu ubicación</ThemedText>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendMarker, { backgroundColor: '#2196F3' }]} />
+              <ThemedText style={[styles.legendText, {
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
+              }]}>Laboratorio</ThemedText>
             </View>
           </View>
           
@@ -559,7 +577,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   mapWrapper: {
-    height: height * 0.4, // 40% de la altura de la pantalla
+    height: height * 0.5, // Aumentar de 0.4 a 0.5 para mejor visualización
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',

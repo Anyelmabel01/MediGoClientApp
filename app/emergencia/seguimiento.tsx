@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Linking, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import MapboxMap from '../../components/MapboxMap';
+import { MapboxMap } from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { calculateDistance, calculateNextPosition, getOptimalMapView, getRoute, RouteInfo } from '../../utils/mapboxDirections';
@@ -93,10 +93,10 @@ export default function EmergenciaSeguimientoScreen() {
         lng: userLocation.longitude + 0.015 // ~1.5km al este
       };
     }
-    // Ubicación por defecto
+    // Ubicación por defecto en tierra firme
     return {
-      lat: 8.9700,
-      lng: -79.5250
+      lat: 8.9831, // Coordenadas terrestres
+      lng: -79.5175
     };
   });
   
@@ -264,14 +264,22 @@ export default function EmergenciaSeguimientoScreen() {
     };
   }, [fetchRoute, userLocation]);
 
-  // Calcular vista óptima del mapa
+  // Calcular vista óptima del mapa - usar solo la ruta para determinar la vista, no las posiciones cambiantes
   const mapView = useMemo(() => {
+    if (route?.coordinates) {
+      // Usar la ruta completa para calcular la vista óptima de una vez
+      return getOptimalMapView(
+        patientLocation,
+        paramedicStartLocation, // Usar posición inicial fija del paramédico
+        route.coordinates
+      );
+    }
+    // Vista por defecto si no hay ruta
     return getOptimalMapView(
       patientLocation,
-      paramedicLocation,
-      route?.coordinates
+      paramedicStartLocation
     );
-  }, [patientLocation, paramedicLocation, route]);
+  }, [patientLocation, route, paramedicStartLocation]); // Remover paramedicLocation de las dependencias
 
   // Marcadores del mapa
   const mapMarkers = useMemo(() => [
@@ -502,11 +510,12 @@ export default function EmergenciaSeguimientoScreen() {
                 zoom={mapView.zoom}
                 markers={mapMarkers}
                 route={route?.coordinates}
-                routeColor="#FF6B35"
-                routeWidth={4}
+                routeColor="#FF0000"
+                routeWidth={6}
                 showCurrentLocation={false}
-                interactive={true}
+                interactive={false}
                 style={styles.map}
+                key={route ? 'with-route' : 'no-route'}
               />
               <View style={styles.mapClickOverlay}>
                 <Ionicons name="expand" size={24} color="white" />
@@ -524,7 +533,7 @@ export default function EmergenciaSeguimientoScreen() {
               </View>
               {route && (
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
                   <ThemedText style={styles.legendText}>Ruta ({(emergencyData.routeDistance / 1000).toFixed(1)}km)</ThemedText>
                 </View>
               )}
@@ -712,8 +721,8 @@ export default function EmergenciaSeguimientoScreen() {
               zoom={Math.max(mapView.zoom, 14)}
               markers={mapMarkers}
               route={route?.coordinates}
-              routeColor="#FF6B35"
-              routeWidth={5}
+              routeColor="#FF0000"
+              routeWidth={6}
               showCurrentLocation={false}
               interactive={true}
               style={styles.fullscreenMap}
@@ -741,7 +750,7 @@ export default function EmergenciaSeguimientoScreen() {
               </View>
               {route && (
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
                   <ThemedText style={[styles.legendText, { color: 'white' }]}>
                     Ruta ({(emergencyData.routeDistance / 1000).toFixed(1)}km)
                   </ThemedText>
@@ -936,7 +945,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   mapContainer: {
-    height: 350,
+    height: height * 0.5,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 12,

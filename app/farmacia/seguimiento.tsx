@@ -8,7 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Linking, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapboxMap from '../../components/MapboxMap';
+import { MapboxMap } from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { calculateDistance, calculateNextPosition, getOptimalMapView, getRoute, RouteInfo } from '../../utils/mapboxDirections';
@@ -57,10 +57,10 @@ const STATUS_CONFIG = {
   },
 };
 
-// Coordenadas de la farmacia (fijas)
+// Coordenadas de la farmacia (fijas) - CORREGIDAS para estar en tierra
 const pharmacyLocation = {
-  lat: 8.9700,
-  lng: -79.5200,
+  lat: 8.9831, // Calle 50, área comercial
+  lng: -79.5175, // Coordenadas terrestres
   name: 'Farmacia Central'
 };
 
@@ -111,7 +111,7 @@ export default function SeguimientoScreen() {
   
   // Ubicación inicial del repartidor (simulada cerca de la farmacia)
   const [deliveryStartLocation] = useState(() => {
-    // Colocar al repartidor en la farmacia inicialmente
+    // Colocar al repartidor en la farmacia inicialmente (coordenadas terrestres)
     return {
       lat: pharmacyLocation.lat,
       lng: pharmacyLocation.lng
@@ -263,14 +263,22 @@ export default function SeguimientoScreen() {
     };
   }, [fetchRoute, userLocation]);
 
-  // Calcular vista óptima del mapa
+  // Calcular vista óptima del mapa - usar solo la ruta para determinar la vista, no las posiciones cambiantes
   const mapView = useMemo(() => {
+    if (route?.coordinates) {
+      // Usar la ruta completa para calcular la vista óptima de una vez
+      return getOptimalMapView(
+        customerLocation,
+        { lat: pharmacyLocation.lat, lng: pharmacyLocation.lng }, // Usar posición fija de farmacia
+        route.coordinates
+      );
+    }
+    // Vista por defecto si no hay ruta
     return getOptimalMapView(
       customerLocation,
-      deliveryLocation,
-      route?.coordinates
+      { lat: pharmacyLocation.lat, lng: pharmacyLocation.lng }
     );
-  }, [customerLocation, deliveryLocation, route]);
+  }, [customerLocation, route]); // Remover deliveryLocation de las dependencias
 
   // Marcadores del mapa
   const mapMarkers = useMemo(() => [
@@ -278,24 +286,24 @@ export default function SeguimientoScreen() {
       id: 'customer',
       latitude: customerLocation.lat,
       longitude: customerLocation.lng,
-      color: '#FF0000',
-      title: 'Tu Ubicación Actual'
+      color: '#FF4444', // Rojo más vibrante
+      title: '📍 Tu Ubicación'
     },
     {
       id: 'delivery',
       latitude: deliveryLocation.lat,
       longitude: deliveryLocation.lng,
-      color: '#00AA00',
-      title: `Repartidor - ETA: ${estimatedTime}min`
+      color: '#00DD00', // Verde más vibrante
+      title: `🚴‍♂️ Repartidor (${estimatedTime}min)`
     },
     {
       id: 'pharmacy',
       latitude: pharmacyLocation.lat,
       longitude: pharmacyLocation.lng,
-      color: '#28a745',
-      title: pharmacyLocation.name
+      color: '#2196F3', // Azul vibrante
+      title: `🏥 ${pharmacyLocation.name}`
     }
-  ], [customerLocation, deliveryLocation, estimatedTime]);
+  ], [customerLocation, deliveryLocation, estimatedTime, pharmacyLocation.name]);
 
   // Handlers
   const handleCallDelivery = useCallback(() => {
@@ -509,11 +517,12 @@ export default function SeguimientoScreen() {
                 zoom={mapView.zoom}
                 markers={mapMarkers}
                 route={route?.coordinates}
-                routeColor="#FF6B35"
-                routeWidth={4}
+                routeColor="#FF0000"
+                routeWidth={6}
                 showCurrentLocation={false}
-                interactive={true}
+                interactive={false}
                 style={styles.map}
+                key={route ? 'with-route' : 'no-route'}
               />
               <View style={styles.mapClickOverlay}>
                 <Ionicons name="expand" size={24} color="white" />
@@ -535,7 +544,7 @@ export default function SeguimientoScreen() {
               </View>
               {route && (
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
                   <ThemedText style={styles.legendText}>Ruta ({(deliveryData.routeDistance / 1000).toFixed(1)}km)</ThemedText>
                 </View>
               )}
@@ -723,8 +732,8 @@ export default function SeguimientoScreen() {
               zoom={Math.max(mapView.zoom, 14)}
               markers={mapMarkers}
               route={route?.coordinates}
-              routeColor="#FF6B35"
-              routeWidth={5}
+              routeColor="#FF0000"
+              routeWidth={6}
               showCurrentLocation={false}
               interactive={true}
               style={styles.fullscreenMap}
@@ -752,7 +761,7 @@ export default function SeguimientoScreen() {
               </View>
               {route && (
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
                   <ThemedText style={[styles.legendText, { color: 'white' }]}>
                     Ruta ({(deliveryData.routeDistance / 1000).toFixed(1)}km)
                   </ThemedText>
@@ -879,7 +888,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   mapContainer: {
-    height: height * 0.4,
+    height: height * 0.5,
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
