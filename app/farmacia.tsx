@@ -9,15 +9,13 @@ import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-    Alert,
-    Animated,
     Dimensions,
     FlatList,
+    Image,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -25,10 +23,8 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
-import MapView from 'react-native-maps';
-import { MapboxMap } from '../components/MapboxMap';
 
 // Get screen dimensions for responsive layout
 const { width, height } = Dimensions.get('window');
@@ -142,63 +138,6 @@ const featuredMedicines: Medicine[] = [
   },
 ];
 
-// Simulate delivery tracking
-const deliveryLocation = {
-  x: 0.3, // Posiciones normalizadas entre 0 y 1
-  y: 0.7,
-};
-
-const userLocation = {
-  x: 0.7,
-  y: 0.3,
-};
-
-// Coordenadas de farmacia simulada para seguimiento real
-const pharmacyLocation = {
-  latitude: 8.9700,
-  longitude: -79.5200,
-  name: 'Farmacia Central'
-};
-
-// Función para calcular distancia entre dos puntos
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371; // Radio de la Tierra en km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  return (distance * 1000).toFixed(0); // Convertir a metros
-};
-
-// Función para obtener la ruta de Mapbox Directions API
-const getMapboxRoute = async (start: any, end: any) => {
-  const MAPBOX_API_KEY = "pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xobXljODM0MiJ9.48MFADtQhp_sFuQjewLFeA";
-  
-  try {
-    const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_API_KEY}`
-    );
-    
-    const data = await response.json();
-    
-    if (data.routes && data.routes.length > 0) {
-      return {
-        coordinates: data.routes[0].geometry.coordinates,
-        duration: data.routes[0].duration,
-        distance: data.routes[0].distance
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error obteniendo ruta:', error);
-    return null;
-  }
-};
-
 export default function FarmaciaScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
@@ -214,115 +153,9 @@ export default function FarmaciaScreen() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
-  const [showDeliveryTracking, setShowDeliveryTracking] = useState(false);
-  const [deliveryStatus, setDeliveryStatus] = useState('Preparando pedido');
-  const [courierPosition, setCourierPosition] = useState({ x: deliveryLocation.x, y: deliveryLocation.y });
-  const [animatedPosition] = useState(new Animated.ValueXY({ x: deliveryLocation.x * width * 0.8, y: deliveryLocation.y * height * 0.3 }));
-  const [mapReady, setMapReady] = useState(false);
-  const mapRef = useRef<MapView | null>(null);
   const [cardInfo, setCardInfo] = useState<CardInfo>({ cardNumber: '', cardHolder: '', expiryDate: '', cvv: '' });
   const [showCardInfo, setShowCardInfo] = useState(false);
   
-  // Estados para seguimiento real con GPS
-  const [userGPSLocation, setUserGPSLocation] = useState<any>(null);
-  const [realDeliveryLocation, setRealDeliveryLocation] = useState(pharmacyLocation);
-  const [deliveryRoute, setDeliveryRoute] = useState<any>(null);
-  const [routeProgress, setRouteProgress] = useState(0);
-  const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(15);
-  const [locationPermission, setLocationPermission] = useState<boolean>(false);
-  
-  // Obtener ubicación real del usuario cuando se activa el seguimiento
-  useEffect(() => {
-    const getLocationPermission = async () => {
-      if (!showDeliveryTracking) return;
-      
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para mostrar tu posición en el mapa.');
-          return;
-        }
-
-        setLocationPermission(true);
-        
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-
-        const userCoords = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude
-        };
-
-        setUserGPSLocation(userCoords);
-
-        // Obtener ruta desde farmacia hasta usuario
-        const routeData = await getMapboxRoute(pharmacyLocation, userCoords);
-        if (routeData) {
-          setDeliveryRoute(routeData);
-          setEstimatedDeliveryTime(Math.ceil(routeData.duration / 60)); // Convertir a minutos
-        }
-
-      } catch (error) {
-        console.error('Error obteniendo ubicación:', error);
-        Alert.alert('Error', 'No se pudo obtener tu ubicación. Usando ubicación por defecto.');
-        // Usar ubicación por defecto en Panama City
-        setUserGPSLocation({
-          latitude: 8.9824,
-          longitude: -79.5199
-        });
-      }
-    };
-
-    getLocationPermission();
-  }, [showDeliveryTracking]);
-
-  // Simular movimiento del repartidor a lo largo de la ruta real
-  useEffect(() => {
-    if (!showDeliveryTracking || !deliveryRoute || !deliveryRoute.coordinates || deliveryRoute.coordinates.length === 0) return;
-
-    const moveAlongRoute = () => {
-      setRouteProgress(prevProgress => {
-        const newProgress = prevProgress + 0.015; // Aumentar 1.5% cada vez
-        
-        if (newProgress >= 1) {
-          setDeliveryStatus('Entregado');
-          setEstimatedDeliveryTime(0);
-          return 1;
-        }
-
-        // Calcular posición en la ruta
-        const routeIndex = Math.floor(newProgress * (deliveryRoute.coordinates.length - 1));
-        const routeCoord = deliveryRoute.coordinates[routeIndex];
-        
-        if (routeCoord) {
-          setRealDeliveryLocation({
-            latitude: routeCoord[1], // Lat/Lng están invertidos en GeoJSON
-            longitude: routeCoord[0],
-            name: 'Repartidor en ruta'
-          });
-        }
-
-        // Actualizar tiempo estimado y estado
-        const remainingTime = Math.ceil((1 - newProgress) * (deliveryRoute.duration / 60));
-        setEstimatedDeliveryTime(remainingTime);
-        
-        if (newProgress > 0.8) {
-          setDeliveryStatus('Llegando a tu ubicación');
-        } else if (newProgress > 0.3) {
-          setDeliveryStatus('En camino');
-        } else {
-          setDeliveryStatus('Preparando pedido');
-        }
-
-        return newProgress;
-      });
-    };
-
-    const interval = setInterval(moveAlongRoute, 2500); // Actualizar cada 2.5 segundos
-    return () => clearInterval(interval);
-  }, [showDeliveryTracking, deliveryRoute]);
-
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(selectedCategory === categoryId ? '' : categoryId);
   };
@@ -389,15 +222,8 @@ export default function FarmaciaScreen() {
   
   const handlePaymentConfirm = () => {
     if (selectedDeliveryMethod === '1') { // A domicilio
-      // Reiniciar estado de seguimiento real
-      setDeliveryStatus('Preparando pedido');
-      setRealDeliveryLocation(pharmacyLocation);
-      setDeliveryRoute(null);
-      setRouteProgress(0);
-      setEstimatedDeliveryTime(15);
-      setUserGPSLocation(null);
-      setLocationPermission(false);
-      setShowDeliveryTracking(true);
+      // Navegar a la pantalla de seguimiento en lugar del modal
+      router.push('/farmacia/seguimiento' as any);
     }
     setShowPaymentModal(false);
     setCartItems([]); // Limpiar carrito global
@@ -585,11 +411,18 @@ export default function FarmaciaScreen() {
           onPress={() => setShowUserProfile(true)}
         >
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-              </ThemedText>
-            </View>
+            {user?.avatar ? (
+              <Image 
+                source={{ uri: user.avatar }} 
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                </ThemedText>
+              </View>
+            )}
           </View>
           
           <View style={styles.greetingContainer}>
@@ -669,7 +502,7 @@ export default function FarmaciaScreen() {
         onRequestClose={() => setShowCart(false)}
         statusBarTranslucent={true}
       >
-        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
+        <StatusBar style="light" translucent />
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, {
             backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background
@@ -761,7 +594,7 @@ export default function FarmaciaScreen() {
         onRequestClose={() => setShowPaymentModal(false)}
         statusBarTranslucent={true}
       >
-        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
+        <StatusBar style="light" translucent />
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalContainer}
@@ -916,177 +749,6 @@ export default function FarmaciaScreen() {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
-      
-      {/* Delivery Tracking Modal */}
-      <Modal
-        visible={showDeliveryTracking}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowDeliveryTracking(false)}
-        statusBarTranslucent={true}
-      >
-        <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, {
-            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.background,
-            maxHeight: height * 0.9
-          }]}>
-            <View style={styles.modalHeader}>
-              <ThemedText style={styles.modalTitle}>Seguimiento de entrega</ThemedText>
-              <TouchableOpacity onPress={() => setShowDeliveryTracking(false)}>
-                <Ionicons name="close" size={24} color={Colors.light.primary} />
-              </TouchableOpacity>
-            </View>
-            
-            <ThemedText style={styles.deliveryStatusText}>{deliveryStatus}</ThemedText>
-            
-            {/* Mensaje de entrega finalizada */}
-            {deliveryStatus === 'Entregado' && (
-              <View style={{ alignItems: 'center', marginVertical: 24 }}>
-                <Ionicons name="checkmark-circle" size={64} color="#4CAF50" style={{ marginBottom: 12 }} />
-                <ThemedText style={{ fontSize: 22, fontWeight: 'bold', color: '#4CAF50', marginBottom: 8 }}>
-                  ¡Pedido entregado!
-                </ThemedText>
-                <ThemedText style={{ fontSize: 16, textAlign: 'center', marginBottom: 16 }}>
-                  ¿Te gustó nuestro servicio?
-                </ThemedText>
-                <TouchableOpacity
-                  style={{ backgroundColor: Colors.light.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
-                  onPress={() => setShowDeliveryTracking(false)}
-                >
-                  <ThemedText style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Cerrar</ThemedText>
-                </TouchableOpacity>
-              </View>
-            )}
-            
-            {/* Simulated Map */}
-            <View style={styles.mapContainer}>
-              {userGPSLocation ? (
-                <MapboxMap
-                  latitude={(realDeliveryLocation.latitude + userGPSLocation.latitude) / 2}
-                  longitude={(realDeliveryLocation.longitude + userGPSLocation.longitude) / 2}
-                  zoom={13}
-                  markers={[
-                    {
-                      id: 'delivery',
-                      latitude: realDeliveryLocation.latitude,
-                      longitude: realDeliveryLocation.longitude,
-                      color: Colors.light.primary,
-                      title: 'Repartidor'
-                    },
-                    {
-                      id: 'user',
-                      latitude: userGPSLocation.latitude,
-                      longitude: userGPSLocation.longitude,
-                      color: '#ff3b30',
-                      title: 'Tu ubicación'
-                    },
-                    {
-                      id: 'pharmacy',
-                      latitude: pharmacyLocation.latitude,
-                      longitude: pharmacyLocation.longitude,
-                      color: '#28a745',
-                      title: pharmacyLocation.name
-                    }
-                  ]}
-                  route={deliveryRoute?.coordinates}
-                  showCurrentLocation={false}
-                  interactive={true}
-                  style={styles.map}
-                />
-              ) : (
-                <View style={styles.loadingMapContainer}>
-                  <Ionicons name="location" size={48} color={Colors.light.primary} />
-                  <ThemedText style={styles.loadingMapText}>
-                    Obteniendo tu ubicación...
-                  </ThemedText>
-                </View>
-              )}
-              
-              {/* Map Legend */}
-              <View style={styles.mapLegend}>
-                <View style={styles.legendItem}>
-                  <Ionicons name="bicycle" size={18} color={Colors.light.primary} />
-                  <ThemedText style={styles.legendText}>Repartidor</ThemedText>
-                </View>
-                <View style={styles.legendItem}>
-                  <Ionicons name="person" size={18} color="#ff3b30" />
-                  <ThemedText style={styles.legendText}>Tu ubicación</ThemedText>
-                </View>
-                <View style={styles.legendItem}>
-                  <Ionicons name="storefront" size={18} color="#28a745" />
-                  <ThemedText style={styles.legendText}>Farmacia</ThemedText>
-                </View>
-              </View>
-            </View>
-            
-            <View style={styles.deliveryInfoContainer}>
-              <View style={styles.deliveryInfoItem}>
-                <Ionicons name="time-outline" size={24} color={Colors.light.primary} />
-                <ThemedText style={styles.deliveryInfoText}>Tiempo estimado: {estimatedDeliveryTime} min</ThemedText>
-              </View>
-              <View style={styles.deliveryInfoItem}>
-                <Ionicons name="person-outline" size={24} color={Colors.light.primary} />
-                <ThemedText style={styles.deliveryInfoText}>Repartidor: Juan Pérez</ThemedText>
-              </View>
-              <View style={styles.deliveryInfoItem}>
-                <Ionicons name="call-outline" size={24} color={Colors.light.primary} />
-                <ThemedText style={styles.deliveryInfoText}>Contacto: 55-1234-5678</ThemedText>
-              </View>
-              {userGPSLocation && (
-                <View style={styles.deliveryInfoItem}>
-                  <Ionicons name="location-outline" size={24} color={Colors.light.primary} />
-                  <ThemedText style={styles.deliveryInfoText}>
-                    Distancia: {calculateDistance(
-                      realDeliveryLocation.latitude, 
-                      realDeliveryLocation.longitude, 
-                      userGPSLocation.latitude, 
-                      userGPSLocation.longitude
-                    )}m aprox.
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-            
-            {/* Delivery Progress */}
-            <View style={styles.deliveryProgressContainer}>
-              <ThemedText style={styles.deliveryProgressTitle}>Progreso de entrega</ThemedText>
-              <View style={styles.progressSteps}>
-                <View style={[styles.progressStep, styles.activeStep]}>
-                  <View style={[styles.stepCircle, styles.completedStepCircle]}>
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  </View>
-                  <ThemedText style={styles.stepText}>Pedido confirmado</ThemedText>
-                </View>
-                <View style={[styles.progressStep, styles.activeStep]}>
-                  <View style={[styles.stepCircle, styles.completedStepCircle]}>
-                    <Ionicons name="checkmark" size={16} color="#fff" />
-                  </View>
-                  <ThemedText style={styles.stepText}>En preparación</ThemedText>
-                </View>
-                <View style={[styles.progressStep, deliveryStatus !== 'Preparando pedido' ? styles.activeStep : undefined]}>
-                  <View style={[styles.stepCircle, deliveryStatus !== 'Preparando pedido' ? styles.completedStepCircle : undefined]}>
-                    {deliveryStatus !== 'Preparando pedido' ? 
-                      <Ionicons name="checkmark" size={16} color="#fff" /> :
-                      <ThemedText style={styles.stepNumber}>3</ThemedText>
-                    }
-                  </View>
-                  <ThemedText style={styles.stepText}>En camino</ThemedText>
-                </View>
-                <View style={[styles.progressStep, deliveryStatus === 'Entregado' ? styles.activeStep : undefined]}>
-                  <View style={[styles.stepCircle, deliveryStatus === 'Entregado' ? styles.completedStepCircle : undefined]}>
-                    {deliveryStatus === 'Entregado' ? 
-                      <Ionicons name="checkmark" size={16} color="#fff" /> :
-                      <ThemedText style={styles.stepNumber}>4</ThemedText>
-                    }
-                  </View>
-                  <ThemedText style={styles.stepText}>Entregado</ThemedText>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
       </Modal>
       
       <BottomNavbar />
@@ -1608,138 +1270,6 @@ const styles = StyleSheet.create({
     right: 10,
   },
   
-  // Delivery Tracking Styles
-  deliveryStatusText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-    color: Colors.light.primary,
-  },
-  mapContainer: {
-    height: 300,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 20,
-    position: 'relative',
-  },
-  simulatedMap: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#e5e5e5',  // Light gray background
-    borderRadius: 10,
-    position: 'relative',
-  },
-  routeLine: {
-    position: 'absolute',
-    width: '100%',
-    height: 4,
-    backgroundColor: '#2D7FF9',
-    top: '50%',
-    left: 0,
-    transform: [{ rotate: '45deg' }],
-    opacity: 0.5,
-  },
-  locationMarker: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    transform: [{ translateX: -20 }, { translateY: -20 }], // Center the marker
-  },
-  userMarker: {
-    borderWidth: 2,
-    borderColor: '#ff3b30',
-  },
-  courierMarker: {
-    borderWidth: 2,
-    borderColor: Colors.light.primary,
-  },
-  mapLegend: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 5,
-    padding: 5,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  legendText: {
-    fontSize: 12,
-    marginLeft: 5,
-  },
-  
-  // Delivery Info Styles
-  deliveryInfoContainer: {
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  deliveryInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  deliveryInfoText: {
-    marginLeft: 10,
-    fontSize: 16,
-  },
-  
-  // Delivery Progress Styles
-  deliveryProgressContainer: {
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  deliveryProgressTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  progressSteps: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  progressStep: {
-    alignItems: 'center',
-    width: '22%',
-  },
-  stepCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  activeStep: {
-    // Estilos para paso activo
-  },
-  completedStepCircle: {
-    backgroundColor: Colors.light.primary,
-  },
-  stepNumber: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  stepText: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
   checkoutButton: {
     backgroundColor: Colors.light.primary,
     borderRadius: 10,
@@ -1755,21 +1285,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#ccc',
-  },
-  map: {
-    flex: 1,
-  },
-  loadingMapContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingMapText: {
-    fontSize: 16,
-    color: Colors.light.primary,
-  },
-  deliveryList: {
-    marginBottom: 20,
   },
   deliveryMethodItem: {
     flexDirection: 'row',

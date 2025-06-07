@@ -51,7 +51,7 @@ export function Modal({
       onRequestClose={onClose}
       statusBarTranslucent={true}
     >
-      <StatusBar style={statusBarStyle} backgroundColor="rgba(0,0,0,0.5)" translucent />
+      <StatusBar style={statusBarStyle} translucent />
       <View style={styles.overlay}>
         <ThemedView style={[styles.container, getSizeStyles()]}>
           {title && (

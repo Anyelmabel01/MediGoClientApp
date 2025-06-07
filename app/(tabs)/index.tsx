@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { LocationSelector } from '@/components/LocationSelector';
@@ -126,11 +126,18 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.avatarContainer}>
-            <View style={[styles.avatar, { backgroundColor: Colors.light.white }]}>
-              <ThemedText style={styles.avatarText}>
-                {user?.nombre?.charAt(0)?.toUpperCase() || 'U'}{user?.apellido?.charAt(0)?.toUpperCase() || 'S'}
-              </ThemedText>
-            </View>
+            {user?.avatar ? (
+              <Image 
+                source={{ uri: user.avatar }} 
+                style={[styles.avatar, { backgroundColor: Colors.light.white }]}
+              />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: Colors.light.white }]}>
+                <ThemedText style={styles.avatarText}>
+                  {user?.nombre?.charAt(0)?.toUpperCase() || 'U'}{user?.apellido?.charAt(0)?.toUpperCase() || 'S'}
+                </ThemedText>
+              </View>
+            )}
             <View style={styles.editAvatarOverlay}>
               <Ionicons name="create-outline" size={12} color={Colors.light.white} />
             </View>

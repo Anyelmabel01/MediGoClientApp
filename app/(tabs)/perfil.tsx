@@ -8,32 +8,219 @@ import { UserLocation } from '@/constants/UserModel';
 import { useTheme } from '@/context/ThemeContext';
 import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Modal, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 
 export default function PerfilScreen() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  
+  // Estados para modales personalizados
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalAnimation] = useState(new Animated.Value(0));
+  
   const { user, currentLocation, setCurrentLocation } = useUser();
   const { isDarkMode } = useTheme();
+  const { updateProfile } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleLocationSelect = (location: UserLocation) => {
     setCurrentLocation(location);
   };
 
-  // Guard clause para verificar que user no sea null
   if (!user) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ThemedText>Cargando...</ThemedText>
-        </View>
+      <ThemedView style={styles.loadingContainer}>
+        <ThemedText>Cargando...</ThemedText>
       </ThemedView>
     );
   }
+
+  const showModal = (type: 'success' | 'error' | 'imagePicker', message: string = '') => {
+    setModalMessage(message);
+    
+    if (type === 'success') {
+      setShowSuccessModal(true);
+    } else if (type === 'error') {
+      setShowErrorModal(true);
+    } else if (type === 'imagePicker') {
+      setShowImagePickerModal(true);
+    }
+    
+    // Animación de entrada
+    Animated.timing(modalAnimation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeModal = () => {
+    Animated.timing(modalAnimation, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowSuccessModal(false);
+      setShowErrorModal(false);
+      setShowImagePickerModal(false);
+    });
+  };
+
+  const uploadImage = async (uri: string): Promise<string | null> => {
+    try {
+      if (!user?.id) return null;
+
+      console.log('Procesando imagen:', uri);
+
+      // Crear nombre único para el archivo
+      const fileExtension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}_${Date.now()}.${fileExtension}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Usar expo-file-system directamente (más confiable para URIs locales)
+      const FileSystem = require('expo-file-system');
+      
+      // Leer el archivo como base64
+      const base64String = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      console.log('Imagen leída correctamente, tamaño base64:', base64String.length);
+
+      // Convertir base64 a Uint8Array para React Native
+      const binaryString = atob(base64String);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      console.log('Archivo preparado, subiendo a Supabase...');
+
+      // Subir el archivo a Supabase usando ArrayBuffer
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, bytes.buffer, {
+          contentType: `image/${fileExtension}`,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw new Error('Error al subir la imagen: ' + uploadError.message);
+      }
+
+      // Obtener la URL pública
+      const { data } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+
+      console.log('Imagen subida exitosamente:', data.publicUrl);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error processing image:', error);
+      
+      // Mostrar mensaje de error más específico al usuario
+      if (error instanceof Error) {
+        if (error.message.includes('FileSystem')) {
+          console.error('Error al leer el archivo de imagen.');
+        } else if (error.message.includes('upload')) {
+          console.error('Error al subir la imagen al servidor.');
+        } else if (error.message.includes('Blob')) {
+          console.error('Error en el formato de la imagen.');
+        } else {
+          console.error('Error al procesar imagen: ' + error.message);
+        }
+      } else {
+        console.error('Error desconocido al procesar imagen.');
+      }
+      
+      return null;
+    }
+  };
+
+  const handleImagePicker = async () => {
+    try {
+      // Solicitar permisos
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showModal('error', 'Se necesitan permisos para acceder a la galería');
+        return;
+      }
+
+      // Mostrar opciones
+      showModal('imagePicker');
+    } catch (error) {
+      showModal('error', 'Error al acceder a las opciones de imagen');
+    }
+  };
+
+  const pickImage = async (source: 'gallery' | 'camera') => {
+    try {
+      setIsUploadingImage(true);
+
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          showModal('error', 'Se necesitan permisos para usar la cámara');
+          return;
+        }
+
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        console.log('Imagen seleccionada:', imageUri);
+        
+        // Subir imagen
+        const publicUrl = await uploadImage(imageUri);
+        
+        if (publicUrl) {
+          // Actualizar perfil con nueva URL
+          const updateResult = await updateProfile({ avatar_url: publicUrl });
+          
+          if (updateResult.error) {
+            showModal('error', 'Error al actualizar la foto de perfil');
+          } else {
+            showModal('success', 'Foto de perfil actualizada correctamente');
+          }
+        } else {
+          showModal('error', 'Error al subir la imagen');
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      showModal('error', 'Error al seleccionar la imagen');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -46,11 +233,18 @@ export default function PerfilScreen() {
           onPress={() => setShowUserProfile(true)}
         >
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-              </ThemedText>
-            </View>
+            {user?.avatar ? (
+              <Image 
+                source={{ uri: user.avatar }} 
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <ThemedText style={styles.avatarText}>
+                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                </ThemedText>
+              </View>
+            )}
           </View>
           
           <View style={styles.greetingContainer}>
@@ -93,16 +287,28 @@ export default function PerfilScreen() {
             <View style={styles.profileHeader}>
               <TouchableOpacity 
                 style={styles.avatarMainContainer}
-                onPress={() => setShowUserProfile(true)}
+                onPress={handleImagePicker}
                 activeOpacity={0.8}
+                disabled={isUploadingImage}
               >
-                <View style={[styles.avatarMain, { backgroundColor: Colors.light.primary }]}>
-                  <ThemedText style={styles.avatarMainText}>
-                    {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
-                  </ThemedText>
-                </View>
+                {user?.avatar ? (
+                  <Image 
+                    source={{ uri: user.avatar }} 
+                    style={styles.avatarMain}
+                  />
+                ) : (
+                  <View style={[styles.avatarMain, { backgroundColor: Colors.light.primary }]}>
+                    <ThemedText style={styles.avatarMainText}>
+                      {user?.nombre?.charAt(0) || 'U'}{user?.apellido?.charAt(0) || 'S'}
+                    </ThemedText>
+                  </View>
+                )}
                 <View style={styles.editAvatarOverlay}>
-                  <Ionicons name="camera" size={16} color={Colors.light.white} />
+                  {isUploadingImage ? (
+                    <ActivityIndicator size={12} color={Colors.light.white} />
+                  ) : (
+                    <Ionicons name="camera" size={16} color={Colors.light.white} />
+                  )}
                 </View>
               </TouchableOpacity>
               
@@ -242,6 +448,102 @@ export default function PerfilScreen() {
         onClose={() => setShowLocationSelector(false)}
         onLocationSelect={handleLocationSelect}
       />
+
+      {/* Modales personalizados */}
+      <Modal
+        visible={showSuccessModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={closeModal}
+      >
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            {
+              opacity: modalAnimation,
+            },
+          ]}
+        >
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Éxito</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalMessage}</ThemedText>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={closeModal}
+            >
+              <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Modal>
+
+      <Modal
+        visible={showErrorModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={closeModal}
+      >
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            {
+              opacity: modalAnimation,
+            },
+          ]}
+        >
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Error</ThemedText>
+            <ThemedText style={styles.modalMessage}>{modalMessage}</ThemedText>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={closeModal}
+            >
+              <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Modal>
+
+      <Modal
+        visible={showImagePickerModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={closeModal}
+      >
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            {
+              opacity: modalAnimation,
+            },
+          ]}
+        >
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Cambiar foto de perfil</ThemedText>
+            <ThemedText style={styles.modalMessage}>Selecciona una opción</ThemedText>
+            <View style={styles.imagePickerButtons}>
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={() => {
+                  closeModal();
+                  pickImage('gallery');
+                }}
+              >
+                <ThemedText style={styles.imagePickerButtonText}>Galería</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={() => {
+                  closeModal();
+                  pickImage('camera');
+                }}
+              >
+                <ThemedText style={styles.imagePickerButtonText}>Cámara</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -492,5 +794,70 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    padding: 20,
+    borderRadius: 20,
+    width: '80%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: Colors.light.primary,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+    color: Colors.light.textSecondary,
+  },
+  closeButton: {
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 100,
+  },
+  closeButtonText: {
+    color: Colors.light.white,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  imagePickerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 10,
+  },
+  imagePickerButton: {
+    backgroundColor: Colors.light.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 8,
+    flex: 1,
+  },
+  imagePickerButtonText: {
+    color: Colors.light.white,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 }); 

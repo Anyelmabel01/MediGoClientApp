@@ -155,6 +155,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (userData.nombre) authUpdates.nombre = userData.nombre;
       if (userData.apellido) authUpdates.apellido = userData.apellido;
       if (userData.telefono) authUpdates.telefono = userData.telefono;
+      if (userData.tipoSangre) authUpdates.tipo_sangre = userData.tipoSangre;
+      if (userData.peso) authUpdates.peso = userData.peso;
+      if (userData.altura) authUpdates.altura = userData.altura;
+      if (userData.fechaNacimiento) authUpdates.fecha_nacimiento = userData.fechaNacimiento;
+      if (userData.genero) authUpdates.genero = userData.genero;
+      if (userData.avatar) authUpdates.avatar_url = userData.avatar; // Mapear avatar a avatar_url para Supabase
       
       if (Object.keys(authUpdates).length > 0) {
         await updateProfile(authUpdates);

@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { ReactNode } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { AppHeader } from './AppHeader';
 import { ThemedView } from './ThemedView';
 
@@ -65,37 +65,42 @@ export function AppContainer({
 
   return (
     <ThemedView style={styles.container}>
-      <StatusBar style="dark" />
-      <RNStatusBar backgroundColor="transparent" translucent />
+      <StatusBar style="dark" translucent />
+      
+      {/* Vista de color de fondo para la status bar con edge-to-edge */}
+      <View style={styles.statusBarBackground} />
       
       {decorative && (
         <View style={styles.backgroundCircles}>
-          <LinearGradient
-            colors={[COLORS.accent, COLORS.primary]}
-            style={[styles.circle, styles.circle1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            opacity={0.08}
-          />
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primaryDark]}
-            style={[styles.circle, styles.circle2]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            opacity={0.06}
-          />
-          <LinearGradient
-            colors={[COLORS.accent, COLORS.primary]}
-            style={[styles.circle, styles.circle3]}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 1, y: 0 }}
-            opacity={0.07}
-          />
+          <View style={[styles.circle, styles.circle1, { opacity: 0.08 }]}>
+            <LinearGradient
+              colors={[COLORS.accent, COLORS.primary]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          </View>
+          <View style={[styles.circle, styles.circle2, { opacity: 0.06 }]}>
+            <LinearGradient
+              colors={[COLORS.primary, COLORS.primaryDark]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          </View>
+          <View style={[styles.circle, styles.circle3, { opacity: 0.07 }]}>
+            <LinearGradient
+              colors={[COLORS.accent, COLORS.primary]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+            />
+          </View>
         </View>
       )}
       
       <LinearGradient 
-        colors={COLORS.backgroundGradient} 
+        colors={[COLORS.backgroundGradient[0], COLORS.backgroundGradient[1]] as const} 
         style={styles.background}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -197,5 +202,13 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 0.8,
     bottom: -SCREEN_WIDTH * 0.2,
     right: -SCREEN_WIDTH * 0.2,
+  },
+  statusBarBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 24,
+    backgroundColor: COLORS.background,
   },
 }); 

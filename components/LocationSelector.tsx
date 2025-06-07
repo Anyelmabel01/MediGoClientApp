@@ -515,7 +515,7 @@ export function LocationSelector({ isVisible, onClose, onLocationSelect }: Locat
       onRequestClose={onClose}
       statusBarTranslucent={true}
     >
-      <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
+      <StatusBar style="light" translucent />
       <ThemedView style={styles.centeredView}>
         <View style={[styles.modalView, { 
           backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,

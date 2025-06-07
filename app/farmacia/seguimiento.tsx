@@ -1,78 +1,75 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
+import { useLocation } from '@/hooks/useLocation';
+import { useUser } from '@/hooks/useUser';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { Alert, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Dimensions, Linking, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapboxMap } from '../../components/MapboxMap';
+import MapboxMap from '../../components/MapboxMap';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+import { calculateDistance, calculateNextPosition, getOptimalMapView, getRoute, RouteInfo } from '../../utils/mapboxDirections';
+
 
 const { height } = Dimensions.get('window');
 
-// Coordenadas simuladas del destino (farmacia)
+type DeliveryStatus = 'PAID' | 'CONFIRMED' | 'PREPARING' | 'IN_PROGRESS' | 'ARRIVING' | 'DELIVERED';
+
+const STATUS_CONFIG = {
+  PAID: {
+    title: 'Pago Confirmado',
+    description: 'Tu pedido fue procesado. Preparando medicamentos...',
+    color: '#FF9800',
+    icon: 'card' as const,
+  },
+  CONFIRMED: {
+    title: 'Pedido Confirmado',
+    description: 'Farmacia confirmó tu pedido y está preparando los medicamentos',
+    color: '#2196F3',
+    icon: 'checkmark-circle' as const,
+  },
+  PREPARING: {
+    title: 'En Preparación',
+    description: 'Los medicamentos están siendo preparados para envío',
+    color: '#FF9800',
+    icon: 'medical' as const,
+  },
+  IN_PROGRESS: {
+    title: 'En Camino',
+    description: 'El repartidor está en ruta hacia tu ubicación',
+    color: '#FF9800',
+    icon: 'bicycle' as const,
+  },
+  ARRIVING: {
+    title: 'Llegando',
+    description: 'El repartidor está muy cerca (menos de 3 minutos)',
+    color: '#4CAF50',
+    icon: 'location' as const,
+  },
+  DELIVERED: {
+    title: 'Entregado',
+    description: 'Tu pedido ha sido entregado exitosamente',
+    color: '#4CAF50',
+    icon: 'checkmark-done' as const,
+  },
+};
+
+// Coordenadas de la farmacia (fijas)
 const pharmacyLocation = {
-  latitude: 8.9700,
-  longitude: -79.5200,
+  lat: 8.9700,
+  lng: -79.5200,
   name: 'Farmacia Central'
 };
 
 // Datos de ejemplo para seguimiento de farmacia
 const orderInfo = {
   id: 'FAR-2024-001',
-  status: 'En camino',
   deliveryPerson: {
     name: 'Juan Pérez',
-    phone: '55-1234-5678'
-  },
-  estimatedTime: '15-20 min',
-  progress: [
-    { step: 'Pedido\nconfirmado', completed: true },
-    { step: 'En\npreparación', completed: true },
-    { step: 'En camino', completed: true },
-    { step: 'Entregado', completed: false }
-  ]
-};
-
-// Función para calcular distancia entre dos puntos
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371; // Radio de la Tierra en km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  return (distance * 1000).toFixed(0); // Convertir a metros
-};
-
-// Función para obtener la ruta de Mapbox Directions API
-const getMapboxRoute = async (start: any, end: any) => {
-  const MAPBOX_API_KEY = "pk.eyJ1Ijoia2V2aW5uMjMiLCJhIjoiY204Y2J0bWN1MTg5ZzJtb2xobXljODM0MiJ9.48MFADtQhp_sFuQjewLFeA";
-  
-  try {
-    const response = await fetch(
-      `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_API_KEY}`
-    );
-    
-    const data = await response.json();
-    
-    if (data.routes && data.routes.length > 0) {
-      return {
-        coordinates: data.routes[0].geometry.coordinates,
-        duration: data.routes[0].duration,
-        distance: data.routes[0].distance
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error obteniendo ruta:', error);
-    return null;
+    phone: '+507 6789-0123'
   }
 };
 
@@ -80,118 +77,311 @@ export default function SeguimientoScreen() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+  const { user } = useUser();
   
-  // Estados para ubicaciones y ruta
-  const [userLocation, setUserLocation] = useState<any>(null);
-  const [deliveryLocation, setDeliveryLocation] = useState(pharmacyLocation);
-  const [route, setRoute] = useState<any>(null);
-  const [routeProgress, setRouteProgress] = useState(0);
+  // Hook de ubicación real del usuario
+  const { 
+    location: userLocation, 
+    isLoading: locationLoading, 
+    error: locationError,
+    hasPermission,
+    getCurrentLocation,
+    requestLocationPermission 
+  } = useLocation(true); // watchPosition = true para seguimiento en tiempo real
+  
+  // Estados principales
+  const [currentStatus, setCurrentStatus] = useState<DeliveryStatus>('PAID');
   const [estimatedTime, setEstimatedTime] = useState(15);
-  const [orderStatus, setOrderStatus] = useState('En camino');
-  const [locationPermission, setLocationPermission] = useState<boolean>(false);
+  const [requestId] = useState('FAR-' + Date.now().toString().slice(-6));
+  
+  // Ubicación del usuario (real)
+  const customerLocation = useMemo(() => {
+    if (userLocation) {
+      return {
+        lat: userLocation.latitude,
+        lng: userLocation.longitude
+      };
+    }
+    // Ubicación por defecto (Ciudad de Panamá) si no hay ubicación real
+    return {
+      lat: 8.9824,
+      lng: -79.5199
+    };
+  }, [userLocation]);
+  
+  // Ubicación inicial del repartidor (simulada cerca de la farmacia)
+  const [deliveryStartLocation] = useState(() => {
+    // Colocar al repartidor en la farmacia inicialmente
+    return {
+      lat: pharmacyLocation.lat,
+      lng: pharmacyLocation.lng
+    };
+  });
+  
+  // Estados del mapa y ruta
+  const [deliveryLocation, setDeliveryLocation] = useState(deliveryStartLocation);
+  const [route, setRoute] = useState<RouteInfo | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [routeProgress, setRouteProgress] = useState(0); // 0 a 1
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [deliveryMovementStep, setDeliveryMovementStep] = useState(0); // Para controlar el movimiento paso a paso
+  
+  // Referencias para optimización
+  const statusIntervalRef = useRef<number | null>(null);
+  const movementIntervalRef = useRef<number | null>(null);
+  const lastRouteRef = useRef<RouteInfo | null>(null);
 
-  // Solicitar permisos de ubicación y obtener ubicación actual
-  useEffect(() => {
-    const getLocationPermission = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permiso denegado', 'Se necesita acceso a la ubicación para mostrar tu posición en el mapa.');
-          return;
-        }
-
-        setLocationPermission(true);
+  // Obtener la ruta inicial cuando se confirma el pedido
+  const fetchRoute = useCallback(async () => {
+    if (isLoadingRoute || route || !userLocation) return;
+    
+    setIsLoadingRoute(true);
+    try {
+      const routeData = await getRoute(
+        pharmacyLocation,
+        customerLocation,
+        'driving-traffic'
+      );
+      
+      if (routeData) {
+        setRoute(routeData);
+        lastRouteRef.current = routeData;
         
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-
-        const userCoords = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude
-        };
-
-        setUserLocation(userCoords);
-
-        // Obtener ruta desde farmacia hasta usuario
-        const routeData = await getMapboxRoute(pharmacyLocation, userCoords);
-        if (routeData) {
-          setRoute(routeData);
-          setEstimatedTime(Math.ceil(routeData.duration / 60)); // Convertir a minutos
-        }
-
-      } catch (error) {
-        console.error('Error obteniendo ubicación:', error);
-        Alert.alert('Error', 'No se pudo obtener tu ubicación. Usando ubicación por defecto.');
-        // Usar ubicación por defecto en Panama City
-        setUserLocation({
-          latitude: 8.9824,
-          longitude: -79.5199
+        // Actualizar tiempo estimado basado en la ruta real
+        setEstimatedTime(Math.max(1, routeData.duration));
+        console.log('Ruta obtenida:', {
+          distance: routeData.distance,
+          duration: routeData.duration,
+          points: routeData.coordinates.length,
+          origin: pharmacyLocation,
+          destination: customerLocation
         });
       }
-    };
+    } catch (error) {
+      console.error('Error obteniendo ruta:', error);
+    } finally {
+      setIsLoadingRoute(false);
+    }
+  }, [userLocation, customerLocation, isLoadingRoute, route]);
 
-    getLocationPermission();
+  // Simular movimiento del repartidor siguiendo la ruta real
+  useEffect(() => {
+    if (!route || currentStatus === 'DELIVERED' || route.coordinates.length === 0) {
+      return;
+    }
+
+    movementIntervalRef.current = setInterval(() => {
+      setDeliveryMovementStep(prevStep => {
+        // Calcular la velocidad de movimiento basada en el estado
+        let stepIncrement = 0.5; // puntos por intervalo por defecto
+        
+        switch (currentStatus) {
+          case 'CONFIRMED':
+            stepIncrement = 0.3; // Más lento al inicio
+            break;
+          case 'IN_PROGRESS':
+            stepIncrement = 0.5; // Velocidad normal
+            break;
+          case 'ARRIVING':
+            stepIncrement = 0.8; // Más rápido al final
+            break;
+        }
+        
+        const newStep = prevStep + stepIncrement;
+        const maxSteps = route.coordinates.length - 1;
+        
+        if (newStep >= maxSteps) {
+          // Ha llegado al destino
+          setRouteProgress(1);
+          setEstimatedTime(0);
+          // Cambiar estado a completado después de un breve delay
+          setTimeout(() => {
+            setCurrentStatus('DELIVERED');
+          }, 3000); // 3 segundos para que se vea que llegó
+          return maxSteps;
+        }
+        
+        // Calcular progreso real basado en el paso actual
+        const realProgress = newStep / maxSteps;
+        setRouteProgress(realProgress);
+        
+        // Calcular nueva posición del repartidor
+        const newPosition = calculateNextPosition(
+          deliveryLocation,
+          route.coordinates,
+          realProgress
+        );
+        setDeliveryLocation(newPosition);
+        
+        // Actualizar tiempo estimado basado en el progreso real
+        const remainingProgress = 1 - realProgress;
+        const remainingTime = Math.ceil(remainingProgress * (route.duration || 5));
+        setEstimatedTime(Math.max(0, remainingTime));
+        
+        console.log(`Repartidor progreso: ${(realProgress * 100).toFixed(1)}%, paso: ${newStep}/${maxSteps}, tiempo restante: ${remainingTime}min`);
+        
+        return newStep;
+      });
+    }, 3000); // Mover cada 3 segundos para un movimiento más visible y controlado
+    
+    return () => {
+      if (movementIntervalRef.current) {
+        clearInterval(movementIntervalRef.current);
+      }
+    };
+  }, [route, currentStatus, deliveryLocation]);
+
+  // Simular progreso de estados
+  useEffect(() => {
+    const statusProgression: DeliveryStatus[] = ['PAID', 'CONFIRMED', 'PREPARING', 'IN_PROGRESS', 'ARRIVING'];
+    let currentIndex = 0;
+    
+    statusIntervalRef.current = setInterval(() => {
+      if (currentIndex < statusProgression.length - 1) {
+        currentIndex++;
+        const newStatus = statusProgression[currentIndex];
+        setCurrentStatus(newStatus);
+        
+        // Acciones específicas por estado
+        if (newStatus === 'CONFIRMED') {
+          setShowMap(true);
+          if (userLocation) {
+            fetchRoute(); // Obtener ruta real al confirmar
+          }
+        } else if (newStatus === 'ARRIVING') {
+          // Cuando está llegando, solo cambiar a arriving si está cerca
+          setEstimatedTime(2);
+        }
+      }
+    }, 8000); // Cambiar estado cada 8 segundos
+    
+    return () => {
+      if (statusIntervalRef.current) {
+        clearInterval(statusIntervalRef.current);
+      }
+    };
+  }, [fetchRoute, userLocation]);
+
+  // Calcular vista óptima del mapa
+  const mapView = useMemo(() => {
+    return getOptimalMapView(
+      customerLocation,
+      deliveryLocation,
+      route?.coordinates
+    );
+  }, [customerLocation, deliveryLocation, route]);
+
+  // Marcadores del mapa
+  const mapMarkers = useMemo(() => [
+    {
+      id: 'customer',
+      latitude: customerLocation.lat,
+      longitude: customerLocation.lng,
+      color: '#FF0000',
+      title: 'Tu Ubicación Actual'
+    },
+    {
+      id: 'delivery',
+      latitude: deliveryLocation.lat,
+      longitude: deliveryLocation.lng,
+      color: '#00AA00',
+      title: `Repartidor - ETA: ${estimatedTime}min`
+    },
+    {
+      id: 'pharmacy',
+      latitude: pharmacyLocation.lat,
+      longitude: pharmacyLocation.lng,
+      color: '#28a745',
+      title: pharmacyLocation.name
+    }
+  ], [customerLocation, deliveryLocation, estimatedTime]);
+
+  // Handlers
+  const handleCallDelivery = useCallback(() => {
+    const deliveryPhone = orderInfo.deliveryPerson.phone;
+    Alert.alert(
+      '📞 Llamar Repartidor',
+      `¿Deseas llamar a ${orderInfo.deliveryPerson.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Llamar', 
+          onPress: () => {
+            Linking.openURL(`tel:${deliveryPhone}`).catch(() => {
+              Alert.alert('Error', 'No se pudo realizar la llamada');
+            });
+          }
+        }
+      ]
+    );
   }, []);
 
-  // Simular movimiento del repartidor a lo largo de la ruta
-  useEffect(() => {
-    if (!route || !route.coordinates || route.coordinates.length === 0) return;
-
-    const moveAlongRoute = () => {
-      setRouteProgress(prevProgress => {
-        const newProgress = prevProgress + 0.02; // Aumentar 2% cada vez
-        
-        if (newProgress >= 1) {
-          setOrderStatus('Entregado');
-          setEstimatedTime(0);
-          return 1;
+  const handleGoHome = useCallback(() => {
+    Alert.alert(
+      '🏠 Regresar al Inicio',
+      '¿Deseas regresar a la pantalla principal?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Ir al Inicio', 
+          onPress: () => router.replace('/')
         }
+      ]
+    );
+  }, [router]);
 
-        // Calcular posición en la ruta
-        const routeIndex = Math.floor(newProgress * (route.coordinates.length - 1));
-        const routeCoord = route.coordinates[routeIndex];
-        
-        if (routeCoord) {
-          setDeliveryLocation({
-            latitude: routeCoord[1], // Lat/Lng están invertidos en GeoJSON
-            longitude: routeCoord[0],
-            name: 'Repartidor en ruta'
-          });
-        }
+  const handleMapPress = useCallback(() => {
+    setIsMapFullscreen(true);
+  }, []);
 
-        // Actualizar tiempo estimado
-        const remainingTime = Math.ceil((1 - newProgress) * (route.duration / 60));
-        setEstimatedTime(remainingTime);
+  const handleCloseFullscreenMap = useCallback(() => {
+    setIsMapFullscreen(false);
+  }, []);
 
-        return newProgress;
-      });
-    };
+  const handleRefreshLocation = useCallback(async () => {
+    try {
+      await getCurrentLocation();
+      Alert.alert('Ubicación actualizada', 'Tu ubicación ha sido actualizada correctamente.');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo actualizar la ubicación. Intenta nuevamente.');
+    }
+  }, [getCurrentLocation]);
 
-    const interval = setInterval(moveAlongRoute, 2000); // Actualizar cada 2 segundos
-    return () => clearInterval(interval);
-  }, [route]);
-
-  const handleClose = () => {
-    router.back();
-  };
-
-  const handleCallDelivery = () => {
-    console.log('Llamando al repartidor:', orderInfo.deliveryPerson.phone);
-  };
-
-  // Datos adicionales para la interfaz
-  const deliveryData = {
+  // Datos de la entrega
+  const deliveryData = useMemo(() => ({
     pharmacyName: pharmacyLocation.name,
-    deliveryPersonName: 'Juan Pérez',
-    deliveryPersonPhone: '+507 6789-0123',
-    deliveryDistance: userLocation ? calculateDistance(
-      deliveryLocation.latitude, 
-      deliveryLocation.longitude, 
-      userLocation.latitude, 
-      userLocation.longitude
-    ) : '0',
-  };
+    customer: `${user?.nombre || 'Usuario'} ${user?.apellido || 'Apellido'}`,
+    location: userLocation?.address || 
+              `${customerLocation.lat.toFixed(4)}, ${customerLocation.lng.toFixed(4)}`,
+    orderTime: new Date().toLocaleTimeString(),
+    deliveryPersonName: orderInfo.deliveryPerson.name,
+    deliveryPersonPhone: orderInfo.deliveryPerson.phone,
+    deliveryDistance: calculateDistance(
+      deliveryLocation.lat, 
+      deliveryLocation.lng, 
+      customerLocation.lat, 
+      customerLocation.lng
+    ),
+    routeDistance: route?.distance || 0,
+    routeProgress: Math.round(routeProgress * 100)
+  }), [user, userLocation, deliveryLocation, customerLocation, route, routeProgress]);
+
+  const statusConfig = STATUS_CONFIG[currentStatus];
+
+  // Manejar errores de permisos
+  useEffect(() => {
+    if (locationError && !hasPermission) {
+      Alert.alert(
+        'Ubicación Requerida',
+        'Necesitamos acceso a tu ubicación para el seguimiento de entregas. ¿Deseas conceder permisos?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Conceder', onPress: requestLocationPermission }
+        ]
+      );
+    }
+  }, [locationError, hasPermission, requestLocationPermission]);
 
   // Si no tenemos ubicación del usuario aún, mostrar loading
   if (!userLocation) {
@@ -213,243 +403,373 @@ export default function SeguimientoScreen() {
     );
   }
 
-  // Marcadores para el mapa de MapBox
-  const mapMarkers = [
-    {
-      id: 'delivery',
-      latitude: deliveryLocation.latitude,
-      longitude: deliveryLocation.longitude,
-      color: Colors.light.primary,
-      title: 'Repartidor'
-    },
-    {
-      id: 'user',
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
-      color: Colors.light.error,
-      title: 'Tu ubicación'
-    },
-    {
-      id: 'pharmacy',
-      latitude: pharmacyLocation.latitude,
-      longitude: pharmacyLocation.longitude,
-      color: '#28a745',
-      title: pharmacyLocation.name
-    }
-  ];
-
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+    <ThemedView style={styles.container}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       
-      {/* Header */}
-      <View style={[styles.header, { 
-        backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white
-      }]}>
-        <ThemedText style={[styles.title, {
-          color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-        }]}>
-          Seguimiento de entrega
-        </ThemedText>
+      <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.closeButton}
-          onPress={handleClose}
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <Ionicons 
-            name="close" 
-            size={24} 
-            color={Colors.light.primary} 
-          />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
+        <ThemedText style={styles.title}>Seguimiento de Entrega</ThemedText>
+        {showMap && (
+          <View style={styles.progressIndicator}>
+            <ThemedText style={styles.progressText}>{Math.round(routeProgress * 100)}%</ThemedText>
+          </View>
+        )}
+        {userLocation && (
+          <TouchableOpacity 
+            style={styles.locationButton}
+            onPress={handleRefreshLocation}
+          >
+            <Ionicons name="refresh" size={20} color="white" />
+          </TouchableOpacity>
+        )}
       </View>
+      
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Indicador de estado de ubicación */}
+        {(locationLoading || locationError) && (
+          <View style={[styles.locationStatus, {
+            backgroundColor: locationError ? '#FFEBEE' : '#E3F2FD'
+          }]}>
+            <Ionicons 
+              name={locationLoading ? "location" : "warning"} 
+              size={20} 
+              color={locationError ? '#F44336' : '#2196F3'} 
+            />
+            <ThemedText style={[styles.locationStatusText, {
+              color: locationError ? '#F44336' : '#2196F3'
+            }]}>
+              {locationLoading ? 'Obteniendo tu ubicación...' : 
+               locationError ? 'Error: ' + locationError : 
+               'Ubicación obtenida correctamente'}
+            </ThemedText>
+            {!hasPermission && (
+              <TouchableOpacity 
+                style={styles.permissionButton}
+                onPress={requestLocationPermission}
+              >
+                <ThemedText style={styles.permissionButtonText}>Permitir</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-      >
-        {/* Estado principal con MAPA DE MAPBOX */}
-        <View style={[styles.statusCard, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white
+        {/* Estado Actual */}
+        <View style={[styles.statusCard, { 
+          backgroundColor: statusConfig.color + '20',
         }]}>
           <View style={styles.statusHeader}>
-            <View style={[styles.statusIcon, { backgroundColor: Colors.light.primary }]}>
-              <Ionicons name="bicycle" size={32} color="white" />
+            <View style={[styles.statusIcon, { backgroundColor: statusConfig.color }]}>
+              <Ionicons name={statusConfig.icon} size={32} color="white" />
             </View>
             <View style={styles.statusInfo}>
-              <ThemedText style={[styles.statusTitle, { color: Colors.light.primary }]}>
-                {orderStatus}
+              <ThemedText style={[styles.statusTitle, { color: statusConfig.color }]}>
+                {statusConfig.title}
               </ThemedText>
-              <ThemedText style={[styles.statusDescription, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                {orderStatus === 'Entregado' ? 
-                  'Tu pedido ha sido entregado exitosamente' : 
-                  'Tu pedido está siendo entregado a tu ubicación'
-                }
+              <ThemedText style={styles.statusDescription}>
+                {statusConfig.description}
               </ThemedText>
             </View>
           </View>
           
           {estimatedTime > 0 && (
-            <View style={[styles.timeContainer, { backgroundColor: Colors.light.primary + '20' }]}>
-              <Ionicons name="time" size={20} color={Colors.light.primary} />
-              <ThemedText style={[styles.estimatedTime, { color: Colors.light.primary }]}>
+            <View style={styles.timeContainer}>
+              <Ionicons name="time" size={20} color={statusConfig.color} />
+              <ThemedText style={[styles.estimatedTime, { color: statusConfig.color }]}>
                 Tiempo estimado: {estimatedTime} minutos
               </ThemedText>
+              {route && (
+                <ThemedText style={[styles.routeInfo, { color: statusConfig.color }]}>
+                  • Distancia: {(deliveryData.routeDistance / 1000).toFixed(1)}km
+                </ThemedText>
+              )}
             </View>
           )}
-          
-          {/* MAPA DE MAPBOX - NO SIMULACIÓN */}
-          <View style={styles.mapContainer}>
-            <MapboxMap
-              latitude={(deliveryLocation.latitude + userLocation.latitude) / 2}
-              longitude={(deliveryLocation.longitude + userLocation.longitude) / 2}
-              zoom={13}
-              markers={mapMarkers}
-              route={route?.coordinates}
-              showCurrentLocation={false}
-              interactive={true}
-              style={styles.map}
-            />
-            
-            {/* Leyenda del mapa */}
-            <View style={styles.mapLegend}>
-              <View style={styles.legendItem}>
-                <Ionicons name="bicycle" size={16} color={Colors.light.primary} />
-                <ThemedText style={[styles.legendText, {
-                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                }]}>
-                  Repartidor
-                </ThemedText>
-              </View>
-              <View style={styles.legendItem}>
-                <Ionicons name="person" size={16} color={Colors.light.error} />
-                <ThemedText style={[styles.legendText, {
-                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                }]}>
-                  Tu ubicación
-                </ThemedText>
-              </View>
-              <View style={styles.legendItem}>
-                <Ionicons name="storefront" size={16} color="#28a745" />
-                <ThemedText style={[styles.legendText, {
-                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-                }]}>
-                  Farmacia
-                </ThemedText>
-              </View>
-            </View>
-          </View>
         </View>
 
-        {/* Información de entrega y repartidor */}
-        <View style={[styles.infoCard, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white
+        {/* Mapa de Tracking en Tiempo Real */}
+        {showMap && userLocation && (
+          <View style={[styles.infoCard, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
+          }]}>
+            <ThemedText style={styles.cardTitle}>
+              Ubicación en Tiempo Real 
+              {isLoadingRoute && <ThemedText style={styles.loadingText}> (Cargando ruta...)</ThemedText>}
+            </ThemedText>
+            <TouchableOpacity style={styles.mapContainer} onPress={handleMapPress}>
+              <MapboxMap
+                latitude={mapView.center.lat}
+                longitude={mapView.center.lng}
+                zoom={mapView.zoom}
+                markers={mapMarkers}
+                route={route?.coordinates}
+                routeColor="#FF6B35"
+                routeWidth={4}
+                showCurrentLocation={false}
+                interactive={true}
+                style={styles.map}
+              />
+              <View style={styles.mapClickOverlay}>
+                <Ionicons name="expand" size={24} color="white" />
+                <ThemedText style={styles.mapClickText}>Toca para ampliar</ThemedText>
+              </View>
+            </TouchableOpacity>
+            <View style={styles.mapLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
+                <ThemedText style={styles.legendText}>Tu ubicación</ThemedText>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#00AA00' }]} />
+                <ThemedText style={styles.legendText}>Repartidor ({deliveryData.routeProgress}%)</ThemedText>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#28a745' }]} />
+                <ThemedText style={styles.legendText}>Farmacia</ThemedText>
+              </View>
+              {route && (
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <ThemedText style={styles.legendText}>Ruta ({(deliveryData.routeDistance / 1000).toFixed(1)}km)</ThemedText>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Mensaje cuando no hay ubicación */}
+        {showMap && !userLocation && (
+          <View style={[styles.infoCard, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: '#FF9800'
+          }]}>
+            <View style={styles.noLocationContainer}>
+              <Ionicons name="location-outline" size={48} color="#FF9800" />
+              <ThemedText style={styles.noLocationTitle}>Ubicación Requerida</ThemedText>
+              <ThemedText style={styles.noLocationText}>
+                Para mostrarte el seguimiento en tiempo real necesitamos acceso a tu ubicación.
+              </ThemedText>
+              <TouchableOpacity 
+                style={styles.enableLocationButton}
+                onPress={requestLocationPermission}
+              >
+                <Ionicons name="location" size={20} color="white" />
+                <ThemedText style={styles.enableLocationText}>Habilitar Ubicación</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Información de la Solicitud */}
+        <View style={[styles.infoCard, { 
+          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
         }]}>
-          <ThemedText style={[styles.cardTitle, { color: Colors.light.primary }]}>
-            Información de Entrega
-          </ThemedText>
+          <ThemedText style={styles.cardTitle}>Detalles de la Entrega</ThemedText>
           
           <View style={styles.infoRow}>
-            <Ionicons name="storefront" size={20} color={Colors.light.primary} />
-            <View style={styles.infoContent}>
-              <ThemedText style={[styles.infoLabel, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Farmacia:
-              </ThemedText>
-              <ThemedText style={[styles.infoValue, {
-                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-              }]}>
-                {deliveryData.pharmacyName}
-              </ThemedText>
-            </View>
+            <Ionicons name="medical" size={20} color={Colors.light.primary} />
+            <ThemedText style={styles.infoLabel}>Tipo:</ThemedText>
+            <ThemedText style={styles.infoValue}>Entrega de Farmacia</ThemedText>
           </View>
 
           <View style={styles.infoRow}>
             <Ionicons name="person" size={20} color={Colors.light.primary} />
-            <View style={styles.infoContent}>
-              <ThemedText style={[styles.infoLabel, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Repartidor:
-              </ThemedText>
-              <ThemedText style={[styles.infoValue, {
-                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-              }]}>
-                {deliveryData.deliveryPersonName}
-              </ThemedText>
-            </View>
+            <ThemedText style={styles.infoLabel}>Cliente:</ThemedText>
+            <ThemedText style={styles.infoValue}>{deliveryData.customer}</ThemedText>
           </View>
 
           <View style={styles.infoRow}>
-            <Ionicons name="location" size={20} color={Colors.light.primary} />
-            <View style={styles.infoContent}>
-              <ThemedText style={[styles.infoLabel, {
-                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary
-              }]}>
-                Distancia:
-              </ThemedText>
-              <ThemedText style={[styles.infoValue, {
-                color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
-              }]}>
-                {deliveryData.deliveryDistance}m aprox.
-              </ThemedText>
-            </View>
+            <Ionicons 
+              name={userLocation ? "location" : "location-outline"} 
+              size={20} 
+              color={userLocation ? Colors.light.primary : '#FF9800'} 
+            />
+            <ThemedText style={styles.infoLabel}>Ubicación:</ThemedText>
+            <ThemedText style={[styles.infoValue, {
+              color: userLocation ? undefined : '#FF9800'
+            }]}>
+              {userLocation ? deliveryData.location : 'Obteniendo ubicación...'}
+            </ThemedText>
           </View>
 
-          <TouchableOpacity 
-            style={[styles.infoRow, styles.callButton]}
-            onPress={handleCallDelivery}
-          >
-            <Ionicons name="call" size={20} color="white" />
-            <View style={styles.infoContent}>
-              <ThemedText style={[styles.infoValue, { color: 'white' }]}>
-                Llamar Repartidor
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.infoRow}>
+            <Ionicons name="time" size={20} color={Colors.light.primary} />
+            <ThemedText style={styles.infoLabel}>Hora:</ThemedText>
+            <ThemedText style={styles.infoValue}>{deliveryData.orderTime}</ThemedText>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="bicycle" size={20} color={Colors.light.primary} />
+            <ThemedText style={styles.infoLabel}>ID Pedido:</ThemedText>
+            <ThemedText style={styles.infoValue}>{requestId}</ThemedText>
+          </View>
         </View>
 
-        {/* Progreso de entrega */}
-        <View style={[styles.progressCard, {
-          backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white
-        }]}>
-          <ThemedText style={[styles.progressTitle, {
-            color: isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary
+        {/* Información del Repartidor */}
+        {(currentStatus === 'CONFIRMED' || currentStatus === 'IN_PROGRESS' || currentStatus === 'ARRIVING') && (
+          <View style={[styles.infoCard, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+            borderColor: isDarkMode ? Colors.dark.border : Colors.light.primary + '30'
           }]}>
-            Progreso de entrega
-          </ThemedText>
-          
-          <View style={styles.progressContainer}>
-            {orderInfo.progress.map((item, index) => (
-              <View key={index} style={styles.progressStep}>
-                <View style={styles.progressIconContainer}>
-                  <Ionicons 
-                    name={item.completed ? 'checkmark-circle' : 'ellipse-outline'} 
-                    size={24} 
-                    color={item.completed ? Colors.light.primary : '#ccc'} 
-                  />
-                  {index < orderInfo.progress.length - 1 && (
-                    <View style={[styles.progressLine, {
-                      backgroundColor: item.completed ? Colors.light.primary : '#ccc'
-                    }]} />
-                  )}
-                </View>
-                <ThemedText style={[styles.progressStepText, {
-                  color: item.completed 
-                    ? (isDarkMode ? Colors.dark.textPrimary : Colors.light.textPrimary)
-                    : '#999',
-                  fontWeight: item.completed ? '600' : 'normal'
+            <ThemedText style={styles.cardTitle}>Información del Repartidor</ThemedText>
+            
+            <View style={styles.paramedicInfo}>
+              <View style={styles.paramedicAvatar}>
+                <Ionicons name="bicycle" size={32} color={Colors.light.primary} />
+              </View>
+              <View style={styles.paramedicDetails}>
+                <ThemedText style={styles.paramedicName}>{deliveryData.deliveryPersonName}</ThemedText>
+                <ThemedText style={[styles.paramedicDistance, { 
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
                 }]}>
-                  {item.step}
+                  Distancia directa: {deliveryData.deliveryDistance}m
+                </ThemedText>
+                {route && (
+                  <ThemedText style={[styles.paramedicDistance, { 
+                    color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                  }]}>
+                    Por carretera: {(deliveryData.routeDistance / 1000).toFixed(1)}km
+                  </ThemedText>
+                )}
+              </View>
+              <TouchableOpacity 
+                style={styles.callButton}
+                onPress={handleCallDelivery}
+              >
+                <Ionicons name="call" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Botón para regresar al inicio cuando se complete la entrega */}
+        {currentStatus === 'DELIVERED' && (
+          <View style={[styles.completionSection, { 
+            backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+          }]}>
+            <View style={styles.completionHeader}>
+              <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
+              <ThemedText style={styles.completionTitle}>¡Entrega Completada!</ThemedText>
+              <ThemedText style={[styles.completionDescription, { 
+                color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+              }]}>
+                Tu pedido de farmacia ha sido entregado exitosamente. ¡Esperamos que tengas una pronta recuperación!
+              </ThemedText>
+              {route && (
+                <ThemedText style={[styles.completionStats, { 
+                  color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary 
+                }]}>
+                  Distancia recorrida: {(deliveryData.routeDistance / 1000).toFixed(1)}km
+                </ThemedText>
+              )}
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.homeButton}
+              onPress={handleGoHome}
+            >
+              <Ionicons name="home" size={24} color="white" />
+              <ThemedText style={styles.homeButtonText}>Regresar al Inicio</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.secondaryButton, { 
+                backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                borderColor: Colors.light.primary
+              }]}
+              onPress={() => router.push('/farmacia')}
+            >
+              <Ionicons name="medical" size={20} color={Colors.light.primary} />
+              <ThemedText style={[styles.secondaryButtonText, { color: Colors.light.primary }]}>
+                Hacer Otro Pedido
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Modal de Mapa en Pantalla Completa */}
+      <Modal
+        visible={isMapFullscreen}
+        animationType="slide"
+        statusBarTranslucent
+      >
+        <View style={styles.fullscreenMapContainer}>
+          <View style={styles.fullscreenMapHeader}>
+            <TouchableOpacity 
+              style={styles.closeMapButton}
+              onPress={handleCloseFullscreenMap}
+            >
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+            <ThemedText style={styles.fullscreenMapTitle}>Seguimiento en Tiempo Real</ThemedText>
+            <View style={styles.fullscreenMapStatus}>
+              <View style={[styles.statusDot, { backgroundColor: statusConfig.color }]} />
+              <ThemedText style={styles.fullscreenStatusText}>{statusConfig.title}</ThemedText>
+            </View>
+          </View>
+          
+          {userLocation ? (
+            <MapboxMap
+              latitude={mapView.center.lat}
+              longitude={mapView.center.lng}
+              zoom={Math.max(mapView.zoom, 14)}
+              markers={mapMarkers}
+              route={route?.coordinates}
+              routeColor="#FF6B35"
+              routeWidth={5}
+              showCurrentLocation={false}
+              interactive={true}
+              style={styles.fullscreenMap}
+            />
+          ) : (
+            <View style={styles.fullscreenNoLocation}>
+              <Ionicons name="location-outline" size={64} color="#999" />
+              <ThemedText style={styles.fullscreenNoLocationText}>
+                Esperando ubicación del usuario...
+              </ThemedText>
+            </View>
+          )}
+          
+          <View style={styles.fullscreenMapFooter}>
+            <View style={styles.fullscreenLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#FF0000' }]} />
+                <ThemedText style={[styles.legendText, { color: 'white' }]}>Tu ubicación</ThemedText>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendMarker, { backgroundColor: '#00AA00' }]} />
+                <ThemedText style={[styles.legendText, { color: 'white' }]}>
+                  Repartidor ({deliveryData.routeProgress}%)
                 </ThemedText>
               </View>
-            ))}
+              {route && (
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendMarker, { backgroundColor: '#FF6B35' }]} />
+                  <ThemedText style={[styles.legendText, { color: 'white' }]}>
+                    Ruta ({(deliveryData.routeDistance / 1000).toFixed(1)}km)
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+            {estimatedTime > 0 && (
+              <View style={styles.fullscreenTimeInfo}>
+                <Ionicons name="time" size={18} color="white" />
+                <ThemedText style={styles.fullscreenTimeText}>
+                  Tiempo estimado: {estimatedTime} min
+                </ThemedText>
+              </View>
+            )}
           </View>
         </View>
-      </ScrollView>
+      </Modal>
     </ThemedView>
   );
 }
@@ -461,21 +781,50 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    backgroundColor: Colors.light.primary,
+    paddingTop: 50,
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: Colors.light.white,
+    flex: 1,
   },
-  closeButton: {
-    padding: 4,
+  backButton: {
+    padding: 8,
+    marginRight: 12,
   },
   content: {
     flex: 1,
+  },
+  locationStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+  },
+  locationStatusText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  permissionButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   statusCard: {
     margin: 16,
@@ -510,12 +859,11 @@ const styles = StyleSheet.create({
   statusDescription: {
     fontSize: 14,
     lineHeight: 20,
+    color: Colors.light.textSecondary,
   },
   timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
@@ -524,33 +872,89 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
+  routeInfo: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+    marginTop: 4,
+  },
   mapContainer: {
     height: height * 0.4,
     borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    marginBottom: 12,
   },
   map: {
     flex: 1,
   },
-  mapLegend: {
+  mapClickOverlay: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
-    right: 12,
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mapClickText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+    marginLeft: 4,
+  },
+  noLocationContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  noLocationTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF9800',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  noLocationText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  enableLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  enableLocationText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  mapLegend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 8,
-    padding: 8,
+    paddingVertical: 8,
+    flexWrap: 'wrap',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 4,
+  },
+  legendMarker: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 6,
   },
   legendText: {
     fontSize: 12,
-    marginLeft: 4,
   },
   infoCard: {
     marginHorizontal: 16,
@@ -561,11 +965,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   infoContent: {
     marginLeft: 12,
@@ -573,25 +983,50 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    marginBottom: 2,
+    fontWeight: '600',
+    marginLeft: 12,
+    flex: 1,
+    color: Colors.light.primary,
   },
   infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: 14,
+    flex: 2,
   },
   callButton: {
     backgroundColor: Colors.light.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 8,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  progressCard: {
+  paramedicInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paramedicAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.light.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  paramedicDetails: {
+    flex: 1,
+  },
+  paramedicName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: Colors.light.primary,
+  },
+  paramedicDistance: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  completionSection: {
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
@@ -601,48 +1036,172 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  progressTitle: {
-    fontSize: 18,
+  completionHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  completionTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 8,
+    color: '#4CAF50',
   },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  progressStep: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  progressIconContainer: {
-    alignItems: 'center',
-    position: 'relative',
+  completionDescription: {
+    fontSize: 14,
+    textAlign: 'center',
     marginBottom: 8,
   },
-  progressLine: {
-    position: 'absolute',
-    top: 12,
-    left: 24,
-    width: 60,
-    height: 2,
-    zIndex: -1,
-  },
-  progressStepText: {
+  completionStats: {
     fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    fontStyle: 'italic',
+  },
+  homeButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  homeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  secondaryButton: {
+    borderRadius: 8,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.light.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  fullscreenMapContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  fullscreenMapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    paddingTop: 60,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  closeMapButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  fullscreenMapTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    flex: 1,
+  },
+  fullscreenMapStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+    backgroundColor: 'white',
+  },
+  fullscreenStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.white,
+  },
+  fullscreenMap: {
+    flex: 1,
+  },
+  fullscreenNoLocation: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  fullscreenNoLocationText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 16,
+  },
+  fullscreenMapFooter: {
+    backgroundColor: Colors.light.primary,
+    padding: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  fullscreenLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  fullscreenTimeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullscreenTimeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+    marginLeft: 8,
   },
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: Colors.light.textSecondary,
   },
   loadingSubtext: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  progressIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.light.white,
+  },
+  locationButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
 }); 

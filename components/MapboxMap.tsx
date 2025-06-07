@@ -54,7 +54,7 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
 
   // Función optimizada para actualizar marcadores sin recargar
   const updateMarkers = useCallback(() => {
-    if (!mapReady || !webViewRef.current) return;
+    if (!mapReady || !webViewRef.current || markers.length === 0) return;
     
     const markersString = JSON.stringify(markers);
     if (lastMarkersRef.current === markersString) return;
@@ -64,32 +64,76 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
     const updateScript = `
       (function() {
         try {
+          // Verificar que el mapa esté completamente listo
+          if (!window.map || !window.mapFullyReady) {
+            console.log('Mapa no está completamente listo, esperando...');
+            setTimeout(arguments.callee, 500);
+            return false;
+          }
+          
           // Eliminar solo marcadores existentes, no todos los elementos
           window.currentMarkers = window.currentMarkers || [];
           window.currentMarkers.forEach(marker => marker.remove());
           window.currentMarkers = [];
           
-          // Añadir nuevos marcadores
+          console.log('ACTUALIZANDO MARCADORES:', ${JSON.stringify(markers)});
+          
+          // Añadir nuevos marcadores con verificación de coordenadas
           ${markers.map(marker => `
-            // MARCADOR SIMPLE PERO MUY VISIBLE
+            console.log('Creando marcador ${marker.id} en:', [${marker.longitude}, ${marker.latitude}]);
+            
+            // Verificar que las coordenadas sean válidas
+            if (isNaN(${marker.longitude}) || isNaN(${marker.latitude})) {
+              console.error('Coordenadas inválidas para marcador ${marker.id}');
+              return;
+            }
+            
+            // MARCADOR CON MÁXIMA VISIBILIDAD
             const marker_${marker.id} = new mapboxgl.Marker({
               color: '${marker.color || '#FF0000'}',
-              scale: 2.0
+              scale: 2.5,
+              draggable: false
             })
               .setLngLat([${marker.longitude}, ${marker.latitude}])
               .addTo(map);
             
             window.currentMarkers.push(marker_${marker.id});
             
-            // FORZAR que sea SUPER visible
+            // ASEGURAR MÁXIMA VISIBILIDAD
             const markerElement = marker_${marker.id}.getElement();
-            markerElement.style.transform = 'scale(2)';
-            markerElement.style.zIndex = '999999';
-            markerElement.style.filter = 'drop-shadow(0 0 20px rgba(255,0,0,1))';
-            markerElement.style.position = 'relative';
+            if (markerElement) {
+              markerElement.style.transform = 'scale(2.5)';
+              markerElement.style.zIndex = '999999 !important';
+              markerElement.style.position = 'absolute !important';
+              markerElement.style.pointerEvents = 'none';
+              markerElement.style.filter = 'drop-shadow(0 0 20px ${marker.color || '#FF0000'})';
+              markerElement.style.border = '3px solid white';
+              markerElement.style.borderRadius = '50%';
+              
+              // Forzar que se vea
+              setTimeout(() => {
+                markerElement.style.display = 'block';
+                markerElement.style.visibility = 'visible';
+                markerElement.style.opacity = '1';
+              }, 100);
+            }
             
-            console.log('MARCADOR CREADO:', marker_${marker.id}, 'en:', [${marker.longitude}, ${marker.latitude}]);
+            // Agregar popup si hay título
+            ${marker.title ? `
+              marker_${marker.id}.setPopup(
+                new mapboxgl.Popup({ 
+                  offset: 25,
+                  closeButton: false,
+                  className: 'custom-popup'
+                }).setHTML('<div style="padding: 8px; font-size: 14px; font-weight: bold; text-align: center;">${marker.title}</div>')
+              );
+            ` : ''}
+            
+            console.log('MARCADOR ${marker.id} CREADO EXITOSAMENTE');
           `).join('')}
+          
+          // Verificar que los marcadores están en el mapa
+          console.log('TOTAL MARCADORES CREADOS:', window.currentMarkers.length);
           
           return true;
         } catch(e) {
@@ -249,6 +293,25 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           }
+          /* ESTILOS ESPECÍFICOS PARA MARCADORES */
+          .mapboxgl-marker {
+            z-index: 999999 !important;
+            position: absolute !important;
+            pointer-events: auto !important;
+          }
+          .mapboxgl-marker svg {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)) !important;
+          }
+          .custom-popup .mapboxgl-popup-content {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          }
         </style>
       </head>
       <body>
@@ -301,6 +364,10 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({
                     });
                   }
                 ` : ''}
+                
+                // Marcar que el mapa está completamente inicializado
+                window.mapFullyReady = true;
+                console.log('MAPA COMPLETAMENTE LISTO PARA MARCADORES');
               });
 
               // Manejar clics en el mapa

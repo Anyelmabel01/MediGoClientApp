@@ -2,10 +2,12 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Image, Modal, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { User } from '../types/supabase';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
@@ -22,6 +24,13 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  
+  // Estados para modales personalizados
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalAnimation] = useState(new Animated.Value(0));
   
   // Datos temporales para edición
   const [editData, setEditData] = useState<User | null>(null);
@@ -32,6 +41,203 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
       setEditData(user);
     }
   }, [isVisible, user]);
+
+  const showModal = (isSuccess: boolean, message: string) => {
+    setModalMessage(message);
+    if (isSuccess) {
+      setShowSuccessModal(true);
+    } else {
+      setShowErrorModal(true);
+    }
+    
+    // Animación de entrada
+    Animated.parallel([
+      Animated.timing(modalAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const closeModal = () => {
+    Animated.timing(modalAnimation, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowSuccessModal(false);
+      setShowErrorModal(false);
+      if (showSuccessModal) {
+        setIsEditing(false);
+      }
+    });
+  };
+
+  const uploadImage = async (uri: string): Promise<string | null> => {
+    try {
+      if (!user?.id) return null;
+
+      console.log('Procesando imagen:', uri);
+
+      // Crear nombre único para el archivo
+      const fileExtension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${user.id}_${Date.now()}.${fileExtension}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Usar expo-file-system directamente (más confiable para URIs locales)
+      const FileSystem = require('expo-file-system');
+      
+      // Leer el archivo como base64
+      const base64String = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      console.log('Imagen leída correctamente, tamaño base64:', base64String.length);
+
+      // Convertir base64 a Uint8Array para React Native
+      const binaryString = atob(base64String);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      console.log('Archivo preparado, subiendo a Supabase...');
+
+      // Subir el archivo a Supabase usando ArrayBuffer
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, bytes.buffer, {
+          contentType: `image/${fileExtension}`,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw new Error('Error al subir la imagen: ' + uploadError.message);
+      }
+
+      // Obtener la URL pública
+      const { data } = supabase.storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+
+      console.log('Imagen subida exitosamente:', data.publicUrl);
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error processing image:', error);
+      
+      // Mostrar mensaje de error más específico al usuario
+      if (error instanceof Error) {
+        if (error.message.includes('FileSystem')) {
+          console.error('Error al leer el archivo de imagen.');
+        } else if (error.message.includes('upload')) {
+          console.error('Error al subir la imagen al servidor.');
+        } else if (error.message.includes('Blob')) {
+          console.error('Error en el formato de la imagen.');
+        } else {
+          console.error('Error al procesar imagen: ' + error.message);
+        }
+      } else {
+        console.error('Error desconocido al procesar imagen.');
+      }
+      
+      return null;
+    }
+  };
+
+  const handleImagePicker = async () => {
+    try {
+      // Solicitar permisos
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showModal(false, 'Se necesitan permisos para acceder a la galería');
+        return;
+      }
+
+      // Mostrar opciones
+      Alert.alert(
+        'Cambiar foto de perfil',
+        'Selecciona una opción',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+          },
+          {
+            text: 'Galería',
+            onPress: () => pickImage('gallery'),
+          },
+          {
+            text: 'Cámara',
+            onPress: () => pickImage('camera'),
+          },
+        ]
+      );
+    } catch (error) {
+      showModal(false, 'Error al acceder a las opciones de imagen');
+    }
+  };
+
+  const pickImage = async (source: 'gallery' | 'camera') => {
+    try {
+      setIsUploadingImage(true);
+
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          showModal(false, 'Se necesitan permisos para usar la cámara');
+          return;
+        }
+
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        console.log('Imagen seleccionada:', imageUri);
+        
+        // Subir imagen
+        const publicUrl = await uploadImage(imageUri);
+        
+        if (publicUrl) {
+          // Actualizar perfil con nueva URL
+          const updateResult = await updateProfile({ avatar_url: publicUrl });
+          
+          if (updateResult.error) {
+            showModal(false, 'Error al actualizar la foto de perfil');
+          } else {
+            // Actualizar datos locales
+            if (editData) {
+              setEditData({ ...editData, avatar_url: publicUrl });
+            }
+            showModal(true, 'Foto de perfil actualizada correctamente');
+          }
+        } else {
+          showModal(false, 'Error al subir la imagen');
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      showModal(false, 'Error al seleccionar la imagen');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!editData || !user) return;
@@ -50,13 +256,12 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
       });
 
       if (result.error) {
-        Alert.alert('Error', 'No se pudo actualizar el perfil: ' + result.error);
+        showModal(false, 'No se pudo actualizar el perfil: ' + result.error);
       } else {
-        Alert.alert('Éxito', 'Perfil actualizado correctamente');
-        setIsEditing(false);
+        showModal(true, 'Perfil actualizado correctamente');
       }
     } catch (error) {
-      Alert.alert('Error', 'Error inesperado al actualizar el perfil');
+      showModal(false, 'Error inesperado al actualizar el perfil');
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +339,7 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
       onRequestClose={onClose}
       statusBarTranslucent={true}
     >
-      <StatusBar style="light" backgroundColor="rgba(0,0,0,0.5)" translucent />
+      <StatusBar style="light" translucent />
       <ThemedView style={styles.centeredView}>
         <View style={[
           styles.modalView,
@@ -145,13 +350,34 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
             isDarkMode && styles.modalHeaderDark
           ]}>
             <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <ThemedText style={styles.avatarText}>
-                    {user.nombre.charAt(0)}{user.apellido.charAt(0)}
-                  </ThemedText>
+              <TouchableOpacity 
+                style={styles.avatarContainer}
+                onPress={handleImagePicker}
+                disabled={isUploadingImage}
+              >
+                {user.avatar_url ? (
+                  <Image 
+                    source={{ uri: user.avatar_url }} 
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={styles.avatar}>
+                    <ThemedText style={styles.avatarText}>
+                      {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                    </ThemedText>
+                  </View>
+                )}
+                
+                {/* Overlay de cámara */}
+                <View style={styles.cameraOverlay}>
+                  {isUploadingImage ? (
+                    <ActivityIndicator size="small" color={Colors.light.white} />
+                  ) : (
+                    <Ionicons name="camera" size={16} color={Colors.light.white} />
+                  )}
                 </View>
-              </View>
+              </TouchableOpacity>
+              
               <View style={styles.profileInfo}>
                 <ThemedText style={styles.userName}>
                   {user.nombre} {user.apellido}
@@ -174,7 +400,6 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
               <>
                 {renderEditField('Nombre', editData.nombre, 'nombre')}
                 {renderEditField('Apellido', editData.apellido, 'apellido')}
-                {renderEditField('Correo electrónico', editData.email, 'email', 'email-address')}
                 {renderEditField('Teléfono', editData.telefono || '', 'telefono', 'phone-pad')}
                 {renderEditField('Tipo de sangre', editData.tipo_sangre || '', 'tipo_sangre')}
                 {renderEditField('Peso (kg)', editData.peso?.toString() || '', 'peso', 'numeric')}
@@ -271,6 +496,94 @@ export function UserProfile({ isVisible, onClose }: UserProfileProps) {
           </View>
         </View>
       </ThemedView>
+
+      {/* Modal de Éxito */}
+      {showSuccessModal && (
+        <Modal
+          visible={showSuccessModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.customModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={64} color={Colors.light.success || '#10b981'} />
+              </View>
+              
+              <ThemedText style={[styles.customModalTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                ¡Éxito!
+              </ThemedText>
+              
+              <ThemedText style={[styles.customModalMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {modalMessage}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.customModalButton, { backgroundColor: Colors.light.primary }]}
+                onPress={closeModal}
+              >
+                <ThemedText style={[styles.customModalButtonText, { color: Colors.light.white }]}>
+                  Entendido
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Modal de Error */}
+      {showErrorModal && (
+        <Modal
+          visible={showErrorModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalOverlay}>
+            <Animated.View 
+              style={[
+                styles.customModalContainer,
+                { 
+                  backgroundColor: isDarkMode ? Colors.dark.background : Colors.light.white,
+                  transform: [{ scale: modalAnimation }],
+                  opacity: modalAnimation,
+                }
+              ]}
+            >
+              <View style={styles.errorIconContainer}>
+                <Ionicons name="alert-circle" size={64} color={Colors.light.error || '#ef4444'} />
+              </View>
+              
+              <ThemedText style={[styles.customModalTitle, { color: isDarkMode ? Colors.dark.text : Colors.light.textPrimary }]}>
+                Error
+              </ThemedText>
+              
+              <ThemedText style={[styles.customModalMessage, { color: isDarkMode ? Colors.dark.textSecondary : Colors.light.textSecondary }]}>
+                {modalMessage}
+              </ThemedText>
+              
+              <TouchableOpacity 
+                style={[styles.customModalButton, { backgroundColor: Colors.light.error || '#ef4444' }]}
+                onPress={closeModal}
+              >
+                <ThemedText style={[styles.customModalButtonText, { color: Colors.light.white }]}>
+                  Cerrar
+                </ThemedText>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -463,5 +776,60 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     marginLeft: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  customModalContainer: {
+    margin: 20,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    maxWidth: 320,
+  },
+  successIconContainer: {
+    marginBottom: 20,
+  },
+  errorIconContainer: {
+    marginBottom: 20,
+  },
+  customModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  customModalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  customModalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  customModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 }); 
